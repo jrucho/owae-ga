@@ -42,4 +42,6 @@ test("homepage live-tool links use preserved local routes", async () => {
 
   assert.match(page, /href="\/Beatmaker_Cues\.html"/);
   assert.match(page, /href="\/Swiss-VJ\.html"/);
+  assert.match(page, /un-bound\.ai\.studio\/public\/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/);
+  assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });

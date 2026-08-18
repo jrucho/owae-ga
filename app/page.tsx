@@ -5,6 +5,7 @@ const links = {
   spotify: "https://open.spotify.com/album/0BtyJXp1wDrdD32R7zE1hz",
   spotifyArtist: "https://open.spotify.com/artist/3CHA9jnHDxkhqaOvWoRWoJ",
   vinyl: "https://elasticstage.com/owaega/releases/sofianima-album",
+  book: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAdGRleATcFwJwZG9mAmV4dG4DYWVtAjExAHNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp3Wxh8W_Nn9VpO0eZTrNcbQ-0Whw5329G4RlwoQ1o3VBtzAKhS3NOFID9xjG_aem_iK0sLI7LjH6lIlqW9yENng",
   instagram: "https://www.instagram.com/owae.ga",
 };
 
@@ -143,7 +144,11 @@ const sofianimaTracks = [
   { title: "Sofiánima", duration: "03:16", href: "https://owaega.bandcamp.com/track/sofi-nima" },
 ];
 
-const ExternalArrow = () => <span aria-hidden="true">↗</span>;
+const ExternalArrow = () => (
+  <svg className="external-arrow" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+    <path d="M3 9 9 3M4 3h5v5" />
+  </svg>
+);
 
 export default function Home() {
   return (
@@ -216,6 +221,7 @@ export default function Home() {
             <a href={links.bandcamp} target="_blank" rel="noreferrer">Bandcamp <ExternalArrow /></a>
             <a href={links.spotify} target="_blank" rel="noreferrer">Spotify <ExternalArrow /></a>
             <a href={links.vinyl} target="_blank" rel="noreferrer">Vinyl / CD <ExternalArrow /></a>
+            <a href={links.book} target="_blank" rel="noreferrer">Book <ExternalArrow /></a>
           </div>
         </div>
       </section>
