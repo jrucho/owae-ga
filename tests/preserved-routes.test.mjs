@@ -25,7 +25,6 @@ const sharedAssets = [
   "logoowae2.png",
   "manifest.webmanifest",
   "owae.ga - Tudor.mp3",
-  "owae-ga-site.zip",
   "service-worker.js",
 ];
 
@@ -33,7 +32,7 @@ test("preserves every legacy tool at its original route", async () => {
   await Promise.all(legacyRoutes.map((route) => access(new URL(`../public/${route}`, import.meta.url))));
 });
 
-test("preserves shared legacy assets and the site download", async () => {
+test("preserves shared legacy assets", async () => {
   await Promise.all(sharedAssets.map((asset) => access(new URL(`../public/${asset}`, import.meta.url))));
 });
 

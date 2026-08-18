@@ -359,7 +359,6 @@ export default function Home() {
           <a href={links.vinyl} target="_blank" rel="noreferrer">Vinyl / CD <ExternalArrow /></a>
           <a href={links.instagram} target="_blank" rel="noreferrer">Instagram <ExternalArrow /></a>
           <a href="mailto:tympaproject@gmail.com">Business inquiries <ExternalArrow /></a>
-          <a href="/owae-ga-site.zip" download>Download site ZIP ↓</a>
         </div>
         <div className="footer-bottom">
           <span>© 2026 owae.ga — All rights reserved</span>
