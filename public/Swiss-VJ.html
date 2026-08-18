@@ -332,12 +332,12 @@
   }
   .toast.show{transform:translateY(0)}
   .overlay{
-    position:absolute;inset:0;display:grid;place-items:center;z-index:5;
-    pointer-events:none;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    position:absolute;inset:0;display:grid;justify-items:center;align-items:start;align-content:start;z-index:5;
+    pointer-events:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
     padding:max(.5rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) max(.5rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left))
   }
   .start-card{
-    pointer-events:auto;width:min(680px, 100%);max-width:680px;margin:auto;padding:1rem;
+    pointer-events:auto;width:min(680px, 100%);max-width:680px;margin:0 auto;padding:1rem;
     background:rgba(17,17,17,.9);border:1px solid var(--line);border-radius:1rem
   }
   .start-card h1{margin:.2rem 0 0;font-size:1.25rem}
@@ -348,6 +348,11 @@
 
   /* Hide UI in “Stage Only” mode */
   .stage-only header, .stage-only footer, .stage-only .hint{display:none}
+  .stage-exit{
+    display:none;position:absolute;z-index:20;top:max(.6rem, env(safe-area-inset-top));right:max(.6rem, env(safe-area-inset-right));
+    min-height:44px;padding:.55rem .75rem;background:rgba(17,17,17,.8);border-color:#555;backdrop-filter:blur(8px)
+  }
+  .stage-only .stage-exit{display:block}
   .fs-btn{margin-left:auto}
 
   /* Responsive Design */
@@ -385,7 +390,7 @@
     
     .start-card {
       padding: 1rem;
-      margin: auto;
+      margin: 0 auto;
       max-width: 95vw;
     }
     
@@ -429,7 +434,7 @@
 
     .start-card {
       padding: 0.8rem;
-      margin: auto;
+      margin: 0 auto;
     }
 
     .start-card select { width:100%;max-width:100%;min-width:0; }
@@ -492,6 +497,7 @@
 
   <main>
     <canvas id="stage" aria-label="visuals stage"></canvas>
+    <button id="exitStageBtn" class="ghost stage-exit" type="button">Exit</button>
 
     <!-- First-run overlay (permission + device discovery) -->
     <div id="startOverlay" class="overlay">
@@ -502,6 +508,10 @@
           Monitoring is optional (OFF by default to avoid feedback). Swipe left/right to change preset, tap to advance.
         </p>
         <div class="grid">
+          <div class="ctl settings-actions" style="justify-content:center;gap:1rem">
+            <button id="enableBtn" class="primary">Enable Audio</button>
+            <button id="closeSettingsBtn" class="ghost">Close</button>
+          </div>
           <div class="ctl">
             <span>Input</span>
             <select id="inputSelect" aria-label="Audio input">
@@ -538,10 +548,6 @@
               <label for="gain">Gain</label>
               <input id="gain" type="range" min="0" max="2" step="0.01" value="0.0" />
             </div>
-          </div>
-          <div class="ctl settings-actions" style="justify-content:center;gap:1rem">
-            <button id="enableBtn" class="primary">Enable Audio</button>
-            <button id="closeSettingsBtn" class="ghost">Close</button>
           </div>
           <div class="mono">HTTPS is required for microphone access. Monitoring stays off by default to prevent feedback.</div>
         </div>
@@ -632,6 +638,7 @@
   const presetBar = E('#presetBar');
   const toast = E('#toast');
   const fsBtn = E('#fsBtn');
+  const exitStageBtn = E('#exitStageBtn');
   const recenterBtn = E('#recenterBtn');
   const settingsBtn = E('#settingsBtn');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -1012,9 +1019,21 @@
     const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
     fsBtn.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
   }
-  if(!requestFullscreen) fsBtn.hidden = true;
+  function setStageOnly(on){
+    document.body.classList.toggle('stage-only', on);
+    if(on) startOverlay.style.display = 'none';
+    requestAnimationFrame(resize);
+  }
+  if(!requestFullscreen){
+    fsBtn.textContent = 'Stage Only';
+    fsBtn.title = 'Hide controls and fill the screen';
+  }
   fsBtn.addEventListener('click', async () => {
     try{
+      if(!requestFullscreen){
+        setStageOnly(true);
+        return;
+      }
       if(document.fullscreenElement || document.webkitFullscreenElement){
         if(!exitFullscreen) throw new Error('fullscreen-exit-unavailable');
         await exitFullscreen.call(document);
@@ -1025,8 +1044,17 @@
       setTimeout(resize, 50);
       setTimeout(resize, 150);
       setTimeout(resize, 300);
-    }catch(e){ showToast('Fullscreen blocked'); }
+    }catch(e){
+      if(!(document.fullscreenElement || document.webkitFullscreenElement)){
+        setStageOnly(true);
+        showToast('Stage-only view');
+      }else{
+        showToast('Fullscreen blocked');
+      }
+    }
   });
+
+  exitStageBtn.addEventListener('click', () => setStageOnly(false));
 
   settingsBtn.addEventListener('click', () => {
     startOverlay.style.display = 'grid';
@@ -1055,7 +1083,7 @@
   canvas.addEventListener('touchend', (e)=>{
     if(twoFinger){
       if(!twoFingerHandled && !twoFingerMoved && performance.now()-touchTime<350){
-        document.body.classList.toggle('stage-only');
+        setStageOnly(!document.body.classList.contains('stage-only'));
         twoFingerHandled=true;
       }
       if(e.touches.length===0) twoFinger=false;
