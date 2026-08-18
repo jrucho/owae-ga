@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Swiss VJ — iOS Audio Monitor + 70s Swiss Art Presets</title>
 <meta name="description" content="Swiss VJ - Audio-reactive visual generator with 70s Swiss design aesthetics. Real-time audio visualization with 30 presets, iOS optimized." />
 <meta name="keywords" content="Swiss VJ, audio visualization, visual generator, Swiss design, audio reactive, real-time visuals" />
@@ -28,18 +28,18 @@
     --accent:#e3001b;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-  html,body{margin:0;height:100vh;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Helvetica Neue,Helvetica,Arial,Inter,Roboto,sans-serif;overflow:hidden;}
-  body{display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:100%;min-height:100vh;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Helvetica Neue,Helvetica,Arial,Inter,Roboto,sans-serif;overflow:hidden;}
+  body{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:100%;min-height:100vh;min-height:100dvh;}
   header,footer{
     display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;
-    padding:.6rem .8rem;background:rgba(17,17,17,.9);backdrop-filter:saturate(120%) blur(10px);
+    padding:max(.6rem, env(safe-area-inset-top)) max(.8rem, env(safe-area-inset-right)) .6rem max(.8rem, env(safe-area-inset-left));background:rgba(17,17,17,.9);backdrop-filter:saturate(120%) blur(10px);
     border-bottom:1px solid var(--line);
   }
-  footer{border-top:1px solid var(--line); border-bottom:none}
+  footer{padding:.6rem max(.8rem, env(safe-area-inset-right)) max(.6rem, env(safe-area-inset-bottom)) max(.8rem, env(safe-area-inset-left));border-top:1px solid var(--line); border-bottom:none}
   .brand{font-weight:700;letter-spacing:.02em;font-size:clamp(0.9rem, 2.5vw, 1.1rem);}
   .badge{font-size:clamp(0.65rem, 1.8vw, 0.75rem);color:var(--muted);border:1px solid var(--line);padding:.15rem .4rem;border-radius:.4rem}
-  main{position:relative;isolation:isolate;overflow:hidden;width:100%;height:100%;display:block;}
-  canvas#stage{position:absolute;inset:0;width:100%;height:100%;touch-action:manipulation;display:block;object-fit:fill;}
+  main{position:relative;isolation:isolate;overflow:hidden;width:100%;height:100%;min-height:0;display:block;}
+  canvas#stage{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;}
 
   /* Controls bar */
   .ctl{
@@ -68,7 +68,7 @@
   }
   
   /* Swiss-inspired track styling */
-  input[type="range"]::-webkit-slider-track {
+  input[type="range"]::-webkit-slider-runnable-track {
     height: 4px;
     background: linear-gradient(90deg, #222 0%, #333 50%, #222 100%);
     border-radius: 2px;
@@ -220,7 +220,7 @@
       width: 18px;
     }
     
-    input[type="range"]::-webkit-slider-track {
+    input[type="range"]::-webkit-slider-runnable-track {
       height: 6px;
     }
     
@@ -239,13 +239,13 @@
   }
   
   /* Extra mobile optimizations */
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     input[type="range"] {
       height: 52px; /* Even larger for small screens */
       min-width: 80px;
     }
     
-    .ctl {
+    .start-card .ctl {
       flex-direction: column;
       align-items: stretch;
       gap: .4rem;
@@ -327,16 +327,17 @@
   }
   .toast{
     position:fixed;top:0;left:0;right:0;text-align:center;
-    background:#161616;border-bottom:1px solid var(--line);padding:.5rem .75rem;color:#ddd;
+    background:#161616;border-bottom:1px solid var(--line);padding:max(.5rem, env(safe-area-inset-top)) .75rem .5rem;color:#ddd;
     transform:translateY(-100%);transition:.3s transform ease;z-index:30
   }
   .toast.show{transform:translateY(0)}
   .overlay{
     position:absolute;inset:0;display:grid;place-items:center;z-index:5;
-    pointer-events:none
+    pointer-events:none;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    padding:max(.5rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) max(.5rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left))
   }
   .start-card{
-    pointer-events:auto;max-width:680px;margin:auto;padding:1rem;
+    pointer-events:auto;width:min(680px, 100%);max-width:680px;margin:auto;padding:1rem;
     background:rgba(17,17,17,.9);border:1px solid var(--line);border-radius:1rem
   }
   .start-card h1{margin:.2rem 0 0;font-size:1.25rem}
@@ -346,13 +347,13 @@
   .mono{font-family:ui-monospace,Menlo,Monaco,monospace;font-size:.85rem;color:#ccc}
 
   /* Hide UI in “Stage Only” mode */
-  .stage-only header, .stage-only footer, .hint{display:none}
+  .stage-only header, .stage-only footer, .stage-only .hint{display:none}
   .fs-btn{margin-left:auto}
 
   /* Responsive Design */
   @media (max-width: 768px) {
     header, footer {
-      padding: .5rem;
+      padding: max(.5rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) .5rem max(.5rem, env(safe-area-inset-left));
       gap: .3rem;
     }
     
@@ -370,15 +371,21 @@
       gap: .3rem;
     }
     
+    footer {
+      padding: .5rem max(.5rem, env(safe-area-inset-right)) max(.5rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left));
+    }
+
+    select, button { font-size: 16px; }
+
     .preset {
       padding: .4rem .6rem;
       font-size: 0.8rem;
-      min-height: 40px;
+      min-height: 44px;
     }
     
     .start-card {
       padding: 1rem;
-      margin: 0.5rem;
+      margin: auto;
       max-width: 95vw;
     }
     
@@ -393,15 +400,21 @@
     }
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
+    header > .row {
+      width:100%;margin-left:0 !important;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+
+    header > .row button { min-width:0;padding:.5rem .2rem; }
+
     .presets {
-      padding: .3rem .5rem;
+      width:100%;padding:.3rem .5rem;
     }
     
     .preset {
       padding: .3rem .5rem;
       font-size: 0.75rem;
-      min-height: 36px;
+      min-height: 44px;
     }
     
     .hint {
@@ -416,40 +429,52 @@
 
     .start-card {
       padding: 0.8rem;
-      margin: 0.3rem;
+      margin: auto;
     }
+
+    .start-card select { width:100%;max-width:100%;min-width:0; }
+
+    footer { display:grid;grid-template-columns:minmax(0,1fr); }
+    footer .ctl { width:100%;display:grid;grid-template-columns:auto minmax(80px,1fr); }
+    footer .ctl input[type="range"] { width:100%;min-width:0; }
   }
 
   @media (orientation: landscape) and (max-height: 500px) {
-    header, footer {
-      padding: .3rem .5rem;
-    }
-    
-    .hint {
-      bottom: 0.3rem;
-      font-size: 0.7rem;
-    }
+    header { flex-wrap:nowrap;padding:max(.3rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) .3rem max(.5rem, env(safe-area-inset-left)); }
+    header .badge { display:none; }
+    header > .row { width:auto;margin-left:auto !important;display:flex;flex-wrap:nowrap; }
+    header > .row button { padding:.35rem .5rem; }
+
+    footer { display:flex;flex-wrap:nowrap;padding:.3rem max(.5rem, env(safe-area-inset-right)) max(.3rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left)); }
+    footer .ctl { width:auto;display:flex;flex-wrap:nowrap; }
+    footer .ctl input[type="range"] { width:clamp(80px,14vw,130px);min-width:80px;height:44px; }
+    footer .presets { min-width:0;flex:1; }
+
+    .hint { display:none; }
     
     .preset {
       padding: .2rem .4rem;
-      min-height: 32px;
+      min-height: 44px;
     }
+
+    .start-card .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .start-card .settings-actions, .start-card .mono { grid-column:1 / -1; }
   }
 
   /* Fullscreen optimizations for true responsive canvas */
   :fullscreen {
     width: 100vw !important;
-    height: 100vh !important;
+    height: 100dvh !important;
   }
   
   :fullscreen main {
     width: 100vw !important;
-    height: 100vh !important;
+    height: 100dvh !important;
   }
   
   :fullscreen canvas#stage {
     width: 100vw !important;
-    height: 100vh !important;
+    height: 100dvh !important;
   }
   
   :-webkit-full-screen {
@@ -467,8 +492,6 @@
     height: 100vh !important;
   }
 </style>
-<!-- PWA Manifest and Icons -->
-<link rel="manifest" href="manifest.json" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23111'/%3E%3Ctext y='70' x='50' text-anchor='middle' font-size='60' fill='%23e3001b'%3ESV%3C/text%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23111'/%3E%3Ctext y='110' x='90' text-anchor='middle' font-size='80' fill='%23e3001b'%3ESV%3C/text%3E%3C/svg%3E" />
 </head>
@@ -477,9 +500,9 @@
     <div class="brand">SWISS VJ</div>
     <span class="badge">iOS • audio monitor • 30 presets • multi-select</span>
     <div class="row" style="margin-left:auto">
-      <button id="recenterBtn" class="ghost" title="Recenter Canvas">↻ Recenter</button>
-      <button id="fsBtn" class="ghost fs-btn" title="Full screen">⛶ Full Screen</button>
-      <button id="settingsBtn" class="ghost" title="Audio Settings">⚙ Settings</button>
+      <button id="recenterBtn" class="ghost" title="Recenter canvas">Recenter</button>
+      <button id="fsBtn" class="ghost fs-btn" title="Full screen">Full Screen</button>
+      <button id="settingsBtn" class="ghost" title="Audio settings">Settings</button>
     </div>
   </header>
 
@@ -501,7 +524,7 @@
               <option value="">(default microphone)</option>
             </select>
           </div>
-          <div class="ctl">
+          <div class="ctl" id="outputCtl">
             <span>Output</span>
             <select id="outputSelect" aria-label="Audio output">
               <option value="">(default speakers)</option>
@@ -532,11 +555,11 @@
               <input id="gain" type="range" min="0" max="2" step="0.01" value="0.0" />
             </div>
           </div>
-          <div class="ctl" style="justify-content:center;gap:1rem">
-            <button id="enableBtn" class="primary">🔊 Enable Audio</button>
-            <button id="closeSettingsBtn" class="ghost">✕ Close</button>
+          <div class="ctl settings-actions" style="justify-content:center;gap:1rem">
+            <button id="enableBtn" class="primary">Enable Audio</button>
+            <button id="closeSettingsBtn" class="ghost">Close</button>
           </div>
-          <div class="mono">HTTPS recommended (device names & better permissions). From file://, iOS exposes a single default mic.</div>
+          <div class="mono">HTTPS is required for microphone access. Monitoring stays off by default to prevent feedback.</div>
         </div>
       </div>
     </div>
@@ -613,6 +636,7 @@
   const startOverlay = E('#startOverlay');
   const inputSelect = E('#inputSelect');
   const outputSelect = E('#outputSelect');
+  const outputCtl = E('#outputCtl');
   const blendModeSelect = E('#blendModeSelect');
   const enableBtn = E('#enableBtn');
   const closeSettingsBtn = E('#closeSettingsBtn');
@@ -626,6 +650,9 @@
   const fsBtn = E('#fsBtn');
   const recenterBtn = E('#recenterBtn');
   const settingsBtn = E('#settingsBtn');
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const canSelectOutput = !!(AudioContextClass && AudioContextClass.prototype && 'setSinkId' in AudioContextClass.prototype);
+  if(!canSelectOutput) outputCtl.hidden = true;
 
   // Util
   function showToast(msg, ms=1400){ toast.textContent = msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), ms); }
@@ -686,26 +713,14 @@
   function resize(){
     const oldW = W, oldH = H;
     dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-    
-    // Get dimensions based on fullscreen state
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      // In fullscreen, use full viewport
-      W = window.innerWidth;
-      H = window.innerHeight;
-    } else {
-      // Normal mode, get container dimensions
-      const rect = canvas.getBoundingClientRect();
-      W = Math.ceil(rect.width) || window.innerWidth;
-      H = Math.ceil(rect.height) || window.innerHeight;
-    }
-    
-    // Ensure minimum dimensions
-    W = Math.max(W, 320);
-    H = Math.max(H, 240);
-    
-    // Always update canvas dimensions for live responsiveness
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = Math.max(1, Math.round(rect.width));
+    H = Math.max(1, Math.round(rect.height));
+
+    const pixelWidth = Math.round(W * dpr);
+    const pixelHeight = Math.round(H * dpr);
+    if(canvas.width !== pixelWidth) canvas.width = pixelWidth;
+    if(canvas.height !== pixelHeight) canvas.height = pixelHeight;
     ctx.setTransform(dpr,0,0,dpr,0,0); // scale for device pixel ratio
     
     // Clear temp canvas pool when dimensions change significantly
@@ -734,116 +749,19 @@
       }
     }
     
-    // Set canvas display size to fill container completely
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    
-    // Ensure the canvas covers the entire area
-    canvas.style.objectFit = 'cover';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
   }
   
   // Manual recenter function for users
   function recenterCanvas() {
-    // Force a complete recalculation of available space
     const oldW = W, oldH = H;
-    dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-    
-    // Get the main container (parent of canvas)
-    const main = canvas.parentElement;
-    
-    // Force a layout reflow to get accurate dimensions
-    main.style.display = 'none';
-    main.offsetHeight; // Force reflow
-    main.style.display = 'block';
-    
-    // Wait for layout to stabilize, then measure
     requestAnimationFrame(() => {
-      const mainRect = main.getBoundingClientRect();
-      
-      // Calculate available space more aggressively
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
-        // In fullscreen, use full viewport
-        W = window.innerWidth;
-        H = window.innerHeight;
-      } else {
-        // Try multiple methods to get the true available space
-        const methods = [
-          () => ({ w: mainRect.width, h: mainRect.height }),
-          () => ({ w: main.clientWidth, h: main.clientHeight }),
-          () => ({ w: main.offsetWidth, h: main.offsetHeight }),
-          () => ({ w: window.innerWidth, h: window.innerHeight - 120 }) // Account for headers
-        ];
-        
-        let maxW = 0, maxH = 0;
-        methods.forEach(method => {
-          const { w, h } = method();
-          maxW = Math.max(maxW, w || 0);
-          maxH = Math.max(maxH, h || 0);
-        });
-        
-        W = Math.max(maxW, 320);
-        H = Math.max(maxH, 240);
-      }
-      
-      // Force canvas to fill the entire available space
-      canvas.style.position = 'absolute';
-      canvas.style.top = '0';
-      canvas.style.left = '0';
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.style.objectFit = 'fill'; // Use fill to ensure full coverage without cropping
-      canvas.style.zIndex = '1';
-      
-      // Update canvas resolution to match display size
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      
-      // Make sure the parent container is properly sized
-      main.style.width = '100%';
-      main.style.height = '100%';
-      main.style.position = 'relative';
-      
-      // Clear and reset everything
-      tempCanvasPool.length = 0; // Clear pool to force recreation with new dimensions
-      updateTempCanvasDimensions(); // Update any remaining canvases
+      resize();
+      tempCanvasPool.length = 0;
       ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, W, H);
-      
-      // Force immediate animation update with new dimensions
-      if (analyser && freq) {
-        // Multiple immediate updates to ensure proper adaptation
-        for (let i = 0; i < 5; i++) {
-          setTimeout(() => {
-            analyser.getByteFrequencyData(freq);
-            analyser.getByteTimeDomainData(time);
-            
-            // Trigger immediate render with new dimensions
-            const t = performance.now() * 0.001;
-            const opts = {bg:palette.bg, fg:palette.fg, acc:palette.acc, sens:sensitivity};
-            
-            // Always clear the full canvas first
-            ctx.fillStyle = opts.bg;
-            ctx.fillRect(0, 0, W, H);
-            
-            if (activePresets.length === 1) {
-              const preset = PRESETS[activePresets[0]];
-              preset.draw(ctx, W, H, t, freq, time, opts);
-            } else if (activePresets.length > 1) {
-              // Handle multi-preset rendering as well
-              activePresets.forEach((presetIdx, layerIndex) => {
-                const preset = PRESETS[presetIdx];
-                ctx.save();
-                ctx.globalAlpha = layerIndex === 0 ? 1.0 : 0.6;
-                preset.draw(ctx, W, H, t, freq, time, opts);
-                ctx.restore();
-              });
-            }
-          }, i * 100); // Longer staggered updates
-        }
-      }
-      
-      showToast(`Canvas recentered to full size: ${W}×${H} (was ${oldW}×${oldH})`, 2000);
+      showToast(`Canvas centered: ${W}×${H} (was ${oldW}×${oldH})`, 1600);
     });
   }
   
@@ -889,15 +807,19 @@
 
   // Audio init
   async function ensureAudio(deviceId=null, outputId=null){
+    if(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){
+      throw new Error('secure-context-required');
+    }
     if(!ac){
-      const AC = window.AudioContext || window.webkitAudioContext;
+      const AC = AudioContextClass;
+      if(!AC) throw new Error('audio-context-unavailable');
       ac = new AC({ latencyHint:'interactive' });
       analyser = ac.createAnalyser();
       analyser.fftSize = 2048;
       analyser.smoothingTimeConstant = smoothing;
       freq = new Uint8Array(analyser.frequencyBinCount);
       time = new Uint8Array(analyser.fftSize);
-      monitorGain = ac.createGain(); monitorGain.gain.value = parseFloat(gain.value);
+      monitorGain = ac.createGain(); monitorGain.gain.value = 0;
       hp = ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 80; // keep rumble off
       comp = ac.createDynamicsCompressor(); // simple safety
       
@@ -910,6 +832,7 @@
       
       // Chain: source -> hp -> comp -> analyser -> (monitorGain -> destination if ON)
       analyser.connect(monitorGain);
+      monitorGain.connect(ac.destination);
       
       // Use stored device IDs if not specified
       if (!deviceId && !outputId) {
@@ -917,20 +840,33 @@
         outputId = safeGetStorage('svj_output_device', null);
       }
       
+      await ac.resume();
       await connectOutput(outputId);
     } else if (outputId !== currentOutputId) {
       await connectOutput(outputId);
     }
     
-    // (Re)open media
-    if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
+    // Acquire the replacement before stopping a working input.
+    const previousStream = mediaStream;
+    let nextStream;
     const constraints = {
       audio: {
         deviceId: deviceId ? {exact:deviceId} : undefined,
         echoCancellation:false, noiseSuppression:false, autoGainControl:false
       }
     };
-    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    try {
+      nextStream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch(err) {
+      if(deviceId && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError')) {
+        nextStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+        deviceId = null;
+      } else {
+        throw err;
+      }
+    }
+    if(previousStream) previousStream.getTracks().forEach(t=>t.stop());
+    mediaStream = nextStream;
     if(sourceNode){ sourceNode.disconnect(); sourceNode = null; }
     sourceNode = ac.createMediaStreamSource(mediaStream);
     sourceNode.connect(hp); hp.connect(comp); comp.connect(analyser);
@@ -946,7 +882,6 @@
   // Connect to output device with low latency
   async function connectOutput(outputId=null) {
     if (monitorGain) {
-      monitorGain.disconnect();
       if (outputId && ac.setSinkId && typeof ac.setSinkId === 'function') {
         try {
           await ac.setSinkId(outputId);
@@ -960,7 +895,6 @@
       } else {
         currentOutputId = null;
       }
-      monitorGain.connect(ac.destination);
     }
   }
 
@@ -988,6 +922,8 @@
       inputSelect.appendChild(opt);
     }
 
+    if(!canSelectOutput) return;
+
     // Populate outputs
     const outs = devs.filter(d=>d.kind==='audiooutput');
     outputSelect.innerHTML = '<option value="">(default speakers)</option>';
@@ -1010,7 +946,7 @@
     monToggle.textContent = on ? 'ON' : 'OFF';
     monToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
     ledMon.classList.toggle('on', on);
-    monitorGain.gain.value = on ? parseFloat(gain.value) : 0.0;
+    if(monitorGain) monitorGain.gain.value = on ? parseFloat(gain.value) : 0.0;
   }
 
   gain.addEventListener('input', () => {
@@ -1036,14 +972,21 @@
 
   enableBtn.addEventListener('click', async () => {
     try{
+      if(ac?.state === 'suspended') await ac.resume();
       await ensureAudio(inputSelect.value || null, outputSelect.value || null);
-      await ac.resume();
+      setMonitoring(isMonitoring);
       startOverlay.style.display = 'none';
       showToast('Audio enabled');
       animate();
     }catch(err){
       console.error(err);
-      showToast('Mic permission denied / not available');
+      const messages = {
+        'secure-context-required':'HTTPS is required for microphone access',
+        'NotAllowedError':'Microphone permission was not granted',
+        'NotFoundError':'No microphone was found',
+        'NotReadableError':'The microphone is already in use'
+      };
+      showToast(messages[err.message] || messages[err.name] || 'Microphone unavailable', 2400);
     }
   });
 
@@ -1055,7 +998,7 @@
   });
 
   outputSelect.addEventListener('change', async () => {
-    if(!ac) return; // Only allow output changes after audio is initialized
+    if(!ac || !canSelectOutput) return;
     try{
       await connectOutput(outputSelect.value || null);
     }catch(err){ 
@@ -1070,45 +1013,27 @@
     showToast(`Blend: ${blendMode === 'auto' ? 'Auto Mix' : blendMode}`, 800);
   });
 
-  // Device selection handlers
-  inputSelect.addEventListener('change', async () => {
-    const deviceId = inputSelect.value || null;
-    try {
-      await ensureAudio(deviceId, currentOutputId);
-      showToast('Input device switched', 800);
-    } catch(err) { 
-      console.error(err); 
-      showToast('Failed to switch input', 1500); 
-    }
-  });
-
-  outputSelect.addEventListener('change', async () => {
-    const outputId = outputSelect.value || null;
-    try {
-      await connectOutput(outputId);
-      showToast('Output device switched', 800);
-    } catch(err) { 
-      console.error(err); 
-      showToast('Failed to switch output', 1500); 
-    }
-  });
-
   // Recenter button handler
   recenterBtn.addEventListener('click', () => {
     recenterCanvas();
   });
 
   // Fullscreen + Settings
+  const requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+  const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+  function updateFullscreenButton(){
+    const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    fsBtn.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+  }
+  if(!requestFullscreen) fsBtn.hidden = true;
   fsBtn.addEventListener('click', async () => {
     const el = document.documentElement;
     try{
-      if(document.fullscreenElement){
-        await document.exitFullscreen();
-        fsBtn.textContent = '⛶ Full Screen';
+      if(document.fullscreenElement || document.webkitFullscreenElement){
+        if(!exitFullscreen) throw new Error('fullscreen-exit-unavailable');
+        await exitFullscreen.call(document);
       }else{
-        if(el.requestFullscreen) await el.requestFullscreen();
-        else showToast('Fullscreen not supported here');
-        fsBtn.textContent = '▢ Exit Full Screen';
+        await requestFullscreen.call(el);
       }
       // Force multiple resize calls with delays for better fullscreen adaptation
       setTimeout(resize, 50);
@@ -1126,29 +1051,53 @@
     startOverlay.style.display = 'none';
   });
 
+  navigator.mediaDevices?.addEventListener?.('devicechange', () => {
+    populateDevices().catch(()=>{});
+  });
+
+  addEventListener('fullscreenchange', updateFullscreenButton);
+  addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
   // Touch controls: tap to next, swipe to switch, two-finger tap toggles stage-only UI
-  let touchStartX=0, touchStartY=0, touchTime=0, twoFinger=false;
+  let touchStartX=0, touchStartY=0, touchTime=0, twoFinger=false, twoFingerHandled=false, twoFingerMoved=false, didSwipe=false;
   canvas.addEventListener('touchstart', (e)=>{
-    if(e.touches.length===2){ twoFinger=true; }
-    else { twoFinger=false; }
+    if(e.touches.length===2){ twoFinger=true; twoFingerHandled=false; twoFingerMoved=false; touchTime=performance.now(); }
+    else { twoFinger=false; didSwipe=false; }
     const t = e.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY; touchTime=performance.now();
-  }, {passive:true});
+    e.preventDefault();
+  }, {passive:false});
   canvas.addEventListener('touchend', (e)=>{
-    if(twoFinger){ document.body.classList.toggle('stage-only'); return; }
+    if(twoFinger){
+      if(!twoFingerHandled && !twoFingerMoved && performance.now()-touchTime<350){
+        document.body.classList.toggle('stage-only');
+        twoFingerHandled=true;
+      }
+      if(e.touches.length===0) twoFinger=false;
+      e.preventDefault();
+      return;
+    }
     const dt = performance.now()-touchTime;
-    if(dt<300){
+    const end = e.changedTouches[0];
+    const moved = end ? Math.hypot(end.clientX-touchStartX, end.clientY-touchStartY) : 0;
+    if(!didSwipe && dt<300 && moved<20){
       // quick tap: next preset
       nextPreset();
     }
-  }, {passive:true});
+    e.preventDefault();
+  }, {passive:false});
   canvas.addEventListener('touchmove', (e)=>{
     const t=e.touches[0]; if(!t) return;
     const dx = t.clientX - touchStartX;
     const dy = t.clientY - touchStartY;
-    if(Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy)){
+    if(twoFinger && (Math.abs(dx)>20 || Math.abs(dy)>20)) twoFingerMoved=true;
+    if(!didSwipe && Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy)){
       if(dx>0) prevPreset(); else nextPreset();
-      touchStartX = t.clientX; // avoid repeated triggers
+      didSwipe = true;
     }
+    e.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('touchcancel', ()=>{
+    twoFinger=false;twoFingerHandled=false;twoFingerMoved=false;didSwipe=false;
   }, {passive:true});
 
   // Presets (15). Each receives (ctx, W, H, t, freq, time, opts)
@@ -2203,8 +2152,8 @@
           
           // Get reusable canvas from pool
           const tempCanvas = getTempCanvas();
-          tempCanvas.width = canvas.width; // Use actual pixel dimensions
-          tempCanvas.height = canvas.height;
+          if(tempCanvas.width !== canvas.width) tempCanvas.width = canvas.width;
+          if(tempCanvas.height !== canvas.height) tempCanvas.height = canvas.height;
           const tempCtx = tempCanvas.getContext('2d', { alpha: false });
           
           // Apply same transform as main canvas
@@ -2248,6 +2197,7 @@
   // Restore persisted values
   (function init(){
     // Validate stored presets
+    if(!Array.isArray(activePresets)) activePresets = [0];
     activePresets = activePresets.filter(i => i >= 0 && i < PRESETS.length);
     if (activePresets.length === 0) activePresets = [0];
     if (!activePresets.includes(primaryPreset)) primaryPreset = activePresets[0];
@@ -2358,15 +2308,6 @@
     console.error('Unhandled promise rejection:', e.reason);
     e.preventDefault();
   });
-
-  // Register service worker for PWA functionality (optional)
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('SW registered'))
-        .catch(() => {}); // Fail silently if no service worker
-    });
-  }
 
 })();
 </script>

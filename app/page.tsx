@@ -24,7 +24,7 @@ const projects = [
     name: "un-released",
     kind: "Music platform",
     description:
-      "A platform for presenting and sharing independent music as complete visual releases.",
+      "A platform for presenting independent music as complete visual releases.",
     href: "https://un-released.ch/",
     cta: "Open platform",
   },
@@ -44,7 +44,7 @@ const projects = [
     description:
       "A distraction-free browser writing environment built around focus, rhythm, and long-form work.",
     href: "https://epochwriter.ch/",
-    cta: "Open writer",
+    cta: "Open writing tool",
   },
   {
     index: "05",
@@ -60,7 +60,7 @@ const projects = [
     name: "TwinSampler",
     kind: "Dual sampler",
     description:
-      "A dual-sampler instrument for chopping, layering, and performing sound through one focused interface.",
+      "A dual-sampler instrument for chopping, layering, and performing sound in one focused interface.",
     href: "https://github.com/jrucho/schwung-twinsampler",
     cta: "Open on GitHub",
   },
@@ -207,15 +207,15 @@ export default function Home() {
           <p className="kicker">Music / image / object</p>
           <h2 id="current-title">SOFIÁNIMA</h2>
           <p className="album-intro">
-            An audiovisual work moving between electronic music, memory,
+            An audiovisual work exploring electronic music, memory,
             distance, and the signals we send—or imagine receiving.
           </p>
           <p>
-            Built around memory, projection and inner transformation, the sound
+            Built around memory, projection, and inner transformation, the sound
             moves through dark electronic textures, heavy drums, Atlantic
-            ambience, distorted details and intimate melodic fragments. The
+            ambience, distorted details, and intimate melodic fragments. The
             dialogue between Sofía and Ánima turns the record into a space for
-            inner wisdom, projection and return.
+            inner wisdom, projection, and return.
           </p>
           <div className="album-links">
             <a href={links.bandcamp} target="_blank" rel="noreferrer">Bandcamp <ExternalArrow /></a>
@@ -230,7 +230,7 @@ export default function Home() {
         <div className="sequence-heading">
           <p className="section-label">02 / THE SEQUENCE</p>
           <h2 id="sequence-title">OUTWARD<br />TO INWARD.</h2>
-          <p>Nine pieces. 12-inch vinyl with booklet. Sound, visual language, text, texture and silence.</p>
+          <p>Nine pieces. 12-inch vinyl with booklet. Sound, visual language, text, texture, and silence.</p>
         </div>
         <ol className="tracklist">
           {sofianimaTracks.map((track, index) => (
@@ -269,7 +269,7 @@ export default function Home() {
             <i /><i /><i />
           </div>
           <div>
-            <p>Reactive audio / 30 presets</p>
+            <p>Audio-reactive / 30 presets</p>
             <h3>Swiss VJ</h3>
             <span>Open visual instrument <ExternalArrow /></span>
           </div>
@@ -304,7 +304,7 @@ export default function Home() {
         <div className="projects-heading">
           <p className="section-label">05 / PROJECTS</p>
           <h2 id="projects-title">TOOLS FOR<br />MAKING.</h2>
-          <p>Platforms and instruments for music, books, writing, synthesis and live performance.</p>
+          <p>Platforms and tools for music, books, writing, synthesis, and live performance.</p>
         </div>
         <div className="project-grid">
           {projects.map((project) => (
@@ -325,7 +325,7 @@ export default function Home() {
         <div className="releases-heading">
           <p className="section-label">06 / LATEST RELEASES</p>
           <h2 id="releases-title">THE<br />CATALOGUE.</h2>
-          <p>Recent albums and tracks released under owae.ga. Each cover opens the release on Bandcamp.</p>
+          <p>Recent owae.ga releases. Each cover opens its Bandcamp page.</p>
         </div>
         <div className="release-grid">
           {releases.map((release, index) => (

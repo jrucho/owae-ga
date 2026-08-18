@@ -44,3 +44,17 @@ test("homepage live-tool links use preserved local routes", async () => {
   assert.match(page, /un-bound\.ai\.studio\/public\/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/);
   assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });
+
+test("Swiss VJ includes its iPhone safeguards", async () => {
+  const html = await readFile(new URL("../public/Swiss-VJ.html", import.meta.url), "utf8");
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+
+  assert.ok(script);
+  assert.match(html, /min-height:100dvh/);
+  assert.match(html, /env\(safe-area-inset-bottom\)/);
+  assert.match(html, /if\(monitorGain\) monitorGain\.gain\.value/);
+  assert.doesNotMatch(html, /user-scalable=no|manifest\.json|\.\/sw\.js/);
+  assert.equal(html.match(/inputSelect\.addEventListener\('change'/g)?.length, 1);
+  assert.equal(html.match(/outputSelect\.addEventListener\('change'/g)?.length, 1);
+  assert.doesNotThrow(() => new Function(script));
+});
