@@ -57,6 +57,9 @@ test("Swiss VJ includes its iPhone safeguards", async () => {
   assert.match(html, /fsBtn\.textContent = 'Stage Only'/);
   assert.match(html, /exitStageBtn\.addEventListener/);
   assert.match(html, /pointer-events:auto;overflow-y:auto/);
+  assert.match(html, /window\.visualViewport\?\.width/);
+  assert.match(html, /body\.stage-only\{display:block/);
+  assert.match(html, /ctx\.fillStyle = i%3===0 \? acc : fg/);
   assert.doesNotMatch(html, /user-scalable=no|manifest\.json|\.\/sw\.js/);
   assert.equal(html.match(/inputSelect\.addEventListener\('change'/g)?.length, 1);
   assert.equal(html.match(/outputSelect\.addEventListener\('change'/g)?.length, 1);

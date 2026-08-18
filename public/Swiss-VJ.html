@@ -348,6 +348,9 @@
 
   /* Hide UI in “Stage Only” mode */
   .stage-only header, .stage-only footer, .stage-only .hint{display:none}
+  body.stage-only{display:block;width:100vw;height:100vh;height:100dvh;overflow:hidden}
+  .stage-only main{position:fixed;inset:0;z-index:100;width:100vw;height:100vh;height:100dvh;background:var(--bg)}
+  .stage-only canvas#stage{position:absolute;inset:0;width:100vw !important;height:100vh !important;height:100dvh !important;visibility:visible}
   .stage-exit{
     display:none;position:absolute;z-index:20;top:max(.6rem, env(safe-area-inset-top));right:max(.6rem, env(safe-area-inset-right));
     min-height:44px;padding:.55rem .75rem;background:rgba(17,17,17,.8);border-color:#555;backdrop-filter:blur(8px)
@@ -705,11 +708,17 @@
     const oldW = W, oldH = H;
     dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
     const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
-    const rect = fullscreenElement === canvas
-      ? canvas.getBoundingClientRect()
-      : canvas.parentElement.getBoundingClientRect();
-    W = Math.max(1, Math.round(rect.width));
-    H = Math.max(1, Math.round(rect.height));
+    const isStageOnly = document.body.classList.contains('stage-only');
+    if(isStageOnly && fullscreenElement !== canvas){
+      W = Math.max(1, Math.round(window.visualViewport?.width || window.innerWidth));
+      H = Math.max(1, Math.round(window.visualViewport?.height || window.innerHeight));
+    }else{
+      const rect = fullscreenElement === canvas
+        ? canvas.getBoundingClientRect()
+        : canvas.parentElement.getBoundingClientRect();
+      W = Math.max(1, Math.round(rect.width));
+      H = Math.max(1, Math.round(rect.height));
+    }
 
     const pixelWidth = Math.round(W * dpr);
     const pixelHeight = Math.round(H * dpr);
@@ -780,6 +789,7 @@
   addEventListener('orientationchange', () => {
     setTimeout(resize, 100); // Small delay to ensure proper dimensions after orientation change
   }, {passive:true});
+  window.visualViewport?.addEventListener('resize', debouncedResize, {passive:true});
   
   // Additional resize events for better responsiveness
   addEventListener('load', resize, {passive:true});
@@ -1022,7 +1032,13 @@
   function setStageOnly(on){
     document.body.classList.toggle('stage-only', on);
     if(on) startOverlay.style.display = 'none';
-    requestAnimationFrame(resize);
+    requestAnimationFrame(() => {
+      resize();
+      animate();
+    });
+    // iOS Safari adjusts its visual viewport after the controls disappear.
+    setTimeout(() => { resize(); animate(); }, 180);
+    setTimeout(() => { resize(); animate(); }, 420);
   }
   if(!requestFullscreen){
     fsBtn.textContent = 'Stage Only';
@@ -2202,7 +2218,8 @@
     // Subtle idle Swiss cross grid
     const s = Math.min(W,H)*0.14;
     for(let i=0;i<6;i++){
-      ctx.globalAlpha = 0.06 + i*0.01;
+      ctx.fillStyle = i%3===0 ? acc : fg;
+      ctx.globalAlpha = 0.2 + i*0.04;
       drawCross(ctx, Math.sin(t*0.1+i)*40 + (W/6)*(i+0.5), (H/2)+Math.cos(t*0.15+i)*30, s*(0.6+0.05*i));
     }
     ctx.globalAlpha=1;
