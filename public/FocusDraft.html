@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FocusDraft — Distraction‑Free Writing</title>
+<meta name="description" content="FocusDraft: minimalist, distraction‑free writing with optional AI assist, autosave, export (PDF/DOCX/Markdown), and streak tracking.">
+<style>
+:root{
+  --bg: #f7f7f5;
+  --fg: #1f1f1f;
+  --muted:#6b6b6b;
+  --accent:#4c7cff;
+  --panel:#ffffff;
+  --shadow: 0 10px 30px rgba(0,0,0,.08);
+  --caret:#333;
+}
+html[data-theme="dark"]{
+  --bg:#0f1115;
+  --fg:#e6e6e6;
+  --muted:#9aa0a6;
+  --accent:#82a0ff;
+  --panel:#12151c;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --caret:#ddd;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font: 16px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+/* Fullscreen editor */
+#editor{
+  position:fixed; inset:0; padding:8vh clamp(12px, 3vw, 40px) 12vh;
+  outline:none; border:0; background:transparent; color:var(--fg);
+  caret-color: var(--caret);
+  white-space: pre-wrap; word-break: break-word; overflow:auto;
+  line-height:1.85;
+  z-index:1;
+}
+#editor:empty::before{
+  content:"Start typing… (⌘K for commands)";
+  opacity:.35;
+}
+/* Subtle typewriter looks */
+#editor{ letter-spacing:.01em }
+.typebar{ /* subtle horizontal guide */
+  position:fixed; left:0; right:0; top:calc(8vh - 1px); height:1px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,.08), transparent);
+  opacity:.4; pointer-events:none;
+}
+html[data-theme="dark"] .typebar{ background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);}
+
+/* Minimal status bar */
+#statusbar{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:24px; display:flex; gap:16px; align-items:center;
+  background:color-mix(in oklab, var(--panel) 86%, transparent);
+  border:1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  box-shadow: var(--shadow);
+  padding:10px 14px; border-radius:999px; font-size:.9rem;
+  opacity:.9; backdrop-filter: blur(8px); z-index:1200;
+}
+.badge{opacity:.7}
+.dot{width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block; margin-right:6px}
+
+/* Micro topbar (appears on hover / move) */
+#microbar{
+  position:fixed; top:12px; left:50%; transform:translateX(-50%);
+  display:flex; gap:6px; opacity:0; pointer-events:none;
+  transition: opacity .25s ease;
+  z-index:2100;
+}
+#microbar:hover, body.mousemoving #microbar{ opacity:1; pointer-events:auto }
+/* Keep microbar usable on touch devices */
+@media (hover:none), (pointer:coarse){
+  #microbar{ opacity:1; pointer-events:auto }
+}
+.button{
+  appearance:none; border:1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  background:var(--panel); color:var(--fg); padding:8px 12px; border-radius:12px;
+  font: inherit; cursor:pointer; transition:transform .05s ease, opacity .2s, background .2s;
+  box-shadow: var(--shadow);
+}
+.button:active{ transform: translateY(1px) }
+.button.ghost{ background:transparent; backdrop-filter: blur(4px) }
+.button.primary{ background: var(--accent); color:white; border-color: transparent }
+.switch{ display:inline-flex; align-items:center; gap:8px }
+
+/* Command palette / modal */
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.45);
+  opacity:0; pointer-events:none; transition: opacity .18s ease;
+  z-index:2000;
+}
+.modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(720px, 92vw); background:var(--panel); border-radius:16px;
+  border:1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  box-shadow: var(--shadow); opacity:0; pointer-events:none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index:2101;
+}
+.modal.show + .modal-content, .modal-content.show{ opacity:1 }
+.modal.show{ opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1) }
+.modal-header{ padding:12px 14px 0 14px }
+.modal-body{ padding:16px 14px 18px 14px }
+.modal-footer{ padding:0 14px 14px 14px; display:flex; justify-content:flex-end; gap:8px }
+#cmd{
+  width:100%; padding:12px 14px; border-radius:10px; border:1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+  background: color-mix(in oklab, var(--panel) 96%, transparent); color:var(--fg); outline:none;
+}
+.cmd-list{ margin-top:10px; max-height:46vh; overflow:auto; }
+.cmd-item{ padding:10px 12px; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center }
+.cmd-item:hover{ background: color-mix(in oklab, var(--fg) 6%, transparent) }
+kbd{ font-family: inherit; font-size:.82em; opacity:.7; background: color-mix(in oklab, var(--fg) 8%, transparent); padding:2px 6px; border-radius:6px }
+
+/* Toast */
+.toast{ position:fixed; right:18px; top:18px; background:var(--panel); border:1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  box-shadow: var(--shadow); padding:10px 12px; border-radius:12px; opacity:0; transform: translateY(-8px);
+  transition: opacity .2s ease, transform .2s ease;
+  z-index:2200;
+}
+.toast.show{ opacity:1; transform: translateY(0) }
+
+/* Settings sheet */
+#settings{ position:fixed; right:14px; top:58px; width:min(520px, 92vw);
+  background:var(--panel); border:1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  border-radius:14px; box-shadow: var(--shadow); padding:14px; display:none; z-index:1500; }
+#settings h3{ margin:6px 0 10px 0 }
+.row{ display:flex; gap:10px; margin-bottom:8px; align-items:center }
+.row label{ width:160px; opacity:.8 }
+.row input, .row select, .row textarea{
+  flex:1; padding:8px 10px; border-radius:10px; border:1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+  background: color-mix(in oklab, var(--panel) 96%, transparent); color:var(--fg);
+  outline:none;
+}
+small.muted{ color:var(--muted) }
+
+/* Notes drawer */
+#notesDrawer{
+  position:fixed; left:14px; top:56px; bottom:24px; width:min(320px, 90vw);
+  background:var(--panel);
+  border:1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  border-radius:12px; box-shadow: var(--shadow);
+  padding:10px; display:none; z-index:1500;
+  overflow:hidden; display:none; flex-direction:column;
+}
+#notesList{ overflow:auto; height:100%; padding-right:4px }
+.note-item{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; cursor:pointer; }
+.note-item:hover{ background: color-mix(in oklab, var(--fg) 6%, transparent) }
+.note-meta{ display:flex; flex-direction:column; min-width:0 }
+.note-title{ font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.note-date{ font-size:12px; color:var(--muted) }
+.note-snippet{ font-size:12px; color:var(--muted); margin:0 0 8px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+/* Print styles for PDF export */
+@media print{
+  body{ background:white; color:black }
+  #microbar, #statusbar, #settings, .toast, .typebar{ display:none !important }
+  #editor{
+    padding: 0 0 0 0; margin:0;
+    font-size: 12pt; line-height: 1.5; max-width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+  <div id="microbar" aria-hidden="true">
+    <button class="button" id="openCmd" title="Commands (⌘K)">⌘K Commands</button>
+    <button class="button" id="notesBtn" title="Notes">Notes</button>
+    <button class="button" id="exportBtn" title="Export">Export</button>
+    <label class="button switch" title="Light/Dark (⇧⌘L)"><input type="checkbox" id="themeToggle" /> <span>Dark</span></label>
+    <button class="button ghost" id="settingsBtn" title="Settings">Settings</button>
+  </div>
+
+  <div class="typebar" aria-hidden="true"></div>
+
+  <main id="editor" contenteditable="plaintext-only" spellcheck="true" aria-label="Editor"></main>
+
+  <div id="statusbar" role="status" aria-live="polite">
+    <span class="badge"><span class="dot"></span><span id="saveState">Saved</span></span>
+    <span class="badge">Words: <span id="wordCount">0</span></span>
+    <span class="badge">Streak: <span id="streak">0</span> days</span>
+    <span class="badge" id="today">—</span>
+  </div>
+
+  <div class="toast" id="toast" role="alert"></div>
+  <input type="file" id="fileInput" accept=".txt,.md,text/plain,text/markdown" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0" />
+
+  <!-- Notes drawer -->
+  <aside id="notesDrawer" aria-label="Notes">
+    <div class="row" style="margin:0 0 8px 0">
+      <input id="notesSearch" placeholder="Search notes" />
+      <button class="button" id="newNoteBtn" title="New note">New</button>
+    </div>
+    <div id="notesList" role="listbox" aria-label="Notes list"></div>
+  </aside>
+
+  <!-- Command palette -->
+  <div class="modal-backdrop" id="backdrop" aria-hidden="true"></div>
+  <div class="modal" id="palette" role="dialog" aria-modal="true" aria-labelledby="cmdLabel">
+    <div class="modal-header"><label id="cmdLabel" class="muted">Type a command…</label></div>
+    <div class="modal-body">
+      <input id="cmd" placeholder="e.g., Expand selection, Grammar check, Tone: friendly…" autocomplete="off" />
+      <div class="cmd-list" id="cmdList" role="listbox" aria-label="Commands"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="button" id="closePalette">Close (Esc)</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <section id="settings" aria-label="Settings panel">
+    <h3>Settings</h3>
+    <div class="row">
+      <label>Theme</label>
+      <select id="themeSelect">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="system">System</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>AI Provider</label>
+      <select id="aiProvider">
+        <option value="auto">Auto (window.ai → OpenAI → Local)</option>
+        <option value="openai">OpenAI (enter key)</option>
+        <option value="local">Local heuristic</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>OpenAI API Key</label>
+      <input id="openaiKey" placeholder="sk-… (stored locally)" />
+    </div>
+    <div class="row">
+      <label>OpenAI Model</label>
+      <input id="openaiModel" placeholder="e.g., gpt-4o-mini" value="gpt-4o-mini" />
+    </div>
+    <small class="muted">Keys are saved only in your browser’s local storage. For better privacy, use the local heuristic mode.</small>
+    <div class="row" style="justify-content:flex-end;margin-top:8px">
+      <button class="button" id="saveSettings">Save</button>
+    </div>
+  </section>
+
+<script>
+/* ---------- Utilities ---------- */
+const $ = (q, root=document) => root.querySelector(q);
+const $$ = (q, root=document) => [...root.querySelectorAll(q)];
+const LS = {
+  get(k, d=null){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return d }},
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)) },
+};
+const fmtDate = (d=new Date()) => d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'});
+const ISO = (d=new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+function showToast(msg, ms=1800){
+  const el = $("#toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(()=> el.classList.remove("show"), ms);
+}
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms) } }
+function throttle(fn, ms){ let t=0; return (...a)=>{ const now=Date.now(); if(now-t>ms){ t=now; fn(...a) } } }
+
+/* ---------- Theme ---------- */
+const themeSelect = $("#themeSelect");
+const themeToggle = $("#themeToggle");
+function applyTheme(mode){
+  if(mode==='system'){
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark':'light');
+    themeToggle.checked = prefersDark;
+  }else{
+    document.documentElement.setAttribute('data-theme', mode);
+    themeToggle.checked = (mode==='dark');
+  }
+}
+themeToggle.addEventListener('change', ()=>{
+  const next = themeToggle.checked ? 'dark' : 'light';
+  themeSelect.value = next;
+  saveSettings();
+  applyTheme(next);
+  showToast(`Theme: ${next}`);
+});
+themeSelect.addEventListener('change', ()=>{
+  saveSettings();
+  applyTheme(themeSelect.value);
+});
+
+/* ---------- Editor + Autosave ---------- */
+const editor = $("#editor");
+const saveState = $("#saveState");
+const wordCountEl = $("#wordCount");
+const todayEl = $("#today");
+const streakEl = $("#streak");
+let dirty=false;
+let lastSavedAt=0;
+const AUTOSAVE_KEY='focusdraft.content.v1';
+const SETTINGS_KEY='focusdraft.settings.v1';
+const STREAK_KEY='focusdraft.streak.v1';
+const NOTES_KEY='focusdraft.notes.v1';
+const CURRENT_NOTE_KEY='focusdraft.currentNote.v1';
+const state = { currentNoteId: null };
+
+function loadInitial(){
+  // Settings
+  const settings = LS.get(SETTINGS_KEY, { theme:'light', aiProvider:'auto', openaiKey:'', openaiModel:'gpt-4o-mini' });
+  themeSelect.value = settings.theme || 'light';
+  $("#aiProvider").value = settings.aiProvider || 'auto';
+  $("#openaiKey").value = settings.openaiKey || '';
+  $("#openaiModel").value = settings.openaiModel || 'gpt-4o-mini';
+  applyTheme(settings.theme || 'light');
+  themeToggle.checked = (document.documentElement.getAttribute('data-theme')==='dark');
+  todayEl.textContent = fmtDate(new Date());
+  updateStreakVisual();
+
+  // Notes / content
+  state.currentNoteId = LS.get(CURRENT_NOTE_KEY, null);
+  const notes = getNotes();
+  if(notes.length){
+    const cur = notes.find(n=> n.id===state.currentNoteId) || notes.slice().sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0))[0];
+    if(cur){ state.currentNoteId = cur.id; LS.set(CURRENT_NOTE_KEY, state.currentNoteId); editor.textContent = cur.content||''; }
+  }else{
+    const saved = LS.get(AUTOSAVE_KEY, "");
+    if(saved) editor.textContent = saved;
+  }
+  renderNotes();
+  updateCounts();
+}
+function saveSettings(){
+  const cfg = {
+    theme: themeSelect.value,
+    aiProvider: $("#aiProvider").value,
+    openaiKey: $("#openaiKey").value.trim(),
+    openaiModel: $("#openaiModel").value.trim() || 'gpt-4o-mini',
+  };
+  LS.set(SETTINGS_KEY, cfg);
+}
+$("#saveSettings").addEventListener('click', ()=>{ saveSettings(); showToast('Settings saved'); });
+// Auto-apply provider and model changes (so Local works immediately)
+$("#aiProvider").addEventListener('change', (e)=>{ saveSettings(); showToast('AI provider: '+e.target.value); });
+$("#openaiKey").addEventListener('input', saveSettings);
+$("#openaiModel").addEventListener('input', saveSettings);
+
+function autosave(){
+  const text = editor.textContent;
+  if(state.currentNoteId){ updateNoteContent(state.currentNoteId, text); }
+  else { LS.set(AUTOSAVE_KEY, text); }
+  lastSavedAt = Date.now();
+  saveState.textContent = 'Saved';
+  dirty=false;
+}
+const autosaveDebounced = debounce(autosave, 350);
+editor.addEventListener('input', ()=>{
+  dirty=true; saveState.textContent = 'Saving…';
+  autosaveDebounced();
+  updateCounts();
+  touchStreak();
+});
+// Paste as plain text to keep the editor clean across browsers
+editor.addEventListener('paste', (e)=>{
+  e.preventDefault();
+  const text = (e.clipboardData||window.clipboardData).getData('text/plain');
+  replaceSelectionWith(text);
+});
+window.addEventListener('beforeunload', (e)=>{ if(dirty){ autosave(); }});
+
+/* ---------- Word count ---------- */
+function wordCount(text){
+  if(!text) return 0;
+  const matches = text.trim().match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9’'\-]+/g);
+  return matches ? matches.length : 0;
+}
+function updateCounts(){
+  wordCountEl.textContent = wordCount(editor.textContent);
+}
+
+/* ---------- Streak tracking ---------- */
+function getStreakData(){
+  return LS.get(STREAK_KEY, { days:[] });
+}
+function touchStreak(){
+  const data = getStreakData();
+  const today = ISO(new Date());
+  if(!data.days.includes(today)){
+    data.days.push(today);
+    LS.set(STREAK_KEY, data);
+    updateStreakVisual();
+  }
+}
+function daysDiff(aISO,bISO){
+  const a = new Date(aISO), b = new Date(bISO);
+  return Math.round((b - a)/86400000);
+}
+function computeStreak(){
+  const data = getStreakData();
+  const days = [...data.days].sort();
+  if(!days.length) return 0;
+  let streak = 0;
+  let cur = ISO(new Date());
+  for(let i=days.length-1;i>=0;i--){
+    if(days[i]===cur){ streak++; const d=new Date(cur); d.setDate(d.getDate()-1); cur=ISO(d); }
+    else break;
+  }
+  return streak;
+}
+function updateStreakVisual(){
+  streakEl.textContent = String(computeStreak());
+}
+
+/* ---------- Microbar visibility on mouse move ---------- */
+let moveTimer;
+window.addEventListener('mousemove', ()=>{
+  document.body.classList.add('mousemoving');
+  clearTimeout(moveTimer);
+  moveTimer = setTimeout(()=> document.body.classList.remove('mousemoving'), 900);
+});
+// Also show microbar briefly on pointer/touch to ensure it's clickable immediately
+function showMicrobarHint(ms=1200){
+  document.body.classList.add('mousemoving');
+  clearTimeout(window._mbhint);
+  window._mbhint = setTimeout(()=> document.body.classList.remove('mousemoving'), ms);
+}
+window.addEventListener('pointerdown', ()=> showMicrobarHint());
+window.addEventListener('touchstart', ()=> showMicrobarHint());
+
+/* ---------- Settings toggle ---------- */
+const settingsPanel = $("#settings");
+$("#settingsBtn").addEventListener('click', ()=>{
+  settingsPanel.style.display = (settingsPanel.style.display==='block' ? 'none' : 'block');
+});
+
+/* ---------- Command palette ---------- */
+const palette = $("#palette");
+const backdrop = $("#backdrop");
+const cmdInput = $("#cmd");
+const cmdList = $("#cmdList");
+const commands = [
+  {label:'AI: Expand selection', keys:'⌥⇧I', id:'ai_expand'},
+  {label:'AI: Grammar check selection', keys:'⌥⇧G', id:'ai_grammar'},
+  {label:'AI: Adjust tone → Friendly', keys:'', id:'ai_tone_friendly'},
+  {label:'AI: Adjust tone → Neutral', keys:'', id:'ai_tone_neutral'},
+  {label:'AI: Adjust tone → Formal', keys:'', id:'ai_tone_formal'},
+  {label:'Export → PDF (Print)', keys:'⌘P', id:'export_pdf'},
+  {label:'Export → Plain Text (.txt)', keys:'⌘S', id:'export_txt'},
+  {label:'Export → Markdown (.md)', keys:'', id:'export_md'},
+  {label:'Export → Word (.docx)', keys:'', id:'export_docx'},
+  {label:'Toggle theme', keys:'⇧⌘L', id:'toggle_theme'},
+  {label:'Settings', keys:'', id:'open_settings'},
+  {label:'New document', keys:'⌘N', id:'new_doc'},
+  {label:'Import…', keys:'⌘O', id:'import_doc'},
+  {label:'Help', keys:'', id:'help'},
+];
+function renderCommands(filter=''){
+  const f = filter.trim().toLowerCase();
+  cmdList.innerHTML = '';
+  commands.filter(c => !f || c.label.toLowerCase().includes(f)).forEach(c=>{
+    const li = document.createElement('div');
+    li.className = 'cmd-item'; li.setAttribute('role','option'); li.tabIndex=0;
+    li.innerHTML = `<span>${c.label}</span><kbd>${c.keys||''}</kbd>`;
+    li.addEventListener('click', ()=>{ execCommand(c.id); hidePalette() });
+    li.addEventListener('keydown', (e)=>{ if(e.key==='Enter') { execCommand(c.id); hidePalette() }});
+    cmdList.appendChild(li);
+  });
+}
+function showPalette(){ backdrop.style.opacity=1; backdrop.style.pointerEvents='auto'; palette.classList.add('show'); palette.style.opacity=1; palette.style.pointerEvents='auto'; renderCommands(); cmdInput.value=''; setTimeout(()=>cmdInput.focus(), 0); }
+function hidePalette(){ backdrop.style.opacity=0; backdrop.style.pointerEvents='none'; palette.classList.remove('show'); palette.style.opacity=0; palette.style.pointerEvents='none'; }
+$("#openCmd").addEventListener('click', showPalette);
+$("#closePalette").addEventListener('click', hidePalette);
+backdrop.addEventListener('click', hidePalette);
+cmdInput.addEventListener('input', ()=> renderCommands(cmdInput.value));
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ hidePalette(); hideNotes(); }});
+
+/* ---------- Keyboard shortcuts ---------- */
+window.addEventListener('keydown', (e)=>{
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+  const mod = mac ? e.metaKey : e.ctrlKey;
+  if(mod && e.key.toLowerCase()==='k'){ e.preventDefault(); showPalette(); }
+  if(mod && e.shiftKey && e.key.toLowerCase()==='l'){ e.preventDefault(); toggleTheme(); }
+  if(mod && e.key.toLowerCase()==='p'){ e.preventDefault(); exportPDF(); }
+  if(mod && e.key.toLowerCase()==='s'){ e.preventDefault(); exportTXT(); }
+  if(mod && e.key.toLowerCase()==='o'){ e.preventDefault(); triggerImport(); }
+  if(mod && e.key.toLowerCase()==='n'){ e.preventDefault(); newDoc(); }
+  if(e.altKey && e.shiftKey && (e.key.toLowerCase()==='i')){ e.preventDefault(); aiAction('expand'); }
+  if(e.altKey && e.shiftKey && (e.key.toLowerCase()==='g')){ e.preventDefault(); aiAction('grammar'); }
+});
+
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : 'dark';
+  themeSelect.value = next; applyTheme(next); saveSettings();
+  showToast(`Theme: ${next}`);
+}
+
+/* ---------- AI Assist (progressive) ---------- */
+async function callAI({mode, instruction, text}){
+  const cfg = LS.get(SETTINGS_KEY, {});
+  const provider = (cfg.aiProvider ?? 'auto');
+  const ask = `${instruction}\n\nText:\n${text}\n\nReturn only the improved text.`;
+
+  // 1) window.ai (Chrome's AI APIs), if available & allowed
+  if((provider==='auto') && window.ai && window.ai.languageModel?.create){
+    try{
+      const session = await window.ai.languageModel.create();
+      const out = await session.prompt(ask);
+      await session.destroy?.();
+      return String(out).trim();
+    }catch(err){ console.warn('window.ai failed', err) }
+  }
+
+  // 2) OpenAI Responses API if user provided key
+  if((provider==='auto' || provider==='openai') && cfg.openaiKey){
+    try{
+      const res = await fetch('https://api.openai.com/v1/responses', {
+        method:'POST',
+        headers:{
+          'Authorization':'Bearer '+cfg.openaiKey,
+          'Content-Type':'application/json'
+        },
+        body: JSON.stringify({
+          model: cfg.openaiModel || 'gpt-4o-mini',
+          input: ask,
+        })
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      // The Responses API returns structured output; map the first text segment
+      const textOut = (data.output && data.output[0] && data.output[0].content && data.output[0].content[0] && data.output[0].content[0].text) ? data.output[0].content[0].text : (data.output_text || '');
+      if(!textOut) throw new Error('Empty response');
+      return String(textOut).trim();
+    }catch(err){
+      console.warn('OpenAI fetch failed', err);
+    }
+  }
+
+  // 3) Local heuristic fallback (simple rules)
+  const simple = (instruction.toLowerCase().includes('grammar'))
+    ? text.replace(/\bi\b/g,'I').replace(/\s{2,}/g,' ').replace(/\s+([.,!?;:])/g,'$1')
+    : (instruction.toLowerCase().includes('tone') ? softenTone(text) : expandHeuristic(text));
+  return simple;
+}
+
+function softenTone(txt){
+  // naive tone adjuster: friendlier language
+  return txt
+    .replace(/\bcan't\b/gi, "can’t")
+    .replace(/\bwon't\b/gi, "won’t")
+    .replace(/\bASAP\b/gi, "as soon as possible")
+    .replace(/\b(?:stupid|dumb|idiot)\b/gi, "unhelpful")
+    .replace(/\bshould\b/gi, "could")
+    .replace(/\bmust\b/gi, "might")
+    .replace(/\bplease\b/gi, "please")
+    .replace(/(^|\.\s)([a-z])/g, (_,p, c)=> p + c.toUpperCase())
+    .trim();
+}
+function expandHeuristic(txt){
+  // naive expansion: add clarifying sentences around paragraphs
+  return txt.split(/\n{2,}/).map(p => {
+    const wc = wordCount(p);
+    if(wc<12) return p + (p.endsWith('.')?'':'.') + ' Here’s a quick elaboration to clarify the idea.';
+    if(wc<40) return p + (p.endsWith('.')?'':'.') + ' In other words, the core point is expanded with a concrete takeaway.';
+    return p;
+  }).join('\n\n');
+}
+
+function getSelectionText(){
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0) return '';
+  return sel.toString();
+}
+
+async function aiAction(kind){
+  const selected = getSelectionText() || editor.textContent.slice(0, 800);
+  if(!selected.trim()){ showToast('Type or select some text first'); return }
+  let instruction = '';
+  if(kind==='expand') instruction = 'Expand and enrich the following text while keeping the author’s voice concise and clear.';
+  if(kind==='grammar') instruction = 'Fix grammar, punctuation and clarity while preserving the original meaning and style.';
+  if(kind==='tone:formal') instruction = 'Rewrite the text in a formal, professional tone.';
+  if(kind==='tone:neutral') instruction = 'Rewrite the text in a neutral, plain tone.';
+  if(kind==='tone:friendly') instruction = 'Rewrite the text in a warm, friendly, encouraging tone.';
+
+  showToast('Thinking…');
+  const improved = await callAI({mode:'auto', instruction, text: selected});
+  showSuggestion(selected, improved);
+}
+
+function showSuggestion(before, after){
+  const modal = document.createElement('div');
+  modal.className='modal'; modal.style.opacity=1; modal.style.pointerEvents='auto';
+  modal.innerHTML = `
+    <div class="modal-header"><strong>Suggestion</strong></div>
+    <div class="modal-body">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-height:46vh; overflow:auto">
+        <div>
+          <div class="muted" style="margin-bottom:6px">Original</div>
+          <textarea style="width:100%;height:26vh" readonly>${before}</textarea>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px">Improved</div>
+          <textarea id="improved" style="width:100%;height:26vh">${after}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="button" id="copySug">Copy</button>
+      <button class="button primary" id="applySug">Replace selection</button>
+      <button class="button" id="closeSug">Close</button>
+    </div>
+  `;
+  const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.style.opacity=1; backdrop.style.pointerEvents='auto';
+  document.body.appendChild(backdrop); document.body.appendChild(modal);
+  $("#closeSug", modal).addEventListener('click', close);
+  $("#copySug", modal).addEventListener('click', ()=>{
+    navigator.clipboard?.writeText($("#improved", modal).value);
+    showToast('Copied');
+  });
+  $("#applySug", modal).addEventListener('click', ()=>{
+    replaceSelectionWith($("#improved", modal).value);
+    close();
+  });
+  function close(){ backdrop.remove(); modal.remove(); }
+  backdrop.addEventListener('click', close);
+  document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', esc) }});
+}
+
+function replaceSelectionWith(text){
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0){ editor.appendChild(document.createTextNode(text)); autosave(); return; }
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  // place caret after inserted text
+  range.setStartAfter(node); range.setEndAfter(node);
+  sel.removeAllRanges(); sel.addRange(range);
+  autosave();
+}
+
+/* ---------- Exports ---------- */
+function exportPDF(){
+  window.print();
+}
+function exportMD(){
+  const text = editor.textContent;
+  const blob = new Blob([text], {type:'text/markdown;charset=utf-8'});
+  downloadBlob(blob, fileBase()+'.md');
+}
+function exportTXT(){
+  const text = editor.textContent;
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  downloadBlob(blob, fileBase()+'.txt');
+}
+function fileBase(){
+  // first non-empty line as title
+  const lines = editor.textContent.split('\n').map(s=>s.trim()).filter(Boolean);
+  const t = (lines[0] || 'FocusDraft').replace(/[\\/:*?"<>|]+/g,'').slice(0,60);
+  return t || 'FocusDraft';
+}
+function exportDocx(){
+  const parts = buildDocxFromText(editor.textContent);
+  const blob = makeZip(parts);
+  downloadBlob(blob, fileBase()+'.docx');
+}
+function downloadBlob(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(a.href), 5000);
+}
+
+$("#exportBtn").addEventListener('click', ()=>{
+  showPalette();
+  cmdInput.value = 'export'; renderCommands('export');
+});
+
+function execCommand(id){
+  if(id==='export_pdf') exportPDF();
+  if(id==='export_txt') exportTXT();
+  if(id==='export_md') exportMD();
+  if(id==='export_docx') exportDocx();
+  if(id==='toggle_theme') toggleTheme();
+  if(id==='open_settings') settingsPanel.style.display='block';
+  if(id==='new_doc') newDoc();
+  if(id==='import_doc') triggerImport();
+  if(id==='ai_expand') aiAction('expand');
+  if(id==='ai_grammar') aiAction('grammar');
+  if(id==='ai_tone_friendly') aiAction('tone:friendly');
+  if(id==='ai_tone_neutral') aiAction('tone:neutral');
+  if(id==='ai_tone_formal') aiAction('tone:formal');
+  if(id==='help') showHelp();
+}
+
+function showHelp(){
+  const msg = `Shortcuts:
+  ⌘K — Commands    ⌘P — Export PDF (Print)
+  ⇧⌘L — Toggle theme
+  ⌥⇧I — AI Expand (selection)    ⌥⇧G — AI Grammar (selection)
+
+Tips:
+• Your text auto-saves to the browser (local storage).
+• Exports: Markdown (.md), Word (.docx), or PDF via Print.
+• Use Settings to plug in an OpenAI API key or rely on local fallback.`;
+  alert(msg);
+}
+
+/* ---------- Documents: new/import ---------- */
+function newDoc(){
+  if((editor.textContent||'').trim().length>0){
+    if(!confirm('Discard current document?')) return;
+  }
+  editor.textContent='';
+  autosave();
+  updateCounts();
+  showToast('New document');
+}
+function triggerImport(){ $("#fileInput").click(); }
+$("#fileInput").addEventListener('change', async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const text = await f.text();
+  editor.textContent = text;
+  autosave(); updateCounts();
+  showToast('Imported');
+  e.target.value='';
+});
+
+/* ---------- Notes (minimal drawer with search) ---------- */
+function getNotes(){ return LS.get(NOTES_KEY, []); }
+function setNotes(list){ LS.set(NOTES_KEY, list); }
+function deriveTitle(text){ const t=(text||'').split('\n').map(s=>s.trim()).find(Boolean)||'Untitled'; return t.slice(0,120); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function renderNotes(filter=''){
+  const q=String(filter||$('#notesSearch')?.value||'').toLowerCase();
+  const notes = getNotes();
+  const list = $('#notesList'); if(!list) return;
+  const items = notes
+    .filter(n=>!q || (n.title?.toLowerCase().includes(q) || (n.content||'').toLowerCase().includes(q)))
+    .sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
+  list.innerHTML = items.map(n=>{
+    const sel = n.id===state.currentNoteId ? ' style="background:'+`color-mix(in oklab, var(--fg) 6%, transparent)`+'"' : '';
+    const date = n.updatedAt ? new Date(n.updatedAt).toLocaleString() : '';
+    const snip = (n.content||'').split('\n').slice(1,3).join(' ').slice(0,120);
+    return `<div class=\"note-item\" data-id=\"${n.id}\"${sel}>
+      <div class=\"note-meta\">
+        <div class=\"note-title\">${escapeHtml(n.title||'Untitled')}</div>
+        <div class=\"note-date\">${escapeHtml(date)}</div>
+      </div>
+      <button class=\"button ghost note-del\" title=\"Delete\" data-id=\"${n.id}\">×</button>
+    </div>
+    <div class=\"note-snippet\">${escapeHtml(snip)}</div>`;
+  }).join('');
+  // Bind events
+  $$(".note-item").forEach(el=> el.addEventListener('click', ()=>{ loadNote(el.getAttribute('data-id')); }));
+  $$(".note-del").forEach(btn=> btn.addEventListener('click', (e)=>{ e.stopPropagation(); deleteNote(btn.getAttribute('data-id')); }));
+}
+function loadNote(id){ const notes=getNotes(); const n=notes.find(x=>x.id===id); if(!n) return; if(dirty) autosave(); editor.textContent = n.content||''; state.currentNoteId=id; LS.set(CURRENT_NOTE_KEY, id); updateCounts(); saveState.textContent='Saved'; dirty=false; showToast('Note opened'); renderNotes(); hideNotes(); }
+function updateNoteContent(id, content){ const notes=getNotes(); const i=notes.findIndex(n=>n.id===id); if(i<0) return; notes[i]={...notes[i], content, title: deriveTitle(content), updatedAt: Date.now()}; setNotes(notes); renderNotes(); }
+function newNote(){ if(dirty) autosave(); const id='n-'+Date.now(); const content=''; const note={ id, title:'Untitled', content, updatedAt: Date.now() }; const notes=getNotes(); notes.push(note); setNotes(notes); state.currentNoteId=id; LS.set(CURRENT_NOTE_KEY, id); editor.textContent=''; updateCounts(); renderNotes(); showToast('New note'); }
+function deleteNote(id){ const notes=getNotes(); const i=notes.findIndex(n=>n.id===id); if(i<0) return; if(!confirm('Delete this note?')) return; const wasCurrent = (id===state.currentNoteId); notes.splice(i,1); setNotes(notes); if(wasCurrent){ state.currentNoteId=null; LS.set(CURRENT_NOTE_KEY, null); const next = notes.slice().sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0))[0]; if(next){ state.currentNoteId=next.id; LS.set(CURRENT_NOTE_KEY, next.id); editor.textContent=next.content||''; } else { editor.textContent=''; } updateCounts(); }
+  renderNotes(); showToast('Deleted'); }
+function toggleNotes(){ const d=$('#notesDrawer'); if(!d) return; d.style.display = (d.style.display==='block'?'none':'block'); if(d.style.display==='block'){ renderNotes(); $('#notesSearch').focus(); } }
+function hideNotes(){ const d=$('#notesDrawer'); if(d) d.style.display='none'; }
+$('#notesBtn').addEventListener('click', toggleNotes);
+$('#newNoteBtn').addEventListener('click', ()=>{ newNote(); });
+$('#notesSearch').addEventListener('input', ()=> renderNotes());
+
+/* ---------- Very small ZIP builder (stored method) ---------- */
+function strToBytes(str){ return new TextEncoder().encode(str) }
+function dosDateTime(d=new Date()){
+  const dt = new Date(d);
+  const time = ((dt.getHours() & 0x1F) << 11) | ((dt.getMinutes() & 0x3F) << 5) | ((Math.floor(dt.getSeconds()/2)) & 0x1F);
+  const date = (((dt.getFullYear()-1980) & 0x7F) << 9) | ((dt.getMonth()+1 & 0xF) << 5) | (dt.getDate() & 0x1F);
+  return {date, time};
+}
+function crc32Init(){
+  const table = new Uint32Array(256);
+  for(let i=0;i<256;i++){
+    let c=i;
+    for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1);
+    table[i]=c>>>0;
+  }
+  return table;
+}
+const CRC_TABLE = crc32Init();
+function crc32(bytes){
+  let c = 0 ^ (-1);
+  for(let i=0;i<bytes.length;i++){
+    c = (c>>>8) ^ CRC_TABLE[(c ^ bytes[i]) & 0xFF];
+  }
+  return (c ^ (-1)) >>> 0;
+}
+function le32(n){ const b=new Uint8Array(4); b[0]=n&255; b[1]=(n>>>8)&255; b[2]=(n>>>16)&255; b[3]=(n>>>24)&255; return b }
+function le16(n){ const b=new Uint8Array(2); b[0]=n&255; b[1]=(n>>>8)&255; return b }
+function concatBytes(chunks){
+  const len = chunks.reduce((a,b)=> a + b.length, 0);
+  const out = new Uint8Array(len);
+  let o=0; for(const c of chunks){ out.set(c, o); o += c.length }
+  return out;
+}
+function makeZip(files){
+  // files: [{name, data(Uint8Array)}]
+  const cd = []; // central dir entries
+  const chunks = [];
+  let offset = 0;
+  const {date, time} = dosDateTime(new Date());
+  for(const f of files){
+    const nameBytes = strToBytes(f.name);
+    const data = f.data instanceof Uint8Array ? f.data : strToBytes(String(f.data));
+    const crc = crc32(data);
+    // Local File Header
+    chunks.push(strToBytes('PK')); chunks.push(new Uint8Array([3,4]));
+    chunks.push(le16(20)); // version needed
+    chunks.push(le16(0));  // flags
+    chunks.push(le16(0));  // method=store
+    chunks.push(le16(time)); chunks.push(le16(date));
+    chunks.push(le32(crc)); chunks.push(le32(data.length)); chunks.push(le32(data.length));
+    chunks.push(le16(nameBytes.length)); chunks.push(le16(0)); // extra len
+    chunks.push(nameBytes);
+    chunks.push(data);
+    // Central Dir Header
+    const cdEntry = [];
+    cdEntry.push(strToBytes('PK')); cdEntry.push(new Uint8Array([1,2]));
+    cdEntry.push(le16(20)); // version made
+    cdEntry.push(le16(20)); // version needed
+    cdEntry.push(le16(0));  // flags
+    cdEntry.push(le16(0));  // method
+    cdEntry.push(le16(time)); cdEntry.push(le16(date));
+    cdEntry.push(le32(crc)); cdEntry.push(le32(data.length)); cdEntry.push(le32(data.length));
+    cdEntry.push(le16(nameBytes.length)); cdEntry.push(le16(0)); // extra
+    cdEntry.push(le16(0)); // comment
+    cdEntry.push(le16(0)); // disk start
+    cdEntry.push(le16(0)); // int attrs
+    cdEntry.push(le32(0)); // ext attrs
+    cdEntry.push(le32(offset)); // local header offset
+    cdEntry.push(nameBytes);
+    cd.push(concatBytes(cdEntry));
+    offset += 30 + nameBytes.length + data.length; // header (30) + name + data
+  }
+  const centralDir = concatBytes(cd);
+  const chunksAll = [...chunks, centralDir];
+  // End of Central Directory
+  const eocd = [];
+  eocd.push(strToBytes('PK')); eocd.push(new Uint8Array([5,6]));
+  eocd.push(le16(0)); eocd.push(le16(0)); // disk numbers
+  eocd.push(le16(files.length)); eocd.push(le16(files.length)); // entries
+  eocd.push(le32(centralDir.length)); // size of central dir
+  eocd.push(le32(offset)); // offset of start of central dir
+  eocd.push(le16(0)); // comment length
+  chunksAll.push(concatBytes(eocd));
+  const zipBytes = concatBytes(chunksAll);
+  return new Blob([zipBytes], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+function buildDocxFromText(text){
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+  const paras = esc(text).split('\n').map(line=>`<w:p><w:r><w:t xml:space="preserve">${line || ''}</w:t></w:r></w:p>`).join('');
+  const documentXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
+    xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing"
+    xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+    xmlns:w10="urn:schemas-microsoft-com:office:word"
+    xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+    xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup"
+    xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk"
+    xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"
+    xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+    mc:Ignorable="w14 wp14">
+    <w:body>${paras}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body>
+  </w:document>`;
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    <Default Extension="xml" ContentType="application/xml"/>
+    <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  </Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  </Relationships>`;
+  return [
+    {name:"[Content_Types].xml", data:strToBytes(contentTypes)},
+    {name:"_rels/.rels", data:strToBytes(rels)},
+    {name:"word/document.xml", data:strToBytes(documentXML)},
+  ];
+}
+
+/* ---------- Init ---------- */
+loadInitial();
+renderCommands();
+// Focus editor on load for immediate typing
+setTimeout(()=> editor.focus(), 0);
+// Briefly reveal microbar so buttons are clickable without moving mouse
+showMicrobarHint(1500);
+</script>
+</body>
+</html>

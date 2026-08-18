@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>PadStory — canvas performance sampler</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0c0f;color:#e7e7ea;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+  #ui{position:fixed;inset:0;display:grid;grid-template-rows:auto 1fr auto}
+  header,footer{display:flex;gap:.5rem;align-items:center;padding:.6rem .8rem;background:#0f1116;border-bottom:1px solid #1a1f2a}
+  footer{border-top:1px solid #1a1f2a;border-bottom:none}
+  header button, footer button, select, input[type="text"]{
+    background:#151925;border:1px solid #2a3142;color:#e7e7ea;border-radius:.5rem;padding:.5rem .7rem;font-size:.9rem
+  }
+  header button:hover, footer button:hover, select:hover{border-color:#3b4760}
+  #canvas-wrap{position:relative}
+  canvas{display:block;width:100%;height:100%}
+  #dropHint{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(12,15,22,.82);backdrop-filter:blur(4px);
+    color:#bcd; font-weight:600; letter-spacing:.02em
+  }
+  #help{margin-left:auto;opacity:.8}
+  #status{font-size:.85rem;opacity:.85}
+  #mimeSelect{max-width:12rem}
+  #padText{min-width:14rem}
+  .pill{padding:.25rem .5rem;border-radius:999px;background:#111521;border:1px solid #202635;font-size:.8rem}
+</style>
+</head>
+<body>
+<div id="ui">
+  <header>
+    <button id="audioCtxBtn">🔊 Init Audio</button>
+    <button id="genOneShot">🎯 New One-Shot</button>
+    <button id="genKit">🎲 Generate Kit</button>
+    <button id="clearPad">🧹 Clear Pad</button>
+    <span class="pill">Selected Pad: <strong id="selPadLbl">1</strong> / 16</span>
+    <input id="padName" type="text" placeholder="Pad name…" />
+    <input id="padText" type="text" placeholder="Custom text (overrides generator)"/>
+    <button id="textGen">✨ Gen Text</button>
+    <select id="mimeSelect" title="Recording format">
+      <option value="audio/mp3">audio/mp3 (if supported)</option>
+      <option value="audio/webm">audio/webm</option>
+      <option value="audio/ogg">audio/ogg</option>
+      <option value="video/webm">video/webm (canvas+audio)</option>
+      <option value="video/mp4">video/mp4 (if supported)</option>
+    </select>
+    <button id="recToggle">⏺️ Record</button>
+    <button id="exportWav">💾 Export Pad (WAV)</button>
+    <span id="help">Drag & drop audio onto a pad • 1–16 keys trigger • Cmd/Ctrl+drag canvas to pan, scroll to scale</span>
+  </header>
+
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div id="dropHint">Drop audio file on a pad</div>
+  </div>
+
+  <footer>
+    <span id="status">Ready.</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // ---------- Constants ----------
+  const NUM_PADS = 16;
+  const PAD_COLS = 4;
+  const PAD_ROWS = 4;
+  const PADDING = 16;
+  const RADIUS = 14;
+  const KEY_BINDINGS = [...Array(NUM_PADS)].map((_,i)=> (i<9? (''+(i+1)) : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i-9]));
+  const ABSTRACT_WORDS = [
+    "suture","void","filament","glitch","meridian","veil","granite","echo","murmur","monolith","silica",
+    "prism","ledger","neon","haze","cobalt","amber","signal","lattice","shard","hollow","pulse","ritual","spine",
+    "ember","static","frost","delta","vortex","marble","moss","ink","silence","fracture","orbit","seam","grain",
+    "loam","weld","cipher","tide","suture","seiche","rift","aurochs","lumen","drift","arc","glyph"
+  ];
+
+  // ---------- State ----------
+  let audioCtx = null, master = null, masterGain = 0.9;
+  let analyser, msDest, mediaRecorder=null, recChunks=[];
+  let selectedPad = 0;
+  let pads = [];
+  let rngSeed = 1337;
+  let canvas, ctx, W=0,H=0, devicePixelRatioCache=1;
+  let camScale = 1, camX=0, camY=0;
+  let isPanning=false, panStart={x:0,y:0,camX:0,camY:0};
+  let isDraggingFile=false;
+  const statusEl = document.getElementById('status');
+
+  // Pad data structure
+  function makePad(i){
+    return {
+      name: `Pad ${i+1}`,
+      customText: "",
+      text: genText(),
+      visualSeed: (Math.random()*1e9)>>>0,
+      palette: swissPalette(i),
+      buffer: null,           // AudioBuffer
+      lastHit: 0,
+      synthParams: null       // {type, freq, dur, noise, env}
+    };
+  }
+  for(let i=0;i<NUM_PADS;i++) pads.push(makePad(i));
+
+  // ---------- DOM ----------
+  const cEl = document.getElementById('c');
+  const wrap = document.getElementById('canvas-wrap');
+  const dropHint = document.getElementById('dropHint');
+  const selPadLbl = document.getElementById('selPadLbl');
+  const padNameEl = document.getElementById('padName');
+  const padTextEl = document.getElementById('padText');
+  const mimeSel = document.getElementById('mimeSelect');
+
+  function setStatus(t){ statusEl.textContent = t; }
+
+  // ---------- Audio ----------
+  function ensureAudio(){
+    if(audioCtx) return audioCtx;
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive", sampleRate: 48000});
+    master = audioCtx.createGain(); master.gain.value = masterGain;
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 2048;
+    const comp = audioCtx.createDynamicsCompressor(); // gentle anti-clip
+    const dst = audioCtx.destination;
+    master.connect(comp).connect(analyser).connect(dst);
+
+    // For recording: a MediaStream from audio graph
+    msDest = audioCtx.createMediaStreamDestination();
+    comp.connect(msDest);
+
+    return audioCtx;
+  }
+
+  async function decodeArrayBuffer(ab){
+    ensureAudio();
+    return await audioCtx.decodeAudioData(ab);
+  }
+
+  function playBuffer(buf, vel=1.0){
+    if(!audioCtx) ensureAudio();
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const g = audioCtx.createGain(); g.gain.value = Math.min(1, Math.max(0.05, vel));
+    src.connect(g).connect(master);
+    src.start();
+  }
+
+  function scheduleOneShot(params){
+    ensureAudio();
+    // Render via current context for immediate latency (constructed one-shot already baked in Offline render)
+    if(params.buffer) playBuffer(params.buffer, 1.0);
+  }
+
+  // Generate one-shot using OfflineAudioContext then store as AudioBuffer
+  async function generateOneShot(){
+    const sr = 48000, dur = 0.8 + Math.random()*0.4;
+    const oac = new OfflineAudioContext(1, Math.ceil(sr*dur), sr);
+    const out = oac.createGain(); out.gain.value = 0.95; out.connect(oac.destination);
+
+    // Basic synth: pitched osc + short noise burst, with ADSR
+    const env = {a:0.002, d:0.08, s:0.2, r:0.25};
+    const base = 120 + Math.random()*680; // Hz
+    const type = ["sine","triangle","sawtooth","square"][Math.floor(Math.random()*4)];
+    const osc = oac.createOscillator(); osc.type = type; osc.frequency.value = base * (Math.random()<0.3 ? 0.5 : 1);
+    const og = oac.createGain(); og.gain.value = 0; osc.connect(og).connect(out);
+
+    const noise = oac.createBufferSource();
+    const nb = oac.createBuffer(1, Math.ceil(sr*dur), sr);
+    const data = nb.getChannelData(0);
+    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * (1 - i/data.length); }
+    noise.buffer = nb;
+    const ng = oac.createGain(); ng.gain.value = 0; noise.connect(ng).connect(out);
+
+    // Envelope function
+    function envSchedule(g, t0, v=1.0){
+      const a=env.a, d=env.d, s=env.s, r=env.r;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(v, t0+a);
+      g.gain.linearRampToValueAtTime(v*s, t0+a+d);
+      g.gain.linearRampToValueAtTime(0, t0+dur);
+    }
+    const t0 = 0;
+    envSchedule(og, t0, 1.0);
+    envSchedule(ng, t0, 0.5*Math.random());
+
+    // Gentle filter
+    const lp = oac.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value = 1000 + Math.random()*5000;
+    out.disconnect(); out.connect(lp).connect(oac.destination);
+
+    osc.start(0); noise.start(0);
+    osc.stop(dur); noise.stop(dur);
+    const rendered = await oac.startRendering();
+
+    // Convert to online AudioBuffer
+    ensureAudio();
+    const buf = audioCtx.createBuffer(1, rendered.length, rendered.sampleRate);
+    buf.copyToChannel(rendered.getChannelData(0), 0);
+    return { buffer: buf, type, freq: base, dur, env };
+  }
+
+  // ---------- Recording (MediaRecorder over audio + optional canvas) ----------
+  function recorderSupported(mime){
+    return (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime));
+  }
+
+  function getChosenMime(){
+    const v = mimeSel.value;
+    if(recorderSupported(v)) return v;
+    // fallbacks based on type
+    const fallbackList = (v.startsWith('video') ? ['video/webm;codecs=vp9,opus','video/webm','video/mp4','video/ogg'] :
+                                              ['audio/webm;codecs=opus','audio/webm','audio/ogg','audio/mp3']);
+    for(const m of fallbackList){ if(recorderSupported(m)) return m; }
+    return null;
+  }
+
+  function startRecording(){
+    ensureAudio();
+    const wantVideo = mimeSel.value.startsWith('video');
+    const mime = getChosenMime();
+    if(!mime) { setStatus("Recording not supported (no compatible MIME)."); return; }
+
+    // Compose tracks
+    let stream;
+    if(wantVideo){
+      const vStream = cEl.captureStream ? cEl.captureStream(60) : null;
+      if(!vStream){ setStatus("Canvas captureStream not supported."); return; }
+      stream = new MediaStream([...vStream.getVideoTracks(), ...msDest.stream.getAudioTracks()]);
+    } else {
+      stream = msDest.stream;
+    }
+
+    mediaRecorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 192000, videoBitsPerSecond: 4000000 });
+    recChunks = [];
+    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size) recChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recChunks, { type: mime });
+      const url = URL.createObjectURL(blob);
+      const ext = mime.includes('mp3') ? 'mp3' : mime.includes('mp4') ? 'mp4' : mime.includes('ogg') ? 'ogg' : mime.startsWith('video') ? 'webm' : 'webm';
+      downloadURL(url, `PadStory_${new Date().toISOString().replace(/[:.]/g,'-')}.${ext}`);
+      setStatus(`Saved recording as ${ext} (${mime}).`);
+    };
+    mediaRecorder.start();
+    setStatus(`Recording… (${mime}) Trigger pads and visuals!`);
+  }
+
+  function stopRecording(){
+    if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+      mediaRecorder.stop();
+      setStatus("Finalizing recording…");
+    }
+  }
+
+  // ---------- File helpers ----------
+  function downloadURL(url, name){
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }
+
+  function exportWavFromBuffer(buf, filename){
+    // 16-bit PCM WAV mono
+    const numCh=1, sr=buf.sampleRate, n=buf.length;
+    const pcm = buf.getChannelData(0);
+    const bytesPerSample=2;
+    const blockAlign = numCh * bytesPerSample;
+    const byteRate = sr * blockAlign;
+    const dataSize = n * bytesPerSample;
+    const header = new ArrayBuffer(44);
+    const dv = new DataView(header);
+    function w32(o,v){ dv.setUint32(o,v,true); }
+    function w16(o,v){ dv.setUint16(o,v,true); }
+    // RIFF header
+    dv.setUint32(0, 0x46464952, false); // "RIFF"
+    w32(4, 36 + dataSize);
+    dv.setUint32(8, 0x45564157, false); // "WAVE"
+    dv.setUint32(12,0x20746d66,false); // "fmt "
+    w32(16,16); w16(20,1); w16(22,numCh); w32(24,sr); w32(28,byteRate); w16(32,blockAlign); w16(34,16);
+    dv.setUint32(36,0x61746164,false); // "data"
+    w32(40,dataSize);
+    const pcmAB = new ArrayBuffer(dataSize); const pcmDV = new DataView(pcmAB);
+    for(let i=0;i<n;i++){
+      let s = Math.max(-1, Math.min(1, pcm[i]));
+      pcmDV.setInt16(i*2, s<0 ? s*0x8000 : s*0x7FFF, true);
+    }
+    const blob = new Blob([header, pcmDV], {type:'audio/wav'});
+    downloadURL(URL.createObjectURL(blob), filename);
+  }
+
+  // ---------- Text generator ----------
+  function genText(){
+    // "Swiss abstract" style short phrase
+    const pick = (k)=> ABSTRACT_WORDS[Math.floor(Math.random()*ABSTRACT_WORDS.length)];
+    const forms = [
+      ()=> `${pick()} / ${pick()} / ${pick()}`,
+      ()=> `${pick()} over ${pick()}`,
+      ()=> `${pick()} :: ${pick()} :: ${pick()}`,
+      ()=> `${pick()} in ${pick()}`,
+      ()=> `${pick()}_${pick()}_${pick()}`
+    ];
+    return forms[Math.floor(Math.random()*forms.length)]();
+  }
+
+  // ---------- Visuals: Swiss abstract generator ----------
+  function swissPalette(i){
+    // Rotating high-contrast palettes reminiscent of Swiss graphic design
+    const sets = [
+      ["#EC111A","#111417","#F7F7F2","#0A84FF","#FFB300"],
+      ["#0AF","#111417","#F5F7FA","#FA0","#0F0"],
+      ["#E6007E","#111417","#EFEFE8","#00B5E2","#FFED00"],
+      ["#FF3B3B","#111417","#F1F4F8","#00D17D","#6A5CFF"]
+    ];
+    return sets[i % sets.length];
+  }
+
+  function randLCG(seed){ // simple deterministic RNG
+    let s = seed >>> 0;
+    return () => (s = (s*1664525+1013904223)>>>0, s/0xFFFFFFFF);
+  }
+
+  function drawPadVisual(x,y,w,h, pad, t){
+    const r = randLCG(pad.visualSeed);
+    const pal = pad.palette;
+    // background
+    roundRect(x,y,w,h,RADIUS);
+    ctx.save();
+    // Soft base
+    ctx.fillStyle = pal[2];
+    ctx.fill();
+
+    // Grid accent
+    ctx.clip();
+    ctx.globalAlpha = .18;
+    const grid = 12;
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 1;
+    for(let gx=0; gx<w; gx+=grid){ line(x+gx,y,x+gx,y+h); }
+    for(let gy=0; gy<h; gy+=grid){ line(x,y+gy,x+w,y+gy); }
+
+    // Bold blocks
+    ctx.globalAlpha = 1;
+    const blocks = 3 + Math.floor(r()*5);
+    for(let i=0;i<blocks;i++){
+      const bw = (w*(.15+.5*r()))|0;
+      const bh = (h*(.12+.42*r()))|0;
+      const bx = x + (w-bw)*r();
+      const by = y + (h-bh)*r();
+      ctx.fillStyle = pal[(i% (pal.length-1))];
+      ctx.fillRect(bx, by, bw, bh);
+
+      // diagonal stripe overlay occasionally
+      if(r()<0.35){
+        ctx.save();
+        ctx.translate(bx+bw/2, by+bh/2);
+        ctx.rotate((r()*0.6-0.3));
+        ctx.translate(-bw/2,-bh/2);
+        ctx.globalAlpha = .35;
+        ctx.fillStyle = pal[3];
+        for(let s=0;s<bw+bh;s+=6){
+          ctx.fillRect(s- bh, 0, 2, bh);
+        }
+        ctx.restore();
+      }
+    }
+
+    // Pulse ring on hit
+    const since = (t - pad.lastHit) / 1000;
+    if(since>=0 && since<0.6){
+      const p = 1 - since/0.6;
+      ctx.globalAlpha = .35*p;
+      ctx.strokeStyle = pal[0];
+      ctx.lineWidth = 6*p+1;
+      ctx.beginPath();
+      ctx.roundRect(x+6,y+6,w-12,h-12, RADIUS*0.7);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Labels
+    ctx.fillStyle = "#0b0c0f";
+    ctx.globalAlpha = .9;
+    ctx.font = `600 ${Math.max(12, Math.floor(h*0.12))}px Inter, system-ui, sans-serif`;
+    const name = pad.name || ("Pad "+(pads.indexOf(pad)+1));
+    ctx.fillText(name, x+12, y+22);
+    ctx.globalAlpha = .7;
+    ctx.font = `500 ${Math.max(10, Math.floor(h*0.09))}px Inter, system-ui, sans-serif`;
+    const label = KEY_BINDINGS[pads.indexOf(pad)] || "";
+    ctx.fillText(label, x+w-24, y+h-10);
+  }
+
+  // ---------- Canvas / Interaction ----------
+  function layout(){
+    devicePixelRatioCache = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+    const rect = wrap.getBoundingClientRect();
+    W = Math.floor(rect.width);
+    H = Math.floor(rect.height);
+    cEl.width = Math.floor(W * devicePixelRatioCache);
+    cEl.height= Math.floor(H * devicePixelRatioCache);
+    cEl.style.width = W+"px"; cEl.style.height = H+"px";
+    ctx = cEl.getContext('2d');
+    ctx.setTransform(devicePixelRatioCache,0,0,devicePixelRatioCache,0,0);
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.roundRect(x,y,w,h,r);
+  }
+  function line(x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+
+  function padRect(i){
+    const gridW = W - PADDING*2;
+    const gridH = H - PADDING*2;
+    const cellW = gridW / PAD_COLS;
+    const cellH = gridH / PAD_ROWS;
+    const col = i % PAD_COLS;
+    const row = (i / PAD_COLS) | 0;
+    const x = (col*cellW + PADDING - camX) * camScale + (1-camScale)*W*0.5;
+    const y = (row*cellH + PADDING - camY) * camScale + (1-camScale)*H*0.5;
+    const w = cellW * camScale - 10;
+    const h = cellH * camScale - 10;
+    return {x:x+5,y:y+5,w,h};
+  }
+
+  function hitPad(mx,my){
+    for(let i=0;i<NUM_PADS;i++){
+      const r = padRect(i);
+      if(mx>=r.x && mx<=r.x+r.w && my>=r.y && my<=r.y+r.h) return i;
+    }
+    return -1;
+  }
+
+  function triggerPad(i, vel=1.0){
+    const pad = pads[i];
+    if(!pad) return;
+    selPad(i);
+    if(pad.buffer){ playBuffer(pad.buffer, vel); }
+    else if(pad.synthParams){ scheduleOneShot(pad.synthParams); }
+    else { // silent but still animate text pulse
+      // no sound
+    }
+    pad.lastHit = performance.now();
+    // Draw floating text
+    spawnFloatingText(i);
+  }
+
+  function selPad(i){
+    selectedPad = Math.max(0, Math.min(NUM_PADS-1, i));
+    selPadLbl.textContent = (selectedPad+1);
+    padNameEl.value = pads[selectedPad].name || "";
+    padTextEl.value = pads[selectedPad].customText || "";
+  }
+
+  // Floating text particles
+  const floaters = [];
+  function spawnFloatingText(i){
+    const r = padRect(i);
+    const pad = pads[i];
+    const text = (pad.customText && pad.customText.trim()) ? pad.customText.trim() : pad.text;
+    floaters.push({
+      x: r.x + r.w/2,
+      y: r.y + r.h/2,
+      t0: performance.now(),
+      life: 1300,
+      text,
+      color: pad.palette[0]
+    });
+  }
+
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    // pads
+    for(let i=0;i<NUM_PADS;i++){
+      const r = padRect(i);
+      drawPadVisual(r.x,r.y,r.w,r.h, pads[i], t);
+      // selection ring
+      if(i===selectedPad){
+        ctx.save();
+        ctx.strokeStyle = "#fff";
+        ctx.globalAlpha = .6;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(r.x+3,r.y+3,r.w-6,r.h-6,RADIUS);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    // floating texts
+    for(let j=floaters.length-1;j>=0;j--){
+      const f = floaters[j];
+      const p = (performance.now() - f.t0) / f.life;
+      if(p>=1){ floaters.splice(j,1); continue; }
+      ctx.save();
+      ctx.globalAlpha = 1 - p;
+      ctx.translate(f.x, f.y - p*80);
+      ctx.rotate((Math.sin(p*Math.PI*2)*0.05));
+      ctx.fillStyle = f.color;
+      ctx.font = "700 20px Inter, system-ui, sans-serif";
+      ctx.textAlign="center";
+      ctx.fillText(f.text, 0, 0);
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  // ---------- Drag & Drop ----------
+  function onDropFile(e){
+    e.preventDefault();
+    dropHint.style.display='none';
+    isDraggingFile=false;
+    const mx = e.clientX, my = e.clientY;
+    const i = hitPad(mx,my);
+    if(i<0){ setStatus("Drop on a pad to load."); return; }
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(!file){ setStatus("No file."); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try{
+        const buf = await decodeArrayBuffer(reader.result);
+        pads[i].buffer = buf;
+        pads[i].synthParams = {buffer: buf}; // play via buffer
+        pads[i].name = file.name.replace(/\.[^.]+$/,'');
+        setStatus(`Loaded "${file.name}" to Pad ${i+1}.`);
+        if(i===selectedPad) padNameEl.value = pads[i].name;
+      }catch(err){ setStatus("Decode failed: "+err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ---------- Events ----------
+  window.addEventListener('resize', layout);
+  layout(); requestAnimationFrame(draw);
+
+  cEl.addEventListener('mousedown', (e)=>{
+    if(e.metaKey||e.ctrlKey){ // pan
+      isPanning=true; panStart={x:e.clientX,y:e.clientY,camX,camY};
+      return;
+    }
+    const i = hitPad(e.clientX,e.clientY);
+    if(i>=0){ triggerPad(i, 1.0); }
+  });
+  window.addEventListener('mousemove',(e)=>{
+    if(isPanning){
+      const dx = (e.clientX - panStart.x)/camScale;
+      const dy = (e.clientY - panStart.y)/camScale;
+      camX = panStart.camX + dx;
+      camY = panStart.camY + dy;
+    }
+  });
+  window.addEventListener('mouseup', ()=> isPanning=false);
+  cEl.addEventListener('wheel', (e)=>{
+    if(e.ctrlKey || e.metaKey){ // pinch-zoom
+      e.preventDefault();
+      const s = Math.exp(-e.deltaY*0.0015);
+      camScale = Math.max(0.6, Math.min(2.2, camScale*s));
+    }
+  }, {passive:false});
+
+  // Drag & drop visuals
+  ;['dragenter','dragover'].forEach(ev=>{
+    cEl.addEventListener(ev, (e)=>{ e.preventDefault(); isDraggingFile=true; dropHint.style.display='flex'; });
+  });
+  ;['dragleave','dragend','drop'].forEach(ev=>{
+    cEl.addEventListener(ev, (e)=>{ e.preventDefault(); if(ev!=='drop'){ isDraggingFile=false; dropHint.style.display='none'; } });
+  });
+  cEl.addEventListener('drop', onDropFile);
+
+  // Keyboard trigger
+  window.addEventListener('keydown',(e)=>{
+    if(document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+    const k = e.key.toUpperCase();
+    // number keys 1..9 then letters
+    for(let i=0;i<KEY_BINDINGS.length;i++){
+      const b = KEY_BINDINGS[i]; if(!b) continue;
+      if(k === b.toUpperCase()){
+        triggerPad(i, 1.0);
+        e.preventDefault(); return;
+      }
+    }
+    if(k==='ARROWLEFT') selPad(Math.max(0, selectedPad-1));
+    if(k==='ARROWRIGHT') selPad(Math.min(NUM_PADS-1, selectedPad+1));
+  });
+
+  // Header controls
+  document.getElementById('audioCtxBtn').onclick = async ()=>{
+    ensureAudio();
+    await audioCtx.resume();
+    setStatus("Audio ready.");
+  };
+
+  document.getElementById('genOneShot').onclick = async ()=>{
+    ensureAudio();
+    setStatus("Generating one-shot…");
+    const sp = await generateOneShot();
+    pads[selectedPad].synthParams = sp;
+    pads[selectedPad].buffer = sp.buffer;
+    if(!pads[selectedPad].name || pads[selectedPad].name.startsWith("Pad ")) {
+      pads[selectedPad].name = "OneShot";
+      padNameEl.value = "OneShot";
+    }
+    // new visuals & text
+    pads[selectedPad].visualSeed = (Math.random()*1e9)>>>0;
+    pads[selectedPad].text = genText();
+    setStatus("One-shot ready. Hit the pad!");
+  };
+
+  document.getElementById('genKit').onclick = async ()=>{
+    ensureAudio();
+    setStatus("Generating kit…");
+    for(let i=0;i<NUM_PADS;i++){
+      const sp = await generateOneShot();
+      pads[i].synthParams = sp;
+      pads[i].buffer = sp.buffer;
+      pads[i].name = `Shot ${i+1}`;
+      pads[i].text = genText();
+      pads[i].visualSeed = (Math.random()*1e9)>>>0;
+    }
+    selPad(0);
+    setStatus("Kit ready. Play!");
+  };
+
+  document.getElementById('clearPad').onclick = ()=>{
+    pads[selectedPad] = makePad(selectedPad);
+    padNameEl.value = "";
+    padTextEl.value = "";
+    setStatus(`Cleared Pad ${selectedPad+1}.`);
+  };
+
+  document.getElementById('textGen').onclick = ()=>{
+    pads[selectedPad].text = genText();
+    setStatus("New abstract text set for the pad.");
+  };
+
+  padNameEl.addEventListener('input', ()=> { pads[selectedPad].name = padNameEl.value; });
+  padTextEl.addEventListener('input', ()=> { pads[selectedPad].customText = padTextEl.value; });
+
+  document.getElementById('recToggle').onclick = ()=>{
+    if(!mediaRecorder || mediaRecorder.state==='inactive'){ startRecording(); }
+    else { stopRecording(); }
+  };
+
+  document.getElementById('exportWav').onclick = ()=>{
+    const p = pads[selectedPad];
+    if(!p.buffer){ setStatus("This pad has no audio yet."); return; }
+    exportWavFromBuffer(p.buffer, (p.name||`Pad${selectedPad+1}`)+".wav");
+  };
+
+  // Inform about MIME support visibly
+  (function showMimeSupport(){
+    const opt = [...mimeSel.options];
+    for(const o of opt){
+      if(o.value && !recorderSupported(o.value)){
+        o.textContent += " (not supported)";
+      }
+    }
+  })();
+
+  // ---------- Kickstart ----------
+  selPad(0);
+  setStatus("Ready. Click ‘Init Audio’, then load or generate sounds. Drag files onto pads.");
+})();
+</script>
+</body>
+</html>

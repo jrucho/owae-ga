@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Beatmaker Cues — Pro Mobile</title>
+  <link rel="preconnect" href="https://www.youtube.com">
+  <link rel="preconnect" href="https://www.youtube-nocookie.com">
+  <link rel="preconnect" href="https://i.ytimg.com">
+  <style>
+    :root{
+      --bg:#0b0c0f; --panel:#11131a; --ink:#e7e9ee; --sub:#a7afbe; --muted:#8e93a2;
+      --line:#232734; --chip:#0f172a; --shadow:0 10px 30px rgba(0,0,0,.35);
+      --accent:#7dd3fc; --accent-2:#a78bfa; --accent-3:#34d399; --danger:#ef4444;
+  --ui-scale:.90; /* default UI scale 90% */
+      --pad-bg: linear-gradient(180deg,#151824,#0e111a);
+      --pad-label:#e7e9ee; --pad-key:#b8c1d8;
+      --pad-flash: radial-gradient(200px 200px at 50% 50%, rgba(125,211,252,.35), transparent 60%);
+      --ok:#22c55e;
+  --ring: 0 0 0 3px rgba(125,211,252,.25), 0 0 0 1px rgba(125,211,252,.45);
+  --glass: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  --bg-grad: radial-gradient(1200px 800px at 10% -10%, rgba(56,189,248,.08), transparent 60%),
+         radial-gradient(1200px 800px at 110% 20%, rgba(167,139,250,.08), transparent 60%),
+         radial-gradient(1000px 700px at 50% 120%, rgba(52,211,153,.08), transparent 60%);
+    }
+    body.light{
+      --bg:#f7f8fb; --panel:#ffffff; --ink:#0b1220; --sub:#4b5563; --muted:#6b7280;
+      --line:#e6eaf0; --chip:#f1f5f9; --shadow:0 10px 30px rgba(16,24,40,.06);
+      --accent:#0ea5e9; --accent-2:#6366f1; --accent-3:#10b981; --danger:#ef4444;
+      --pad-bg:#ffffff;
+      --pad-label:#0b1220;
+      --pad-key:#475569;
+      --pad-flash: radial-gradient(200px 200px at 50% 50%, rgba(0,0,0,.12), transparent 60%);
+    }
+
+    *{box-sizing:border-box}
+    /* Disable text selection globally; allow only in inputs/textareas/selects */
+    html, body, .app{ -webkit-user-select:none; -moz-user-select:none; user-select:none; -webkit-touch-callout:none }
+    input, textarea, select, .input, [contenteditable="true"]{ -webkit-user-select:text; -moz-user-select:text; user-select:text; -webkit-touch-callout:default }
+    /* Strong guard: prevent selection anywhere except writing zones */
+    :where(body) *:not(input):not(textarea):not(select):not([contenteditable="true"]){
+      -webkit-user-select:none !important; user-select:none !important; -webkit-touch-callout:none !important;
+    }
+  html,body{min-height:100dvh; touch-action: manipulation; overscroll-behavior: none}
+    body{margin:0; background:var(--bg); background-image: var(--bg-grad); color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;}
+  button, input, select{ -webkit-tap-highlight-color: transparent; touch-action: manipulation }
+  .btn, .pad, .cue, .looper{ -webkit-user-select:none !important; user-select:none !important; touch-action: manipulation; -webkit-touch-callout:none }
+  /* Ensure inner labels don’t get selected on long-press */
+  .looper *, .cue *, .pad *{ -webkit-user-select:none !important; user-select:none !important; -webkit-touch-callout:none }
+  .looper, .cue{ -webkit-tap-highlight-color: transparent }
+    :focus-visible{ outline:none; box-shadow: var(--ring); border-radius:12px }
+
+  /* Scalable app container */
+  #app{ transform: scale(var(--ui-scale)); transform-origin: top left; width: calc(100% / var(--ui-scale)); min-height: calc(100dvh / var(--ui-scale)); }
+  .app{display:grid; grid-template-columns:1.2fr 1fr; grid-template-rows:auto auto auto auto; gap:14px; min-height:100dvh; padding:16px; align-items:stretch; grid-template-areas:
+    "header header"
+    "video cues"
+    "settings settings"
+    "footer footer"
+  }
+    header{grid-area: header; display:flex; gap:10px; align-items:center; background:var(--panel)}
+    .brand{font-weight:800; letter-spacing:.2px; font-size:16px; padding:8px 10px; border-radius:10px;
+      border:1px solid var(--line); background:var(--panel); box-shadow:var(--shadow); background-image: var(--glass)}
+    .toolbar{display:flex; gap:8px; align-items:center; width:100%; flex-wrap:wrap}
+
+    .input{flex:1; min-height:48px; background:var(--panel); border:1px solid var(--line); border-radius:14px;
+      padding:12px 14px; color:var(--ink); outline:none; box-shadow:var(--shadow); font-size:16px}
+  .btn{background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:12px 14px; min-height:44px;
+      border-radius:14px; cursor:pointer; transition:transform .06s ease, border-color .2s ease, background .2s ease, filter .15s ease; box-shadow:var(--shadow); font-size:16px; background-image: var(--glass)}
+    .btn:active{transform:translateY(1px)}
+    .btn:hover{transform:translateY(-1px); border-color:rgba(148,163,184,.5); filter:brightness(1.05)}
+  .btn.small{padding:8px 10px; min-height:36px; font-size:13px}
+    .btn.affirm{border-color:rgba(34,197,94,.35)}
+    .ghost{background:transparent}
+
+  .video-wrap{grid-area: video; background:var(--panel); border:1px solid var(--line); border-radius:16px;
+      overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow)}
+    #player{position:relative; width:100%; aspect-ratio:16/9; background:#000}
+    #player iframe{ position:absolute; inset:0; width:100%; height:100%; }
+  .progress{position:relative; height:32px; display:flex; align-items:center; gap:0; padding:0 10px; background:var(--chip); border-top:1px solid var(--line);} 
+  .bar{position:relative; height:8px; background:rgba(148,163,184,.25); width:100%; border-radius:999px; overflow:visible; touch-action:none; transition:height .12s ease}
+    .bar .fill{position:absolute; left:0; top:0; height:100%; width:0%; background:linear-gradient(90deg,var(--accent-2),var(--accent)); border-radius:999px}
+  .scrub{position:absolute; top:50%; transform:translate(-50%, -50%); width:14px; height:14px; background:#94a3b8; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .progress:hover .bar{ height:10px }
+  /* Collapse controls: hide progress and transport when toggled */
+  body.controls-collapsed .progress,
+  body.controls-collapsed .transport{ display:none !important }
+  .time-bubble{ position:absolute; bottom:36px; transform:translateX(-50%); left:0; padding:6px 8px; font-size:12px; border-radius:8px; background:var(--panel); border:1px solid var(--line); color:var(--ink); box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:opacity .12s ease }
+  .time-bubble.show{ opacity:1 }
+
+    .transport{display:flex; align-items:center; gap:6px; padding:6px 10px; border-top:1px solid var(--line); background:var(--panel); position:static; flex-wrap:wrap}
+    .transport .btn{ min-height:34px; padding:8px 10px; font-size:14px }
+    .time{font-variant-numeric:tabular-nums; color:var(--sub); font-size:13px}
+    .mode-chip{border-radius:10px; padding:4px 8px; border:1px solid var(--line); background:var(--chip); font-size:12px}
+
+    .cues{padding:10px 12px; border-top:1px solid var(--line); background:var(--panel)}
+    .cue-track{position:relative; height:56px; background:var(--chip); border:1px solid var(--line); border-radius:12px; padding:8px;}
+    .cue-marker{position:absolute; top:6px; width:16px; height:40px; background:linear-gradient(180deg,var(--accent),var(--accent-2));
+      border-radius:6px; cursor:ew-resize; box-shadow:0 0 0 2px rgba(0,0,0,.08)}
+  .cue-buttons{margin-top:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap:10px; align-items:stretch}
+    .cue{min-height:60px; background:var(--chip); border:1px solid var(--line); border-radius:12px; padding:14px 10px; font-size:17px;
+      display:flex; align-items:center; justify-content:center; gap:8px; font-weight:800; user-select:none; color:var(--ink) !important; position:relative; overflow:hidden}
+    .cue.unset{opacity:1; color:var(--muted) !important}
+    .cue.active{ border-color: rgba(125,211,252,.55); background: linear-gradient(180deg, rgba(125,211,252,.10), rgba(125,211,252,.03)); }
+
+    /* Long-press clear indicator */
+    .cue.hold::after{ content:""; position:absolute; left:8px; right:8px; top:6px; height:4px; border-radius:999px; background:rgba(148,163,184,.35); }
+    .cue.hold::before{ content:""; position:absolute; left:8px; top:6px; height:4px; border-radius:999px; background:linear-gradient(90deg,var(--danger),#f59e0b); width:0%; animation: holdProgress var(--hold-ms, 600ms) linear forwards }
+    @keyframes holdProgress{ from{ width:0% } to{ width:calc(100% - 16px) } }
+
+  .pads{margin-top:12px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
+  .pad{height:clamp(88px,22vw,124px); background:var(--pad-bg); border:1px solid var(--line); border-radius:18px; display:flex; align-items:center;
+      justify-content:center; flex-direction:column; gap:8px; position:relative; overflow:hidden; transition:transform .12s ease; will-change:transform}
+    .pad .label{font-weight:900; font-size:18px; color:var(--pad-label)}
+    .pad .key{font-size:14px; color:var(--pad-key)}
+    .pad::before{content:""; position:absolute; inset:0; border-radius:inherit; box-shadow:0 0 0 0 rgba(125,211,252,.0); opacity:0; pointer-events:none}
+  .pad.flash{animation:padBump .18s ease; box-shadow:0 8px 24px rgba(125,211,252,.15)}
+    .pad.flash::after{content:""; position:absolute; inset:0; background:var(--pad-flash); opacity:0; animation:flash .28s ease}
+    .pad.flash::before{animation:padPulse .55s ease}
+  /* Loopers (clips) */
+  .loopers{margin-top:12px; display:grid; grid-template-columns: repeat(4, 1fr); gap:10px}
+  .looper{position:relative; min-height:44px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
+    padding:8px 10px; text-align:left; display:flex; gap:8px; align-items:center; cursor:pointer; box-shadow:var(--shadow); background-image: var(--glass)}
+  .looper .led{width:12px; height:12px; border-radius:50%; background:#64748b; box-shadow:0 0 0 3px rgba(100,116,139,.25)}
+  .looper .name{font-weight:800; font-size:14px; color:var(--pad-label)}
+  .looper .meta{ margin-left:6px; font-size:11px; color:var(--muted); }
+  .looper .badge{ margin-left:auto; font-size:11px; color:var(--sub); padding:2px 6px; border-radius:8px; background:var(--chip); border:1px solid var(--line) }
+  .looper.flash{animation:padBump .18s ease; box-shadow:0 8px 24px rgba(125,211,252,.15)}
+  .looper.flash::after{content:""; position:absolute; inset:0; background:var(--pad-flash); opacity:0; animation:flash .28s ease}
+  .looper.flash::before{content:""; position:absolute; inset:0; border-radius:inherit; box-shadow:0 0 0 0 rgba(125,211,252,.0); opacity:0; pointer-events:none; animation:padPulse .55s ease}
+  .looper.idle .led{ background:#64748b }
+  .looper.recording{ border-color:rgba(239,68,68,.45) }
+  .looper.recording .led{ background:var(--danger); box-shadow:0 0 0 4px rgba(239,68,68,.25) }
+  .looper.playing{ border-color:rgba(56,189,248,.45) }
+  .looper.playing .led{ background:var(--accent); box-shadow:0 0 0 4px rgba(125,211,252,.25) }
+  .looper.overdub{ border-color:rgba(167,139,250,.45) }
+  .looper.overdub .led{ background:var(--accent-2); box-shadow:0 0 0 4px rgba(167,139,250,.25) }
+  .looper.stopped{ opacity:0.9 }
+  .looper.erasing .led{ background:var(--danger) }
+  .looper.hold::after{ content:""; position:absolute; left:8px; right:8px; top:6px; height:4px; border-radius:999px; background:rgba(148,163,184,.35); }
+  .looper.hold::before{ content:""; position:absolute; left:8px; top:6px; height:4px; border-radius:999px; background:linear-gradient(90deg,var(--danger),#f59e0b); width:0%; animation: holdProgress var(--hold-ms, 800ms) linear forwards }
+    @keyframes flash{0%{opacity:1}100%{opacity:0}}
+    @keyframes padBump{0%{transform:scale(1)}60%{transform:scale(1.05)}100%{transform:scale(1)}}
+    @keyframes padPulse{0%{opacity:.45; box-shadow:0 0 0 0 rgba(125,211,252,.55)}100%{opacity:0; box-shadow:0 0 0 22px rgba(125,211,252,0)}}
+
+  .right-wrap{grid-area: cues; background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); overflow:hidden}
+  /* Settings full width under both columns */
+  .side{grid-area: settings; display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px; box-shadow:var(--shadow)}
+  .card .btn{ padding:10px 12px; min-height:40px; font-size:14px }
+  .card .btn.small{ padding:8px 10px; min-height:34px; font-size:13px }
+  .card .input, .card select.input{ width:100%; min-width:0 }
+  .card .card-body{ overflow:hidden }
+
+    /* Collapsible cards */
+    details.card{padding:0; overflow:hidden}
+  details.card>summary{list-style:none; cursor:pointer; padding:10px; display:flex; align-items:center; justify-content:space-between; min-height:38px}
+    details.card>summary .summary-title{font-weight:600}
+    details.card>summary .caret{width:10px; height:10px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(-45deg); transition:transform .2s ease}
+    details.card[open]>summary .caret{transform:rotate(45deg)}
+    details.card .card-body{padding:12px; border-top:1px solid var(--line)}
+
+    .hint{color:var(--muted); font-size:13px}
+  .footer{grid-area: footer; display:flex; align-items:center; justify-content:space-between; color:var(--muted); flex-wrap:wrap; gap:8px}
+    .kbd{display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 6px; border-radius:6px; background:var(--chip); border:1px solid var(--line); font-size:12px}
+
+    .toast{position:fixed; right:16px; bottom:16px; background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:10px 12px; border-radius:12px; box-shadow:var(--shadow); opacity:0; transform:translateY(8px); transition:.2s ease}
+    .toast.show{opacity:1; transform:none}
+
+    /* iOS audio gate overlay */
+    .gate{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index:50; opacity:0; pointer-events:none; transition: opacity .2s ease }
+    .gate.show{ opacity:1; pointer-events:auto }
+    .gate-card{ background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:16px; padding:18px; width:min(520px, 92vw); box-shadow:var(--shadow) }
+    .gate-card h2{ margin:0 0 6px 0 }
+    .gate-card p{ margin:0 0 12px 0; color:var(--muted) }
+
+    /* Motion sensitivity */
+    @media (prefers-reduced-motion: reduce){
+      .btn, .pad{ transition: none }
+      .pad.flash, .pad.flash::after, .pad.flash::before{ animation: none }
+    }
+
+    /* Mobile first: keep desktop two columns, make pads horizontal on phones */
+    @media (max-width: 980px){
+      .app{grid-template-columns:1fr; grid-template-areas:
+        "header"
+        "video"
+        "cues"
+        "settings"
+        "footer"
+      }
+      .side{grid-template-columns:1fr}
+      .cue-buttons{grid-template-columns: repeat(auto-fit, minmax(88px, 1fr))}
+      /* Make loopers wrap to two columns on mobile so all four fit */
+      .loopers{ grid-template-columns: repeat(2, 1fr); }
+      .pads{display:flex; gap:10px}
+      .pad{flex:1; height:clamp(74px,18vw,110px)}
+      .transport{gap:6px}
+    }
+    @media (max-width: 420px){
+      .input,.btn{min-height:52px; font-size:17px}
+      .cue{min-height:64px; font-size:18px}
+      .time{font-size:15px}
+    }
+
+    /* Compact selects on iOS */
+    select.input{ min-height:38px; padding:6px 10px; font-size:14px }
+  .row{ display:grid; grid-template-columns: 80px minmax(0,1fr) auto auto; gap:8px; align-items:center }
+  .row > *{ min-width:0 }
+  .row .vol{ display:flex; flex-direction:column; align-items:stretch; gap:6px }
+  .vol label{ white-space:nowrap }
+  .vol output{ min-width:40px; text-align:center; color:var(--sub) }
+  /* Compact horizontal faders (all ranges) */
+  input[type="range"].input{ min-height:24px; height:24px; padding:0 6px; background:transparent; width:100%; -webkit-appearance:none; appearance:none }
+  /* WebKit/Blink */
+  input[type="range"].input::-webkit-slider-runnable-track{ height:6px; background:rgba(148,163,184,.35); border-radius:999px }
+  input[type="range"].input::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); border:1px solid rgba(0,0,0,.25); margin-top:-4px }
+  /* Firefox */
+  input[type="range"].input::-moz-range-track{ height:6px; background:rgba(148,163,184,.35); border-radius:999px }
+  input[type="range"].input::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--accent); border:1px solid rgba(0,0,0,.25) }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="brand" aria-label="Brand">Beatmaker Cues</div>
+      <div class="toolbar" role="group" aria-label="Search and actions">
+        <form id="searchForm" style="display:contents" aria-label="Load by URL/ID only">
+          <input id="query" class="input" value="" inputmode="url" placeholder="Paste a YouTube video or playlist link/ID" aria-label="Paste a YouTube video or playlist link/ID" />
+          <button id="loadBtn" type="button" class="btn" title="Load by URL/ID" aria-label="Load by URL or ID">Load</button>
+          <button id="randomBtn" type="button" class="btn" title="Random sample playlist" aria-label="Random sample playlist">Random ▶︎</button>
+        </form>
+    <button id="prevBtn" class="btn small ghost" title="Previous result" aria-label="Previous search result">⟨ Prev</button>
+    <button id="nextBtn" class="btn small ghost" title="Next result" aria-label="Next search result">Next ⟩</button>
+    <button id="themeToggle" class="btn small" title="Toggle light/dark" aria-pressed="false" aria-label="Toggle light or dark theme">☀︎ / 🌙</button>
+    <button id="controlsToggle" class="btn small" title="Show or hide transport controls" aria-expanded="true" aria-label="Toggle controls area">Controls ▼</button>
+      </div>
+    </header>
+
+  <section class="video-wrap" aria-label="Video and transport">
+      <div id="player" aria-label="YouTube player"></div>
+      <div class="progress" id="progress" aria-label="Progress bar">
+        <div class="bar" id="bar" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="fill" id="fill"></div>
+          <div class="scrub" id="scrub" style="left:0%"></div>
+          <div class="time-bubble" id="timeBubble" role="status" aria-live="off">00:00</div>
+        </div>
+      </div>
+      <div class="transport" role="group" aria-label="Playback controls">
+        <button id="playPause" class="btn" aria-label="Play or pause">Play/Pause</button>
+        <button id="audioBtn" class="btn small affirm" title="Enable audio engine (iOS)" aria-label="Enable audio engine">Enable Audio</button>
+        <span class="time" id="time" aria-live="polite">00:00 / 00:00</span>
+        <span class="mode-chip">Mode: <b id="modeLabel">Play</b></span>
+        <button id="modeToggle" class="btn small" title="Toggle Set/Play for cues" aria-pressed="false" aria-label="Toggle cue set/play mode">Toggle Set/Play</button>
+        <div style="flex:1"></div>
+  <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="keepExisting"> Keep existing</label>
+        <button id="randomize" class="btn" title="Random cues (pseudo‑transient)" aria-label="Randomize cues">Random Cues 🎲</button>
+        <button id="undo" class="btn small" title="Undo (Cmd/Ctrl+Z)" aria-label="Undo">Undo ↺</button>
+        <button id="redo" class="btn small" title="Redo (Shift+Cmd+Z / Ctrl+Y)" aria-label="Redo">Redo ↻</button>
+        <button id="clearCues" class="btn" title="Clear all cues for this video" aria-label="Clear all cues">Clear</button>
+  <button id="exportLinkBtn" class="btn small" title="Export as cues link" aria-label="Export as cues link">Cues Link</button>
+  <button id="importLinkBtn" class="btn small" title="Import from cues link" aria-label="Import from cues link">Import Link</button>
+      </div>
+
+    </section>
+
+    <section class="right-wrap" aria-label="Cues and pads">
+      <div class="cues" aria-label="Cues section">
+          <div class="cue-track" id="cueTrack" aria-label="Cue positions"></div>
+          <div class="cue-buttons" id="cueButtons" aria-label="Cue buttons"></div>
+          <div class="pads" aria-label="Drum pads">
+            <button type="button" class="pad" data-pad="kick" aria-label="Kick pad"><div class="label">Kick</div><div class="key" id="key_kick">é (MIDI:36)</div></button>
+            <button type="button" class="pad" data-pad="snare" aria-label="Snare pad"><div class="label">Snare</div><div class="key" id="key_snare">à (MIDI:38)</div></button>
+            <button type="button" class="pad" data-pad="hihat" aria-label="Hi‑Hat pad"><div class="label">Hi‑Hat</div><div class="key" id="key_hihat">$ (MIDI:42)</div></button>
+          </div>
+          <div class="loopers" id="loopers" aria-label="Loopers (clips)">
+            <button type="button" class="looper idle" data-ix="0" aria-label="Looper A">
+              <div class="led" aria-hidden="true"></div>
+              <div class="name">A</div>
+              <div class="badge state" id="loop_state_0">Idle</div>
+              <div class="meta" id="loop_meta_0"></div>
+            </button>
+            <button type="button" class="looper idle" data-ix="1" aria-label="Looper S">
+              <div class="led" aria-hidden="true"></div>
+              <div class="name">S</div>
+              <div class="badge state" id="loop_state_1">Idle</div>
+              <div class="meta" id="loop_meta_1"></div>
+            </button>
+            <button type="button" class="looper idle" data-ix="2" aria-label="Looper D">
+              <div class="led" aria-hidden="true"></div>
+              <div class="name">D</div>
+              <div class="badge state" id="loop_state_2">Idle</div>
+              <div class="meta" id="loop_meta_2"></div>
+            </button>
+            <button type="button" class="looper idle" data-ix="3" aria-label="Looper F">
+              <div class="led" aria-hidden="true"></div>
+              <div class="name">F</div>
+              <div class="badge state" id="loop_state_3">Idle</div>
+              <div class="meta" id="loop_meta_3"></div>
+            </button>
+          </div>
+          <div class="hint" style="margin-top:8px">
+            Cues: <span class="kbd">1–9</span>,<span class="kbd">0</span> or MIDI notes (Cue1..Cue10 → 48–57). Hold <b>Cmd/Ctrl</b> or MIDI <b>Shift</b> to <i>set</i> cues; otherwise you <i>play</i> them. If a cue is empty, pressing its number will set it automatically.
+          </div>
+          <div class="hint" style="margin-top:4px">
+            Loops: <span class="kbd">A</span> <span class="kbd">S</span> <span class="kbd">D</span> <span class="kbd">F</span> — Tap: Record → Play → Overdub. Double‑tap: Stop. Double‑tap + hold: Erase. Hold <b>Shift</b>/<b>Cmd</b> to run multiple.
+          </div>
+      </div>
+    </section>
+
+    <aside class="side" aria-label="Mapping and settings">
+      <details class="card" id="audioPanel">
+        <summary>
+          <span class="summary-title">Audio engine</span>
+          <span class="hint" id="audioSummary">Low-latency</span>
+          <span class="caret" aria-hidden="true"></span>
+        </summary>
+        <div class="card-body" style="display:grid; gap:8px">
+          <div class="hint">Levels</div>
+          <label class="hint" for="gainCtl">Master gain</label>
+          <input id="gainCtl" class="input" type="range" min="0" max="1.2" step="0.01" />
+          <div class="hint">Compressor</div>
+          <label class="hint" for="compThresh">Threshold</label>
+          <input id="compThresh" class="input" type="range" min="-60" max="0" step="1" />
+          <label class="hint" for="compKnee">Knee</label>
+          <input id="compKnee" class="input" type="range" min="0" max="40" step="1" />
+          <label class="hint" for="compRatio">Ratio</label>
+          <input id="compRatio" class="input" type="range" min="1" max="20" step="0.5" />
+          <label class="hint" for="compAttack">Attack (s)</label>
+          <input id="compAttack" class="input" type="range" min="0" max="0.2" step="0.001" />
+          <label class="hint" for="compRelease">Release (s)</label>
+          <input id="compRelease" class="input" type="range" min="0.01" max="1.0" step="0.01" />
+          <button id="audioReset" class="btn small">Reset audio</button>
+        </div>
+      </details>
+      <details class="card" id="midiPanel">
+        <summary>
+          <span class="summary-title">MIDI</span>
+          <span class="hint" id="midiSummary">Closed</span>
+          <span class="caret" aria-hidden="true"></span>
+        </summary>
+        <div class="card-body">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+            <div class="hint">Devices & mapping</div>
+            <button id="midiRefresh" class="btn small" aria-label="Refresh MIDI devices">Refresh</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center">
+            <label class="hint" for="midiInput">Input</label>
+            <span></span>
+            <select id="midiInput" class="input" aria-label="MIDI input device"></select>
+            <button id="midiConnect" class="btn small" aria-label="Connect MIDI">Connect</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:center; margin-top:8px">
+            <label class="hint" for="midiChannel">Channel</label>
+            <select id="midiChannel" class="input" aria-label="MIDI channel (Any or 1–16)"></select>
+          </div>
+          <div class="hint" style="margin-top:8px" id="midiStatus">No device</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap">
+            <button id="learnCues" class="btn small">Learn Cues (10)</button>
+            <button id="learnKick" class="btn small">Learn Kick</button>
+            <button id="learnSnare" class="btn small">Learn Snare</button>
+            <button id="learnHihat" class="btn small">Learn Hi‑Hat</button>
+            <button id="learnLoops" class="btn small">Learn Loops (4)</button>
+            <button id="learnShift" class="btn small">Learn Shift</button>
+            <button id="learnRand" class="btn small">Learn Randomize</button>
+            <button id="learnUndo" class="btn small">Learn Undo</button>
+            <button id="learnRedo" class="btn small">Learn Redo</button>
+            <button id="resetMidi" class="btn small ghost">Reset MIDI Map</button>
+          </div>
+          <div class="hint" style="margin-top:6px">Shift (hold‑to‑set): <b id="shiftLabel">—</b></div>
+        </div>
+      </details>
+
+      <details class="card" id="samplesPanel">
+        <summary>
+          <span class="summary-title">Drum samples</span>
+          <span class="hint" id="samplesSummary">Built-ins</span>
+          <span class="caret" aria-hidden="true"></span>
+        </summary>
+        <div class="card-body" style="display:grid; gap:10px">
+          <div class="row">
+            <div class="hint">Kick</div>
+            <select id="kickSampleSel" class="input" aria-label="Kick sample"></select>
+            <button id="kickLoadBtn" class="btn small" aria-label="Load kick sample">Load</button>
+            <button id="kickEraseBtn" class="btn small ghost" aria-label="Erase kick sample">Erase</button>
+            <input id="kickFile" type="file" accept="audio/*" style="display:none" />
+          </div>
+          <div class="row">
+            <div></div>
+            <div class="vol">
+              <label class="hint" for="kickVol">Volume</label>
+              <div style="display:flex; align-items:center; gap:8px; width:100%">
+                <input id="kickVol" type="range" min="-12" max="12" step="0.1" class="input" />
+                <output id="kickVolOut" style="min-width:50px; text-align:right">0 dB</output>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="hint">Snare</div>
+            <select id="snareSampleSel" class="input" aria-label="Snare sample"></select>
+            <button id="snareLoadBtn" class="btn small" aria-label="Load snare sample">Load</button>
+            <button id="snareEraseBtn" class="btn small ghost" aria-label="Erase snare sample">Erase</button>
+            <input id="snareFile" type="file" accept="audio/*" style="display:none" />
+          </div>
+          <div class="row">
+            <div></div>
+            <div class="vol">
+              <label class="hint" for="snareVol">Volume</label>
+              <div style="display:flex; align-items:center; gap:8px; width:100%">
+                <input id="snareVol" type="range" min="-12" max="12" step="0.1" class="input" />
+                <output id="snareVolOut" style="min-width:50px; text-align:right">0 dB</output>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="hint">Hi‑Hat</div>
+            <select id="hihatSampleSel" class="input" aria-label="Hi‑Hat sample"></select>
+            <button id="hihatLoadBtn" class="btn small" aria-label="Load hi‑hat sample">Load</button>
+            <button id="hihatEraseBtn" class="btn small ghost" aria-label="Erase hi‑hat sample">Erase</button>
+            <input id="hihatFile" type="file" accept="audio/*" style="display:none" />
+          </div>
+          <div class="row">
+            <div></div>
+            <div class="vol">
+              <label class="hint" for="hihatVol">Volume</label>
+              <div style="display:flex; align-items:center; gap:8px; width:100%">
+                <input id="hihatVol" type="range" min="-12" max="12" step="0.1" class="input" />
+                <output id="hihatVolOut" style="min-width:50px; text-align:right">0 dB</output>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card" id="keysPanel">
+        <summary>
+          <span class="summary-title">Keyboard mapping</span>
+          <span class="hint" id="keysSummary">No pad keys yet</span>
+          <span class="caret" aria-hidden="true"></span>
+        </summary>
+        <div class="card-body">
+          <div class="hint">Click a field and press the key you want. Saved locally.</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px">
+            <input id="map_kick" class="input" placeholder="Kick key…" aria-label="Kick key"/>
+            <input id="map_snare" class="input" placeholder="Snare key…" aria-label="Snare key"/>
+            <input id="map_hihat" class="input" placeholder="Hi‑Hat key…" aria-label="Hi‑Hat key"/>
+            <input id="map_loopA" class="input" placeholder="Looper A key…" aria-label="Looper A key"/>
+            <input id="map_loopS" class="input" placeholder="Looper S key…" aria-label="Looper S key"/>
+            <input id="map_loopD" class="input" placeholder="Looper D key…" aria-label="Looper D key"/>
+            <input id="map_loopF" class="input" placeholder="Looper F key…" aria-label="Looper F key"/>
+            <input id="map_rand" class="input" placeholder="Randomize key…" aria-label="Randomize key"/>
+            <input id="map_undo" class="input" placeholder="Undo key…" aria-label="Undo key"/>
+            <input id="map_redo" class="input" placeholder="Redo key…" aria-label="Redo key"/>
+            <button id="resetKeys" class="btn small" type="button" aria-label="Reset keyboard mapping">Reset keys</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="card" id="viewPanel">
+        <summary>
+          <span class="summary-title">View</span>
+          <span class="hint" id="viewSummary">Scale 95%</span>
+          <span class="caret" aria-hidden="true"></span>
+        </summary>
+        <div class="card-body" style="display:grid; gap:8px">
+          <label class="hint" for="uiScale">UI scale</label>
+          <input id="uiScale" class="input" type="range" min="0.5" max="1.25" step="0.01" />
+          <button id="uiReset" class="btn small">Reset scale</button>
+        </div>
+      </details>
+    </aside>
+
+    <div class="footer">
+      <div>© 2025 owae.ga — Beatmaker Cues lets you load YouTube videos, set jump cues, and perform with looped clips that retrigger drum hits and cue jumps in sync. Works offline as a single HTML file.</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Audio gate overlay for iOS -->
+  <div id="audioGate" class="gate" aria-hidden="true">
+    <div class="gate-card">
+      <h2>Tap to enable audio</h2>
+      <p>On iOS, a touch is required before sound can play. This will arm the drum pads and unmute the video.</p>
+      <button id="gateBtn" class="btn affirm" aria-label="Enable audio">Start</button>
+    </div>
+  </div>
+
+  <!-- Cues link export modal -->
+  <div id="linkModal" class="gate" aria-hidden="true">
+    <div class="gate-card">
+      <h2>Export Cues Link</h2>
+      <p>This URL encodes your current cues for this video.</p>
+      <input id="linkOutput" class="input" type="text" readonly value="" aria-label="Cues link" />
+      <div style="display:flex; gap:8px; margin-top:10px">
+        <button id="linkCopyBtn" class="btn small" aria-label="Copy cues link">Copy</button>
+        <button id="linkOpenBtn" class="btn small" aria-label="Open cues link">Open</button>
+        <div style="flex:1"></div>
+        <button id="linkCloseBtn" class="btn small ghost" aria-label="Close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import from cues link modal -->
+  <div id="importLinkModal" class="gate" aria-hidden="true">
+    <div class="gate-card">
+      <h2>Import Cues Link</h2>
+      <p>Paste a YouTube URL with <b>cue_points</b> to load and apply cues.</p>
+      <input id="importLinkInput" class="input" type="text" placeholder="https://www.youtube.com/watch?v=...&cue_points=0:12.345,..." aria-label="Paste cues link" />
+      <label class="hint" style="display:flex;align-items:center;gap:6px;margin-top:8px"><input type="checkbox" id="importLinkLoadVideo" checked> Load video before applying</label>
+      <div style="display:flex; gap:8px; margin-top:10px">
+        <button id="importLinkPasteBtn" class="btn small" aria-label="Paste from clipboard">Paste</button>
+        <button id="importLinkApplyBtn" class="btn small affirm" aria-label="Apply cues from link">Apply</button>
+        <div style="flex:1"></div>
+        <button id="importLinkCloseBtn" class="btn small ghost" aria-label="Close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = sel => document.querySelector(sel);
+    const pad = (n)=> String(Math.floor(n)).padStart(2,'0');
+  const fmt = (s)=> {
+    const sec = Math.floor(s);
+    const ms = Math.round((s-sec)*1000);
+    return `${pad(sec/60)}:${pad(sec%60)}${ms?'.'+String(ms).padStart(3,'0'):''}`;
+  };
+    const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const dbToGain = (db)=> Math.pow(10, (db||0)/20);
+  const gainToDb = (g)=> 20 * Math.log10(Math.max(g, 1e-6));
+
+    const THEME_KEY = 'bm:theme';
+    function applyTheme(t){ document.body.classList.toggle('light', t==='light'); $('#themeToggle')?.setAttribute('aria-pressed', t==='light'); }
+    function loadTheme(){ const t = localStorage.getItem(THEME_KEY) || 'dark'; applyTheme(t); }
+    function toggleTheme(){ const cur = document.body.classList.contains('light')? 'light':'dark'; const next = cur==='dark'?'light':'dark'; localStorage.setItem(THEME_KEY, next); applyTheme(next); }
+
+    // Controls collapse state
+    const CONTROLS_KEY = 'bm:controlsCollapsed';
+    let controlsCollapsed = false;
+    function saveControls(){ try{ localStorage.setItem(CONTROLS_KEY, controlsCollapsed ? '1':'0'); }catch(e){} }
+    function applyControls(){
+      document.body.classList.toggle('controls-collapsed', !!controlsCollapsed);
+      const btn = document.querySelector('#controlsToggle');
+      const expanded = !controlsCollapsed;
+      if(btn){
+        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        btn.textContent = expanded ? 'Controls ▼' : 'Controls ▲';
+      }
+      try{ adjustPlayerLayout(); }catch(_){ }
+    }
+    function loadControls(){ try{ controlsCollapsed = (localStorage.getItem(CONTROLS_KEY) === '1'); }catch(e){ controlsCollapsed=false; } applyControls(); }
+
+    // Panel state + summaries
+    const PANEL_KEY='bm:panels';
+  function savePanels(){
+      try{
+    const s={ midi: !!document.querySelector('#midiPanel')?.open,
+          keys: !!document.querySelector('#keysPanel')?.open,
+          audio: !!document.querySelector('#audioPanel')?.open };
+        localStorage.setItem(PANEL_KEY, JSON.stringify(s));
+      }catch(e){}
+    }
+    function loadPanels(){
+      try{
+        const s=JSON.parse(localStorage.getItem(PANEL_KEY)||'null');
+        if(s){
+          const m=document.querySelector('#midiPanel');
+          const k=document.querySelector('#keysPanel');
+      const a=document.querySelector('#audioPanel');
+          if(m) m.open=!!s.midi;
+          if(k) k.open=!!s.keys;
+      if(a) a.open=!!s.audio;
+        }
+      }catch(e){}
+    }
+
+  // =========================
+  // YouTube: dual path (YT API or CSP-safe lite wrapper via postMessage)
+  // =========================
+  let player=null, duration=0, lastVideoId=null, state=-1, currentTime=0, videoData={};
+  let useLite=false; // flips true if YT API cannot load
+  const DEFAULT_VIDEO_ID = 'A8UrExagECo';
+  let navMode = 'single'; // 'single' | 'search' | 'playlist'
+  let wantPrimePlayer=false;
+  let playerPrimed=false;
+
+  function markPlayerDirty(){ playerPrimed=false; }
+  function primePlayer(force=false){
+    if(force) wantPrimePlayer=true;
+    if(playerPrimed || !player || (!wantPrimePlayer && !force)) return;
+    try{
+      if(typeof player.playVideo === 'function'){ player.playVideo(); }
+      else if(typeof player.post === 'function'){ player.post('playVideo'); }
+      if(typeof player.getCurrentTime === 'function' && typeof player.seekTo === 'function'){
+        const cur = Number(player.getCurrentTime()||0);
+        if(!Number.isNaN(cur)) player.seekTo(cur, true);
+      }
+      playerPrimed=true;
+    }catch(_){ }
+  }
+
+    // ---- Lite wrapper
+    function createLitePlayer(){
+      useLite = true;
+      const host = 'https://www.youtube-nocookie.com';
+      const iframe = document.createElement('iframe');
+  iframe.id = 'ytlite';
+  iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+  // Preload default video immediately for faster startup
+  iframe.src = `${host}/embed/${DEFAULT_VIDEO_ID}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1&controls=1&autoplay=1`;
+      iframe.style.width='100%';
+      iframe.style.height='100%';
+      iframe.setAttribute('referrerpolicy','strict-origin-when-cross-origin');
+      $('#player').innerHTML='';
+      $('#player').appendChild(iframe);
+      markPlayerDirty();
+
+      const armListening = ()=>{ setTimeout(()=>{ try{ iframe.contentWindow.postMessage(JSON.stringify({event:'listening'}), '*'); }catch(e){} }, 400); };
+
+      const api = {
+        iframe,
+        post(func, args=[]) { try{ iframe.contentWindow.postMessage(JSON.stringify({event:'command', func, args}), '*'); }catch(e){} },
+        playVideo(){ api.post('playVideo'); },
+        pauseVideo(){ api.post('pauseVideo'); },
+        seekTo(t, allow){ api.post('seekTo',[Number(t)||0, !!allow]); },
+        mute(){ api.post('mute'); },
+        unMute(){ api.post('unMute'); },
+        getCurrentTime(){ return currentTime||0; },
+        getDuration(){ return duration||0; },
+        getPlayerState(){ return state; },
+        getVideoData(){ return videoData; },
+  getIframe(){ return iframe; },
+  cueVideoById(id){ lastVideoId=id; iframe.src=`${host}/embed/${id}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1&controls=1`; armListening(); },
+        loadPlaylist(opts){
+          const q = opts.list || opts.q || '';
+          const index = Number.isInteger(opts.index)? opts.index:0;
+          const lt = opts.listType || 'search';
+          iframe.src = `${host}/embed?enablejsapi=1&playsinline=1&rel=0&modestbranding=1&controls=1&listType=${encodeURIComponent(lt)}&list=${encodeURIComponent(q)}&index=${index}`;
+          // Track navigation mode and playlist state
+          try{
+            if(lt==='playlist'){
+              navMode='playlist';
+              lastPlaylist={ id:q, index:index };
+              savePlaylist?.();
+            } else {
+              navMode='search';
+            }
+          }catch(_){}
+          armListening();
+        },
+        nextVideo(){ api.post('nextVideo'); },
+        previousVideo(){ api.post('previousVideo'); }
+      };
+
+      // event wiring
+      window.addEventListener('message', (ev)=>{
+        if(ev.source !== iframe.contentWindow) return;
+        let data = ev.data;
+        if(typeof data === 'string'){
+          try{ data = JSON.parse(data); }catch(e){ return; }
+        }
+        if(!data) return;
+        if(data.event === 'onReady'){
+          // subscribe to info updates
+          api.post('addEventListener',['onStateChange']);
+          api.post('addEventListener',['onPlaybackRateChange']);
+          api.post('addEventListener',['onPlaybackQualityChange']);
+          api.post('addEventListener',['onError']);
+          api.post('addEventListener',['onApiChange']);
+          primePlayer();
+        }
+        if(data.event === 'onStateChange'){
+          state = data.info;
+          if(state===0 || state===2){ try{ stopAllLoopers(); }catch(_){} }
+        }
+        if(data.event === 'infoDelivery' && data.info){
+          if(typeof data.info.currentTime === 'number') currentTime = data.info.currentTime;
+          if(typeof data.info.duration === 'number') duration = Math.max(duration, data.info.duration);
+          if(typeof data.info.playlistIndex === 'number'){
+            try{ lastPlaylist.index = data.info.playlistIndex; savePlaylist?.(); }catch(_){ }
+          }
+          if(data.info.videoData){
+            videoData = data.info.videoData;
+            if(videoData.video_id && lastVideoId!==videoData.video_id){ markPlayerDirty(); lastVideoId = videoData.video_id; loadCues(); toast('Loaded: ' + (videoData.title||videoData.video_id)); }
+          }
+        }
+      });
+
+  // kick off message listening
+  armListening();
+
+      return api;
+    }
+
+    // ---- Try to load official API; fallback to lite on failure
+    function loadYT(){
+      return new Promise((resolve)=>{
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        let settled=false;
+        tag.onload = ()=>{ settled=true; resolve('ok'); };
+        tag.onerror = ()=>{ settled=true; resolve('blocked'); };
+        document.body.appendChild(tag);
+        setTimeout(()=>{ if(!settled) resolve('timeout'); }, 1500);
+      });
+    }
+    window.onYouTubeIframeAPIReady = ()=>{
+      // Build standard player (preload default video fast)
+      const cfg = { height:'390', width:'640', videoId:DEFAULT_VIDEO_ID, host:'https://www.youtube-nocookie.com', playerVars:{ playsinline:1, rel:0, modestbranding:1, controls:1, autoplay:1 } };
+      if(location.protocol.startsWith('http')) cfg.origin = location.origin;
+      player = new YT.Player('player', { ...cfg, events:{ onReady, onStateChange: (e)=>{ try{ state=e.data; if(state===0 || state===2){ stopAllLoopers(); } }catch(_){} }, onError: ()=>{} } });
+      markPlayerDirty();
+    };
+
+  function onReady(){ try{ player.mute(); }catch(e){} try{ const iframe = player.getIframe(); iframe?.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen'); }catch(e){} tick(); primePlayer(); }
+
+  function initLiteIfNeeded(){ if(!player){ player = createLitePlayer(); tick(); } }
+
+  function updateMeta(){ try{ duration = Math.floor((player.getDuration&&player.getDuration())||duration||0); const data = player.getVideoData? player.getVideoData():{}; if(data && data.video_id && lastVideoId!==data.video_id){ markPlayerDirty(); lastVideoId=data.video_id; loadCues(); toast('Loaded: ' + (data.title||data.video_id));} }catch(e){} }
+  function tick(){ try{ const cur=((player.getCurrentTime&&player.getCurrentTime())||0); const dur=((player.getDuration&&player.getDuration())||0); if(dur) duration=dur; const pct=duration? ((cur/duration)*100).toFixed(2):0; $('#fill').style.width = pct+'%'; $('#scrub').style.left = pct+'%'; $('#bar').setAttribute('aria-valuenow', pct); $('#time').textContent = `${fmt(cur)} / ${fmt(duration||0)}`; }catch(e){} requestAnimationFrame(tick); }
+
+    function extractId(input){ if(!input) return ''; input=input.trim(); if(/^[a-zA-Z0-9_-]{11}$/.test(input)) return input; try{ const u=new URL(input); if(u.hostname.includes('youtube.com')){ if(u.searchParams.get('v')) return u.searchParams.get('v'); const m=u.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/); if(m) return m[1]; } if(u.hostname==='youtu.be'){ const p=u.pathname.split('/').filter(Boolean)[0]; if(p && p.length===11) return p; } }catch(e){} return ''; }
+    function extractPlaylistId(input){ if(!input) return ''; input=String(input).trim(); try{ const u=new URL(input); const list=u.searchParams.get('list'); if(list) return list; }catch(e){} if(/^(PL|LL|UU|FL)[A-Za-z0-9_-]{10,}$/.test(input)) return input; return ''; }
+
+    // Search/Playlist state
+    const SEARCH_KEY='bm:lastSearch';
+  let lastSearch={ q:'', index:0 };
+    function loadSearch(){ try{ const s=JSON.parse(localStorage.getItem(SEARCH_KEY)||'null'); if(s && s.q) lastSearch=s; }catch(e){} }
+    function saveSearch(){ localStorage.setItem(SEARCH_KEY, JSON.stringify(lastSearch)); }
+    const PLAYLIST_KEY='bm:lastPlaylist';
+    let lastPlaylist={ id:'', index:0 };
+    function loadPlaylistState(){ try{ const s=JSON.parse(localStorage.getItem(PLAYLIST_KEY)||'null'); if(s && s.id) lastPlaylist=s; }catch(e){} }
+    function savePlaylist(){ localStorage.setItem(PLAYLIST_KEY, JSON.stringify(lastPlaylist)); }
+
+  function ensurePlayer(){ if(!player){ initLiteIfNeeded(); } }
+  function loadDefaultVideo(){ ensurePlayer(); loadVideoById(DEFAULT_VIDEO_ID); }
+  function loadVideoById(id){ ensurePlayer(); navMode='single'; try{ if(useLite && player.cueVideoById){ player.cueVideoById(id); markPlayerDirty(); } else if(player.cueVideoById){ player.cueVideoById(id); markPlayerDirty(); player.playVideo?.(); } setTimeout(updateMeta, 500);}catch(e){ toast('Could not load video.'); } }
+  function searchQuery(q,opts={}){ ensurePlayer(); const index = Number.isInteger(opts.index)? opts.index:0; try{ if(useLite && player.loadPlaylist){ player.loadPlaylist({listType:'search', list:q, index}); markPlayerDirty(); setTimeout(()=>{ try{ player.playVideo?.(); }catch(_){} }, 600); } else if(player.loadPlaylist){ player.loadPlaylist({ listType:'search', list:q, index }); markPlayerDirty(); player.playVideo?.(); } lastSearch={q, index}; navMode='search'; saveSearch(); setTimeout(updateMeta,800); }catch(e){ toast('Search failed'); } }
+  function loadPlaylistById(id, index=0){ ensurePlayer(); try{ if(player.loadPlaylist){ player.loadPlaylist({ listType:'playlist', list:id, index }); markPlayerDirty(); player.playVideo?.(); lastPlaylist={ id, index }; navMode='playlist'; savePlaylist(); setTimeout(updateMeta,800); } else { toast('Playlist not supported'); } }catch(e){ toast('Playlist load failed'); } }
+  function navigateNext(){ ensurePlayer(); if(navMode==='single'){ toast('Load a search or playlist first'); return; } try{ if(player && typeof player.nextVideo==='function'){ player.nextVideo(); markPlayerDirty(); setTimeout(()=>{ try{ if(navMode==='playlist' && player.getPlaylistIndex){ lastPlaylist.index = player.getPlaylistIndex(); savePlaylist(); } else if(navMode==='search'){ lastSearch.index = (lastSearch.index||0)+1; saveSearch(); } }catch(_){} }, 500); ensureAudio(); return; } }catch(_){} if(navMode==='playlist' && lastPlaylist.id){ lastPlaylist.index = (lastPlaylist.index||0)+1; savePlaylist(); loadPlaylistById(lastPlaylist.id, lastPlaylist.index); ensureAudio(); return; } if(navMode==='search' && lastSearch.q){ lastSearch.index = (lastSearch.index||0)+1; saveSearch(); searchQuery(lastSearch.q,{index:lastSearch.index}); ensureAudio(); return; } }
+  function navigatePrev(){ ensurePlayer(); if(navMode==='single'){ toast('Load a search or playlist first'); return; } try{ if(player && typeof player.previousVideo==='function'){ player.previousVideo(); markPlayerDirty(); setTimeout(()=>{ try{ if(navMode==='playlist' && player.getPlaylistIndex){ lastPlaylist.index = player.getPlaylistIndex(); savePlaylist(); } else if(navMode==='search'){ lastSearch.index = Math.max(0,(lastSearch.index||0)-1); saveSearch(); } }catch(_){} }, 500); ensureAudio(); return; } }catch(_){} if(navMode==='playlist' && lastPlaylist.id){ lastPlaylist.index = Math.max(0,(lastPlaylist.index||0)-1); savePlaylist(); loadPlaylistById(lastPlaylist.id, lastPlaylist.index); ensureAudio(); return; } if(navMode==='search' && lastSearch.q){ lastSearch.index = Math.max(0,(lastSearch.index||0)-1); saveSearch(); searchQuery(lastSearch.q,{index:lastSearch.index}); ensureAudio(); return; } }
+  // Removed SAMPLE_QUERIES and autoRandomSample; Random now uses CURATED_PLAYLISTS IDs only.
+  const CURATED_PLAYLISTS = [
+    'PLW4NDfp3IicGgq6eRsBI1oJrC0lrPcyHU',
+    'PLW4NDfp3IicHahCrVeqi2N03TgKWyvUHr',
+    'PL2hKiQJDX3q8bWd4NDZSfkHwXQelEtGeT',
+    'PLW4NDfp3IicGyAw0Ix0Z0yr-FL35Eo_qB',
+    'PLfNbP5vDLed9hnwMxuxWCq-2GfKdOGkO8',
+    'PLo1tNjCCJiFipFRxWASzaaU25Tx0Pc0F1',
+    'PLwOhBVijslhED9GRyTvFo9AVMzsDxyQ2t',
+    'PL6F3kM0fkBterG08WkoQHokWHg8_7Nr0z',
+    'PL1lRCnQVCel5pVcYe_ii2aMYVpBqTwLlE',
+    'PLRB98nnoVMI-onlBX7O5-yaqj6KrwJJx4',
+    'PLVbCFDyOcVBhC4rmHWmHJOWGvcIFGP2u3',
+    'PLV9a6wzGR0jNPXI6kPkG3684BHNJMIPav',
+    'PLwOwD-Kfd50RI6DfNYyFQZSXdC6iferLJ',
+    'PLGsQ6H7kXBMApohXNyXoMK24ekRmp8fdv',
+    'PLKV7EJNZDttTsuFfbyMprFkO6kMGSJtgr',
+    'PL0bq757BcevzkBK1yAoElQWQ93Wp12iE_',
+    'PL_4kns9SH5FfSrE0_KTUYGoaw7MBhECtL',
+    'PLik8k8u5t-YxzmZbAg3T3qi7mnFHQhVaF',
+    'PLUXl043M6v4MWY0vtvGD7c7-gstF_ikx2',
+    'PL3KOVSAMecJ-_FzmhNxscvyJ3MkKgwAXC',
+    'PLKV7EJNZDttTSpFG0EipUGlv0XQHx9Scc'
+  ];
+  function setRandomBarPlaylist(){
+    const pick = CURATED_PLAYLISTS[Math.floor(Math.random()*CURATED_PLAYLISTS.length)];
+    const el=document.querySelector('#query');
+    if(el){ el.value = pick; el.focus(); }
+    toast('Random: ready to Load — '+pick);
+  }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+    loadSearch(); loadPlaylistState();
+    $('#searchForm').addEventListener('submit', (e)=>{ e.preventDefault(); const q=$('#query').value.trim(); const pl=extractPlaylistId(q); const id=extractId(q); if(pl){ ensurePlayer(); loadPlaylistById(pl,0); ensureAudio(); } else if(id){ ensurePlayer(); loadVideoById(id); ensureAudio(); } else { ensurePlayer(); searchQuery(q,{index:0}); ensureAudio(); } });
+    $('#loadBtn').addEventListener('click', ()=>{ const q=$('#query').value.trim(); const pl=extractPlaylistId(q); const id=extractId(q); if(pl){ ensurePlayer(); loadPlaylistById(pl,0); ensureAudio(); } else if(id){ ensurePlayer(); loadVideoById(id); ensureAudio(); } else { ensurePlayer(); searchQuery(q,{index:0}); ensureAudio(); } });
+    $('#randomBtn').addEventListener('pointerdown', ()=>{ setRandomBarPlaylist(); });
+    $('#prevBtn').addEventListener('pointerdown', ()=>{ navigatePrev(); });
+    $('#nextBtn').addEventListener('pointerdown', ()=>{ navigateNext(); });
+      });
+
+    // ===== Undo/Redo =====
+    const hist=[], future=[]; const MAX_HIST=100; const cloneList=()=> cueState.list.map(v=> v==null? null: Number(v));
+    // Global action stacks to interleave cue + looper undos in order
+    const actionHist=[], actionFuture=[];
+    function pushHistory(){ hist.push(cloneList()); if(hist.length>MAX_HIST) hist.shift(); future.length=0; actionHist.push('cue'); actionFuture.length=0; updateUndoRedoUI(); }
+    function undo(){ if(!hist.length) return; const prev=hist.pop(); future.push(cloneList()); cueState.list=prev; requestRenderCues(); toast('Undo'); }
+    function redo(){ if(!future.length) return; const next=future.pop(); hist.push(cloneList()); cueState.list=next; requestRenderCues(); toast('Redo'); }
+    function updateUndoRedoUI(){ const canUndo = (actionHist.length>0); const canRedo=(actionFuture.length>0); $('#undo').disabled = !canUndo; $('#redo').disabled = !canRedo; }
+    function undoGlobal(){ if(!actionHist.length) return; const typ=actionHist.pop(); actionFuture.push(typ); if(typ==='looper'){ if(!looperUndo()){ /* fallback */ if(hist.length){ undo(); } } } else { if(hist.length){ undo(); } }
+      updateUndoRedoUI(); }
+    function redoGlobal(){ if(!actionFuture.length) return; const typ=actionFuture.pop(); actionHist.push(typ); if(typ==='looper'){ if(!looperRedo()){ /* fallback */ if(future.length){ redo(); } } } else { if(future.length){ redo(); } }
+      updateUndoRedoUI(); }
+
+    // ===== Cues =====
+    const cueState = { list: new Array(10).fill(null) };
+    const cueEraseGuard = new Array(10).fill(false);
+    const storageKey = ()=> lastVideoId? `bm:cues:${lastVideoId}`: null;
+    function loadCues(){ cueState.list = new Array(10).fill(null); const k=storageKey(); if(k){ try{ const saved=JSON.parse(localStorage.getItem(k)||'null'); if(Array.isArray(saved)) cueState.list = saved.slice(0,10).concat(new Array(10).fill(null)).slice(0,10); }catch(e){} } requestRenderCues(true); updateUndoRedoUI(); }
+    function saveCues(){ const k=storageKey(); if(k) localStorage.setItem(k, JSON.stringify(cueState.list)); }
+  function setCue(i,t,opts={record:true}){ if(opts.record) pushHistory(); cueState.list[i]=clamp(Number(t),0,Number(duration)||0); saveCues(); requestRenderCues(); }
+    function clearCue(i){ pushHistory(); cueState.list[i]=null; saveCues(); requestRenderCues(); toast('Cue ' + (i===9?0:i+1) + ' cleared'); }
+    function clearCues(){ pushHistory(); cueState.list = new Array(10).fill(null); saveCues(); requestRenderCues(); toast('All cues cleared'); }
+  function jumpToCue(i){ const t=cueState.list[i]; if(typeof t==='number') try{ if(!looperInternalAction) try{ looperNotifyCue(i); }catch(_){} primePlayer(true); player.seekTo(t,true); if(!useLite){ player.playVideo(); } else { player.playVideo?.(); } }catch(e){} }
+
+    // Export / Import cues
+    async function copyText(text){
+      try{ await navigator.clipboard.writeText(text); return true; }
+      catch(e){ try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); const ok=document.execCommand('copy'); document.body.removeChild(ta); return ok; }catch(_){} }
+      return false;
+    }
+    async function exportCuesToClipboard(){
+  const data={ id:lastVideoId||'', duration:duration||0, cues:cueState.list.slice(), when:new Date().toISOString() };
+      const ok=await copyText(JSON.stringify(data));
+      toast(ok? 'Cues copied to clipboard' : 'Copy failed');
+    }
+    function buildCuesLink(){
+      try{
+        const vid = (player?.getVideoData && player.getVideoData()?.video_id) || lastVideoId || '';
+        if(!vid){ toast('Load a video first'); return ''; }
+        const pairs=[];
+        // Export with indices 1..9, then 0 as 10th (extension style)
+        for(let i=0;i<9;i++){
+          const t = cueState.list[i];
+          if(typeof t==='number') pairs.push((i+1) + ':' + t.toFixed(3));
+        }
+        const t10 = cueState.list[9];
+        if(typeof t10==='number') pairs.push('0:' + t10.toFixed(3));
+        if(!pairs.length){ toast('No cues to export'); }
+        const base = 'https://www.youtube.com/watch?v=' + encodeURIComponent(vid);
+        const url = base + '&cue_points=' + encodeURIComponent(pairs.join(','));
+        return url;
+      }catch(e){ toast('Could not build link'); return ''; }
+    }
+    function showLinkModal(url){ const m=$('#linkModal'); const o=$('#linkOutput'); if(o){ o.value=String(url||''); o.focus(); o.select(); } if(m){ m.classList.add('show'); m.setAttribute('aria-hidden','false'); } }
+    function hideLinkModal(){ const m=$('#linkModal'); if(m){ m.classList.remove('show'); m.setAttribute('aria-hidden','true'); } }
+
+    function parseCuesLink(str){
+      let videoId = '';
+      let cuesParam = '';
+      try{
+        videoId = extractId(str)||'';
+        const u = new URL(str);
+        cuesParam = u.searchParams.get('cue_points')||'';
+      }catch(_){
+        videoId = extractId(str)||'';
+        const m = String(str).match(/(?:[?&])cue_points=([^&#]+)/);
+        cuesParam = m? decodeURIComponent(m[1]) : '';
+      }
+      const list = new Array(10).fill(null);
+      if(cuesParam){
+        String(cuesParam).split(',').forEach(seg=>{
+          const [a,b] = String(seg).split(':');
+          const extIdx = parseInt(a,10);
+          const t = parseFloat(b);
+          if(!isFinite(t)) return;
+          // Map extension indices: 1..9 -> 0..8, 0 -> 9
+          let idx = -1;
+          if(extIdx===0){ idx = 9; }
+          else if(extIdx>=1 && extIdx<=9){ idx = extIdx-1; }
+          // Fallback: accept 0..9 direct (old style)
+          else if(extIdx>=0 && extIdx<10){ idx = extIdx; }
+          if(idx>=0 && idx<10){ list[idx] = Math.max(0, t); }
+        });
+      }
+      const count = list.filter(v=> typeof v==='number').length;
+      return { videoId, cues:list, count };
+    }
+
+    function showImportLinkModal(){ const m=$('#importLinkModal'); if(m){ m.classList.add('show'); m.setAttribute('aria-hidden','false'); $('#importLinkInput')?.focus(); } }
+    function hideImportLinkModal(){ const m=$('#importLinkModal'); if(m){ m.classList.remove('show'); m.setAttribute('aria-hidden','true'); } }
+
+    function importCuesFromLink(link, opts={loadVideo:true}){
+      const { videoId, cues, count } = parseCuesLink(link||'');
+      if(!count){ toast('No cue_points found'); return; }
+      const vid = videoId || lastVideoId || '';
+      if(opts.loadVideo && videoId){ ensurePlayer(); loadVideoById(videoId); }
+      // Wait for duration if we are loading a different video
+      const start = Date.now();
+      const apply = ()=>{
+        pushHistory();
+        if(vid) lastVideoId = vid;
+        if((duration||0) > 0){
+          cueState.list = cues.map(v=> v==null? null: clamp(Number(v),0,Number(duration)||0));
+        } else {
+          // Avoid clamping to 0s if duration unknown yet
+          cueState.list = cues.slice();
+        }
+        saveCues(); requestRenderCues(); updateUndoRedoUI();
+        toast('Cues imported from link' + (videoId?' • '+videoId:''));
+      };
+      const wait = ()=>{
+        const ready = (!opts.loadVideo) || ((lastVideoId===vid) && (duration||0)>0);
+        if(ready){ apply(); return; }
+        if(Date.now()-start > 5000){ apply(); return; }
+        setTimeout(wait, 200);
+      };
+      wait();
+    }
+    async function importCuesFromClipboard(){
+      let text='';
+      try{ text = await navigator.clipboard.readText(); }
+      catch(e){ text = window.prompt('Paste cues JSON here:')||''; }
+      if(!text) return;
+      try{
+        const obj=JSON.parse(text);
+        if(!obj || !Array.isArray(obj.cues)) throw new Error('Bad format');
+        pushHistory();
+  const arr=obj.cues.slice(0,10).concat(new Array(10).fill(null)).slice(0,10);
+  cueState.list = arr.map(v=> v==null? null: clamp(Number(v),0,Number(duration)||0));
+        saveCues(); requestRenderCues();
+        if(obj.id && lastVideoId && obj.id!==lastVideoId){ toast('Imported (video ID mismatch)'); }
+        else { toast('Cues imported'); }
+      }catch(err){ toast('Import failed'); }
+    }
+
+    let renderCuesHandle=0;
+    function requestRenderCues(immediate=false){
+      if(immediate){
+        if(renderCuesHandle){ cancelAnimationFrame(renderCuesHandle); renderCuesHandle=0; }
+        renderCues();
+        return;
+      }
+      if(renderCuesHandle) return;
+      renderCuesHandle = requestAnimationFrame(()=>{
+        renderCuesHandle=0;
+        renderCues();
+      });
+    }
+
+    function renderCues(){
+      const wrap=$('#cueButtons'); wrap.innerHTML='';
+      cueState.list.forEach((v,i)=>{
+        const b=document.createElement('button');
+        b.type='button';
+        b.className='cue' + (v==null? ' unset':' active');
+        b.dataset.idx=i;
+        b.textContent = (i===9?0:i+1);
+        b.title = 'Cue ' + (i===9?0:i+1) + (v==null? ' — empty' : (' — ' + fmt(v)));
+        // Long-press to clear this cue
+        let pressTimer=null, cleared=false;
+        const cancelTimer=()=>{ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } };
+        // Block any text selection/dragging on long-press
+        b.addEventListener('selectstart', (e)=>{ try{ e.preventDefault(); }catch(_){ } });
+        b.addEventListener('dragstart', (e)=>{ try{ e.preventDefault(); }catch(_){ } });
+        let lastDownAt = 0;
+        let isDown=false;
+        const onPressStart = (e)=>{
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){ }
+          if(isDown) return;
+          const now = Date.now();
+          if(lastDownAt && (now - lastDownAt) < 60){ return; }
+          lastDownAt = now;
+          isDown = true;
+          // start hold-to-clear only if this cue is already set
+          cleared=false;
+          cancelTimer();
+          const isUnset = cueState.list[i]==null;
+          const inSetMode = (cueMode==='set');
+          if(!isUnset && !inSetMode){
+            try{ b.classList.add('hold'); b.style.setProperty('--hold-ms','600ms'); }catch(_){ }
+            pressTimer=setTimeout(()=>{
+              cueEraseGuard[i]=true; clearCue(i); cleared=true; try{ b.classList.remove('hold'); }catch(_){ }
+              setTimeout(()=>{ cueEraseGuard[i]=false; }, 800);
+            }, 600);
+          }
+          // Trigger immediately on press
+          const cur=(player&&player.getCurrentTime? player.getCurrentTime():0)||0;
+          if(inSetMode || isUnset){ setCue(i,cur,{record:true}); toast('Set cue ' + (i===9?0:i+1) + ' @ ' + fmt(cur)); }
+          else { jumpToCue(i); }
+        };
+        // Primary pointer path
+        b.addEventListener('pointerdown', onPressStart);
+        // Fallbacks for older/mobile browsers
+        b.addEventListener('touchstart', onPressStart, {passive:false});
+        b.addEventListener('mousedown', onPressStart);
+        const onPressEnd = (ev)=>{
+          try{ ev.preventDefault(); ev.stopPropagation(); }catch(_){ }
+          const wasDown = isDown; isDown=false;
+          // End hold indicator and timer
+          cancelTimer(); try{ b.classList.remove('hold'); }catch(_){ }
+          if(!wasDown) return;
+          if(cleared){ return; }
+          if(cueEraseGuard[i]){ cueEraseGuard[i]=false; return; }
+          // Nothing else on release (press already handled)
+        };
+        ['pointerup','pointerleave','pointercancel','touchend','mouseup'].forEach(ev=> b.addEventListener(ev, onPressEnd));
+        wrap.appendChild(b);
+      });
+      const track=$('#cueTrack'); track.innerHTML='';
+      cueState.list.forEach((v,i)=>{
+        if(v==null||!duration) return;
+        const m=document.createElement('div');
+        m.className='cue-marker';
+        m.style.left=(v/duration*100).toFixed(2)+'%';
+        m.title='Cue ' + (i===9?0:i+1) + ' — ' + fmt(v);
+        let dragging=false, pushed=false;
+        const onMove=(e)=>{
+          if(!dragging) return;
+          const rect=track.getBoundingClientRect();
+          const pct=clamp((e.clientX-rect.left)/rect.width,0,1);
+          const t=(pct*duration);
+          cueState.list[i]=t; saveCues();
+          m.style.left=(t/duration*100).toFixed(2)+'%';
+          const label=wrap.children[i]; if(label){ label.textContent=(i===9?0:i+1); label.classList.add('active'); label.classList.remove('unset'); label.title='Cue ' + (i===9?0:i+1) + ' — ' + fmt(t); }
+        };
+        const onUp=()=>{ dragging=false; window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
+        m.addEventListener('pointerdown',(e)=>{ dragging=true; e.preventDefault(); e.stopPropagation(); if(!pushed){ pushHistory(); pushed=true; } window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); });
+        track.appendChild(m);
+      });
+    }
+
+  function randomizeCues(){ if(!duration){ toast('Load a video first'); return; } const keep=$('#keepExisting').checked; const existing=cueState.list.map((v,i)=>({i,t:v})).filter(o=> typeof o.t==='number').sort((a,b)=>a.t-b.t); const emptyIdx=cueState.list.map((v,i)=> i).filter(i=> cueState.list[i]==null); const targetSlots=keep? emptyIdx: cueState.list.map((_,i)=> i); const times=[]; const minGap=Math.max(0.6,(duration/10)*0.02); const ok=(t)=> times.every(x=> Math.abs(x-t)>=minGap) && (!keep || existing.every(o=> Math.abs(o.t-t)>=0.35)); const snap=(t)=> Math.max(0, Math.min(duration, Math.round(t*20)/20)); if(existing.length && keep){ for(let k=0;k<targetSlots.length;k++){ let tries=0,t=null; while(tries++<200){ const base=existing[Math.floor(Math.random()*existing.length)].t; const off=(Math.random()*1.05+0.15)*(Math.random()<0.5?-1:1); t=snap(base+off); if(t>=0 && t<=duration && ok(t)) break; } if(t==null||isNaN(t)) t=snap(Math.random()*duration); times.push(t);} } else { const n=targetSlots.length||10; const step=duration/(n+1); for(let k=1;k<=n;k++){ let t=snap(k*step+(Math.random()-0.5)*step*0.35); let tries=0; while(!ok(t) && tries++<200){ t=snap(k*step+(Math.random()-0.5)*step*0.5);} times.push(t);} } times.sort((a,b)=>a-b); pushHistory(); targetSlots.sort((a,b)=> a-b); for(let idx=0; idx<targetSlots.length; idx++){ const slot=targetSlots[idx]; cueState.list[slot]=(times[idx]||0);} saveCues(); requestRenderCues(); toast('Random cues generated'); }
+
+    // ===== Keyboard + Pads =====
+    let cueMode = 'play';
+    window.addEventListener('keydown',(e)=>{
+      const active=document.activeElement; if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
+      // Transport shortcuts
+      if(e.code==='Space'){
+        e.preventDefault(); ensureAudio();
+        try{ const s=(player.getPlayerState&&player.getPlayerState())||state; if(s===1){ player.pauseVideo(); stopAllLoopers(); } else { player.playVideo(); } }catch(err){}
+        return;
+      }
+      if(e.key==='ArrowLeft' || e.key==='ArrowRight'){
+        e.preventDefault(); ensureAudio();
+        const step = e.shiftKey? 10 : 5;
+        const cur = (player&&player.getCurrentTime? player.getCurrentTime():0)||0;
+        const t = clamp(Math.floor(cur + (e.key==='ArrowRight'? step : -step)), 0, duration||0);
+        try{ player.seekTo(t,true); }catch(err){}
+        return;
+      }
+      if(e.key && e.key.toLowerCase && e.key.toLowerCase()==='c'){
+        cueMode = cueMode==='play'? 'set':'play';
+        $('#modeLabel').textContent = cueMode==='play'? 'Play':'Set';
+        $('#modeToggle').setAttribute('aria-pressed', cueMode==='set');
+        toast('Mode: '+(cueMode==='play'?'Play':'Set'));
+        return;
+      }
+      if(keyMap.rand && e.key===keyMap.rand){ e.preventDefault(); randomizeCues(); return; }
+      if(keyMap.undo && e.key===keyMap.undo){ e.preventDefault(); undoGlobal(); return; }
+      if(keyMap.redo && e.key===keyMap.redo){ e.preventDefault(); redoGlobal(); return; }
+      if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='z'){ e.preventDefault(); undoGlobal(); return; }
+      if((e.ctrlKey&&e.key.toLowerCase()==='y') || (e.metaKey&&e.shiftKey&&e.key.toLowerCase()==='z')){ e.preventDefault(); redoGlobal(); return; }
+      const numMap={'1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6,'8':7,'9':8,'0':9};
+      if(Object.prototype.hasOwnProperty.call(numMap, e.key)){
+        const idx=numMap[e.key]; const cur=(player&&player.getCurrentTime? player.getCurrentTime():0)||0;
+        const forceSet=(e.metaKey||e.ctrlKey||midiShiftActive);
+        const isUnset = cueState.list[idx]==null;
+  if(forceSet || cueMode==='set' || isUnset){ setCue(idx,cur,{record:true}); toast('Set cue ' + (idx===9?0:idx+1) + ' @ ' + fmt(cur));} else { jumpToCue(idx); }
+        e.preventDefault(); return;
+      }
+      handlePadKey(e.key);
+    });
+
+    // Looper keyboard control (A/S/D/F) — installed after setupLoopers
+
+    // ===== Drum Pads (web audio, low-latency, iOS-friendly) =====
+  let actx=null, masterGain=null, comp=null, snareBuf=null, hatBuf=null, audioWarmed=false;
+  const AUDIO_KEY='bm:audio';
+  let audioCfg = { gain:0.9, threshold:-24, knee:18, ratio:4, attack:0.003, release:0.25 };
+  function loadAudioCfg(){ try{ const s=JSON.parse(localStorage.getItem(AUDIO_KEY)||'null'); if(s) audioCfg={...audioCfg, ...s}; }catch(e){} }
+  function saveAudioCfg(){ localStorage.setItem(AUDIO_KEY, JSON.stringify(audioCfg)); updateAudioSummary(); }
+  function applyAudioCfg(){ if(masterGain){ masterGain.gain.value = audioCfg.gain; } if(comp){ try{ comp.threshold.value=audioCfg.threshold; comp.knee.value=audioCfg.knee; comp.ratio.value=audioCfg.ratio; comp.attack.value=audioCfg.attack; comp.release.value=audioCfg.release; }catch(e){} } }
+  function updateAudioSummary(){ const el=document.querySelector('#audioSummary'); if(el) el.textContent = `Gain ${audioCfg.gain.toFixed(2)} • Cmp ${audioCfg.ratio}x`; }
+    function buildNoiseBuffer(lenSec, rolloffPow){
+      const sr = actx.sampleRate;
+      const len = Math.max(1, Math.floor(sr * lenSec));
+      const buf = actx.createBuffer(1, len, sr);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<len;i++){
+        const env = Math.pow(1 - (i/len), rolloffPow);
+        data[i] = (Math.random()*2-1) * env;
+      }
+      return buf;
+    }
+    function warmUp(){
+      if(audioWarmed || !actx) return;
+      try{
+        const silent = actx.createBuffer(1, 128, actx.sampleRate);
+        const src = actx.createBufferSource();
+        src.buffer = silent; src.connect(masterGain); src.start();
+        audioWarmed = true;
+      }catch(e){ /* some browsers disallow start() while suspended; try again after resume */ }
+    }
+
+    // Create the audio graph without trying to resume/unlock (to avoid first-hit cost)
+    function initAudioContext(){
+      if(actx) return actx;
+      try{
+        const Ctor = window.AudioContext||window.webkitAudioContext;
+        actx = new Ctor({ latencyHint:'interactive' });
+      }catch(e){ actx = new (window.AudioContext||window.webkitAudioContext)(); }
+      // Master chain
+      masterGain = actx.createGain();
+      try{ comp = actx.createDynamicsCompressor(); masterGain.connect(comp).connect(actx.destination); }
+      catch(e){ masterGain.connect(actx.destination); }
+      applyAudioCfg();
+      // Prebuild noise buffers (reuse per hit)
+      try{ snareBuf = buildNoiseBuffer(0.2, 2.0); hatBuf = buildNoiseBuffer(0.05, 1.5); }catch(_){ /* actx may not be fully ready */ }
+      return actx;
+    }
+    function ensureAudio(){
+      if(!actx){ initAudioContext(); }
+      if(actx && actx.state==='suspended'){
+        try{ actx.resume().catch(()=>{}); }catch(_){ /* ignore */ }
+      }
+      // Only warm and hide gate once the context is actually running
+      if(actx && actx.state==='running'){
+        warmUp();
+        hideGate();
+      }
+      return actx;
+    }
+    // Built-in synth drums
+    function playKickBuiltin(padVol=1){
+      ensureAudio(); const t=actx.currentTime;
+      // Body sine with slight pitch wobble for lofi character
+      const o=actx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(105, t);
+      o.frequency.exponentialRampToValueAtTime(42, t+0.14);
+      // Soft saturation via waveshaper
+      const sh=actx.createWaveShaper(); const curve=new Float32Array(256); for(let i=0;i<256;i++){ const x=(i/128-1); curve[i]=Math.tanh(2.2*x); } sh.curve=curve; sh.oversample='2x';
+      const g=actx.createGain(); g.gain.setValueAtTime(1.0*padVol,t); g.gain.exponentialRampToValueAtTime(0.001*padVol, t+0.22);
+      // Gentle lowpass for muffled lofi kick
+      const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(2200, t); lp.Q.value=0.2;
+      o.connect(sh).connect(lp).connect(g).connect(masterGain);
+      o.start(t); o.stop(t+0.24);
+      // Defer UI effects so audio scheduling isn't blocked by layout/vibration
+      requestAnimationFrame(()=>{ flash('kick'); navigator.vibrate?.(10); });
+    }
+    function playSnareBuiltin(padVol=1){
+      ensureAudio(); const t=actx.currentTime;
+      // Clean, non-distorted snare: filtered noise + short tonal body
+      const nSrc=actx.createBufferSource(); nSrc.buffer=snareBuf;
+      const hp=actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=600; hp.Q.value=0.7;
+      const bp=actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2000; bp.Q.value=0.9;
+      const ng=actx.createGain(); ng.gain.setValueAtTime(0.75*padVol,t); ng.gain.exponentialRampToValueAtTime(0.001*padVol, t+0.20);
+      const tone=actx.createOscillator(); tone.type='triangle'; tone.frequency.setValueAtTime(200, t); tone.frequency.exponentialRampToValueAtTime(150, t+0.07);
+      const tg=actx.createGain(); tg.gain.setValueAtTime(0.25*padVol,t); tg.gain.exponentialRampToValueAtTime(0.001*padVol, t+0.10);
+      const mix=actx.createGain();
+      nSrc.connect(hp).connect(bp).connect(ng).connect(mix);
+      tone.connect(tg).connect(mix);
+      const out=actx.createGain(); out.gain.value=1.0; mix.connect(out).connect(masterGain);
+      nSrc.start(t); tone.start(t); nSrc.stop(t+0.22); tone.stop(t+0.12);
+      requestAnimationFrame(()=>{ flash('snare'); navigator.vibrate?.(8); });
+    }
+    function playHihatBuiltin(padVol=1){
+      ensureAudio(); const t=actx.currentTime;
+      const src=actx.createBufferSource(); src.buffer=hatBuf;
+      const bp=actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=7500; bp.Q.value=0.8;
+      const hp=actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=5500;
+      const g=actx.createGain(); g.gain.setValueAtTime(0.42*padVol,t); g.gain.exponentialRampToValueAtTime(0.001*padVol, t+0.07);
+      // gentle tilt EQ via shelving
+      const shelf=actx.createBiquadFilter(); shelf.type='highshelf'; shelf.frequency.value=8000; shelf.gain.value=2;
+      src.connect(bp).connect(hp).connect(shelf).connect(g).connect(masterGain);
+      src.start(t);
+      requestAnimationFrame(()=>{ flash('hihat'); navigator.vibrate?.(6); });
+    }
+  function flash(p){ const el=document.querySelector('.pad[data-pad="'+p+'"]'); if(!el) return; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+
+    // ===== Sample management (per-pad) =====
+    const SAMPLES_KEY='bm:samples';
+    let samples={
+      kick:{ current:'builtin', volDb:0, items:{ builtin:{ id:'builtin', name:'Built‑in Kick', builtin:true } } },
+      snare:{ current:'builtin', volDb:0, items:{ builtin:{ id:'builtin', name:'Built‑in Snare', builtin:true } } },
+      hihat:{ current:'builtin', volDb:0, items:{ builtin:{ id:'builtin', name:'Built‑in Hi‑Hat', builtin:true } } }
+    };
+    const decodedCache={ kick:{}, snare:{}, hihat:{} };
+    function loadSamplesCfg(){ try{ const s=JSON.parse(localStorage.getItem(SAMPLES_KEY)||'null'); if(s){ samples=s; } }catch(e){}
+      // Ensure built-ins exist and are protected
+      ['kick','snare','hihat'].forEach(p=>{
+        if(!samples[p]) samples[p]={ current:'builtin', volDb:0, items:{} };
+        if(!samples[p].items) samples[p].items={};
+        samples[p].items.builtin = samples[p].items.builtin || { id:'builtin', name:`Built‑in ${p==='hihat'?'Hi‑Hat':(p[0].toUpperCase()+p.slice(1))}`, builtin:true };
+        if(!samples[p].current) samples[p].current='builtin';
+        if(typeof samples[p].volDb!=='number') samples[p].volDb=0;
+      });
+    }
+    // Decode currently-selected custom samples up front to avoid first-hit lag
+    function prewarmSamples(){
+      try{
+        ['kick','snare','hihat'].forEach((pad, i)=>{
+          const cur = samples?.[pad]?.current;
+          const it = samples?.[pad]?.items?.[cur];
+          if(it && !it.builtin && !decodedCache[pad][it.id]){
+            setTimeout(()=>{ decodeItem(pad, it); }, 60 + i*80);
+          }
+        });
+      }catch(_){ /* ignore */ }
+    }
+    function saveSamplesCfg(){ try{ localStorage.setItem(SAMPLES_KEY, JSON.stringify(samples)); updateSamplesSummary(); }catch(e){ toast('Could not save samples'); } }
+  function updateSamplesSummary(){ const el=$('#samplesSummary'); if(!el) return; const n=['kick','snare','hihat'].reduce((a,p)=> a + Object.keys(samples[p].items).length - 1, 0); el.textContent = (n>0? (n+' custom') : 'Built-ins'); }
+    function dataUrlToArrayBuffer(dataUrl){ const idx=dataUrl.indexOf(','); const base=dataUrl.slice(idx+1); const isB64=/;base64/i.test(dataUrl.slice(0,idx)); if(isB64){ const bin=atob(base); const len=bin.length; const buf=new ArrayBuffer(len); const view=new Uint8Array(buf); for(let i=0;i<len;i++) view[i]=bin.charCodeAt(i); return buf; } else { const enc=new TextEncoder(); return enc.encode(base).buffer; } }
+  async function decodeItem(pad, item){ try{ ensureAudio(); const buf = await actx.decodeAudioData(dataUrlToArrayBuffer(item.dataUrl).slice(0)); decodedCache[pad][item.id]=buf; return buf; }catch(e){ toast('Decode failed'); return null; } }
+    function populatePadSelect(pad){ const sel=$(`#${pad}SampleSel`); if(!sel) return; sel.innerHTML=''; const items=samples[pad].items; Object.values(items).forEach(it=>{ const o=document.createElement('option'); o.value=it.id; o.textContent=it.name + (it.builtin?' (built‑in)':''); sel.appendChild(o); }); sel.value=samples[pad].current; const eraseBtn=$(`#${pad}EraseBtn`); if(eraseBtn) eraseBtn.disabled = (samples[pad].current==='builtin'); const vol=$(`#${pad}Vol`), out=$(`#${pad}VolOut`); if(vol) vol.value = samples[pad].volDb; if(out) out.textContent = `${samples[pad].volDb.toFixed(1)} dB`; }
+    function wirePadRow(pad){
+      const sel=$(`#${pad}SampleSel`); const loadBtn=$(`#${pad}LoadBtn`); const eraseBtn=$(`#${pad}EraseBtn`); const file=$(`#${pad}File`); const vol=$(`#${pad}Vol`); const out=$(`#${pad}VolOut`);
+      if(sel){ sel.onchange=()=>{ samples[pad].current=sel.value; saveSamplesCfg(); populatePadSelect(pad); toast(pad+': '+ (samples[pad].items[sel.value]?.name||sel.value)); }; }
+      if(loadBtn && file){ loadBtn.onclick=()=> file.click(); file.onchange=async ()=>{ const f=file.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=async (ev)=>{ const dataUrl=String(ev.target?.result||''); const id='s'+Date.now()+Math.random().toString(36).slice(2,6); const name=f.name||('Sample '+id.slice(-4)); samples[pad].items[id]={ id, name, dataUrl }; samples[pad].current=id; saveSamplesCfg(); populatePadSelect(pad); await decodeItem(pad, samples[pad].items[id]); toast('Loaded '+name); file.value=''; }; reader.readAsDataURL(f); } }
+      if(eraseBtn){ eraseBtn.onclick=()=>{ const cur=samples[pad].current; const it=samples[pad].items[cur]; if(!it || it.builtin){ toast('Cannot erase built‑in'); return; } delete samples[pad].items[cur]; delete decodedCache[pad][cur]; samples[pad].current='builtin'; saveSamplesCfg(); populatePadSelect(pad); toast('Erased sample'); }; }
+      if(vol && out){ vol.oninput=()=>{ samples[pad].volDb=parseFloat(vol.value)||0; out.textContent=`${samples[pad].volDb.toFixed(1)} dB`; saveSamplesCfg(); }; }
+      populatePadSelect(pad);
+    }
+    function setupSamplesUI(){ ['kick','snare','hihat'].forEach(wirePadRow); }
+
+    // Unified pad playback respecting selected sample and per-pad volume
+  async function playPad(pad){ ensureAudio(); try{ if(!looperInternalAction) looperNotifyPad(pad); }catch(_){} const cfg=samples[pad]; const vol=dbToGain(cfg?.volDb||0); if(!cfg || cfg.current==='builtin'){ if(pad==='kick') return playKickBuiltin(vol); if(pad==='snare') return playSnareBuiltin(vol); if(pad==='hihat') return playHihatBuiltin(vol); return; }
+      const item = cfg.items[cfg.current]; if(!item){ samples[pad].current='builtin'; saveSamplesCfg(); return playPad(pad); }
+      let buf = decodedCache[pad][item.id]; if(!buf){ buf = await decodeItem(pad,item); if(!buf){ toast('Sample unavailable'); return; } }
+      const t=actx.currentTime; const src=actx.createBufferSource(); src.buffer=buf; const g=actx.createGain(); g.gain.value=vol; src.connect(g).connect(masterGain); try{ src.start(t); }catch(e){}
+      // Defer UI effects one frame
+      requestAnimationFrame(()=>{ flash(pad); navigator.vibrate?.(5); });
+    }
+
+    // ===== Loopers (clips) =====
+    const LOOPER_KEY_NAMES=['loopA','loopS','loopD','loopF'];
+    function looperIndexFromKey(k){ k=(k||'').toLowerCase(); for(let i=0;i<LOOPER_KEY_NAMES.length;i++){ const name=LOOPER_KEY_NAMES[i]; const mapKey=(keyMap[name]||'').toLowerCase(); if(mapKey && k===mapKey) return i; } return -1; }
+    let looperInternalAction=false; // guard to avoid recording our own playback
+    const loopers=[]; // filled in setupLoopers()
+    const DOUBLE_MS=300, ERASE_HOLD_MS=800, SCHED_INTERVAL_MS=25, LOOKAHEAD=0.12;
+
+    function setupLoopers(){
+      const els = Array.from(document.querySelectorAll('.looper'));
+      els.forEach((el)=>{
+        const ix = parseInt(el.dataset.ix||'0',10);
+        loopers[ix] = {
+          ix,
+          key: (keyMap[LOOPER_KEY_NAMES[ix]]||''),
+          state: 'idle', // idle | recording | playing | overdub | stopped
+          events: [], // { t, kind:'pad'|'cue', data:{pad}|{idx} }
+          recordAnchor: 0,
+          loopLen: 0,
+          playAnchor: 0,
+          schedLast: 0,
+          schedId: null,
+          lastTap: 0,
+          doubleActive: false,
+          eraseTimer: null,
+          keyHold: false,
+          keyDouble: false,
+          keyEraseTimer: null,
+          midiDouble: false,
+          midiEraseTimer: null,
+          gestureErased: false,
+          el,
+          stateEl: el.querySelector('.state'),
+          metaEl: el.querySelector('.meta')
+        };
+        bindLooperPointer(loopers[ix]);
+        renderLooper(loopers[ix]);
+      });
+    }
+
+    // Update visible key letters on looper buttons based on current keyMap
+    function updateLooperKeyLabels(){
+      try{
+        const fallback=['A','S','D','F'];
+        for(let ix=0; ix<LOOPER_KEY_NAMES.length; ix++){
+          const name = LOOPER_KEY_NAMES[ix];
+          const keyVal = String(keyMap[name]||'');
+          const label = (keyVal.length===1 && keyVal.trim()!=='') ? keyVal.toUpperCase() : fallback[ix];
+          const l = loopers[ix];
+          const el = l?.el || document.querySelector(`.looper[data-ix="${ix}"]`);
+          if(el){
+            const nameEl = el.querySelector('.name');
+            if(nameEl) nameEl.textContent = label;
+            el.setAttribute('aria-label', 'Looper ' + String(label).toUpperCase());
+          }
+          if(l) l.key = keyMap[name]||'';
+        }
+      }catch(_){ /* noop */ }
+    }
+
+    // Looper history (for Undo/Redo)
+    const loopHist=[], loopFuture=[];
+    function snapshotLoopers(){
+      return loopers.map(l=>({
+        ix:l.ix,
+        state:l.state,
+        loopLen:l.loopLen,
+        events:l.events.map(ev=>({ t:ev.t, kind:ev.kind, data: { ...(ev.data||{}) } })),
+      }));
+    }
+    function applyLooperSnapshot(snap){
+      ensureAudio();
+      // stop schedulers
+      loopers.forEach(l=>{ if(l && l.schedId){ clearInterval(l.schedId); l.schedId=null; } });
+      const now = actx? actx.currentTime : 0;
+      snap.forEach((s,ix)=>{
+        const l=loopers[ix]; if(!l) return;
+        l.events = s.events.map(ev=>({ t:ev.t, kind:ev.kind, data:{ ...(ev.data||{}) } }));
+        l.loopLen = s.loopLen;
+        // reset anchors
+        l.recordAnchor = 0;
+        l.playAnchor = now;
+        l.schedLast = now;
+        l.state = s.state;
+        renderLooper(l);
+        if(l.state==='playing' || l.state==='overdub') looperStartScheduler(l);
+      });
+    }
+    function looperPushHistory(){ loopHist.push(snapshotLoopers()); if(loopHist.length>MAX_HIST) loopHist.shift(); loopFuture.length=0; actionHist.push('looper'); actionFuture.length=0; updateUndoRedoUI(); }
+    function looperUndo(){ if(!loopHist.length) return false; const prev=loopHist.pop(); loopFuture.push(snapshotLoopers()); applyLooperSnapshot(prev); toast('Undo'); return true; }
+    function looperRedo(){ if(!loopFuture.length) return false; const next=loopFuture.pop(); loopHist.push(snapshotLoopers()); applyLooperSnapshot(next); toast('Redo'); return true; }
+
+    function renderLooper(l){
+      const st = l.state;
+      if(!l.el) return;
+      l.el.classList.remove('idle','recording','playing','overdub','stopped','erasing');
+      l.el.classList.add(st);
+      const has = (l.loopLen>0 && l.events.length>0);
+      if(has) l.el.classList.add('has-content'); else l.el.classList.remove('has-content');
+      if(l.stateEl){
+        if(st==='idle') l.stateEl.textContent='Idle';
+        else if(st==='recording') l.stateEl.textContent='REC';
+        else if(st==='playing') l.stateEl.textContent='PLAY';
+        else if(st==='overdub') l.stateEl.textContent='OD';
+        else if(st==='stopped') l.stateEl.textContent='STOP';
+        else l.stateEl.textContent = st;
+      }
+      if(l.metaEl){ l.metaEl.textContent = has? ('⟲ ' + (l.loopLen||0).toFixed(1) + 's') : ''; }
+    }
+
+    function stopOtherLoopers(exceptIx){
+      loopers.forEach((l)=>{
+        if(!l) return;
+        if(l.ix!==exceptIx && (l.state==='playing' || l.state==='overdub' || l.state==='recording')){
+          looperStop(l);
+        }
+      });
+    }
+    function stopAllLoopers(){
+      loopers.forEach((l)=>{ if(!l) return; looperStop(l); });
+    }
+
+    function looperStartRecord(l, opts={exclusive:true}){
+      ensureAudio();
+      looperPushHistory();
+      if(opts.exclusive) stopOtherLoopers(l.ix);
+      l.events=[];
+      l.recordAnchor = actx.currentTime;
+      l.loopLen = 0;
+      l.playAnchor = 0;
+      l.schedLast = 0;
+      l.state='recording';
+      renderLooper(l);
+    }
+    function looperCommitRecord(l){
+      ensureAudio();
+      const now = actx.currentTime;
+      const len = Math.max(0.25, now - (l.recordAnchor||now));
+      l.loopLen = len;
+      l.playAnchor = now;
+      l.schedLast = now;
+      l.state = 'playing';
+      looperStartScheduler(l);
+      renderLooper(l);
+    }
+    function looperToggleOverdub(l){
+      if(l.state==='playing'){ l.state='overdub'; }
+      else if(l.state==='overdub'){ l.state='playing'; }
+      renderLooper(l);
+    }
+    function looperPlay(l, opts={exclusive:true}){
+      ensureAudio();
+      if(l.loopLen<=0 || !l.events.length){ // nothing recorded: start fresh recording
+        looperStartRecord(l, opts);
+        return;
+      }
+      if(opts.exclusive) stopOtherLoopers(l.ix);
+      l.playAnchor = actx.currentTime;
+      l.schedLast = l.playAnchor;
+      l.state='playing';
+      looperStartScheduler(l);
+      renderLooper(l);
+    }
+    function looperStop(l){
+      if(l.schedId){ clearInterval(l.schedId); l.schedId=null; }
+      if(l.eraseTimer){ clearTimeout(l.eraseTimer); l.eraseTimer=null; }
+      if(l.keyEraseTimer){ clearTimeout(l.keyEraseTimer); l.keyEraseTimer=null; }
+      // If we were recording with no commit, commit a very short loop and stop
+      if(l.state==='recording'){
+        ensureAudio();
+        const now=actx.currentTime;
+        l.loopLen = Math.max(0.25, now - (l.recordAnchor||now));
+      }
+      l.state='stopped';
+      renderLooper(l);
+    }
+    function looperErase(l){
+      looperPushHistory();
+      if(l.schedId){ clearInterval(l.schedId); l.schedId=null; }
+      l.events=[]; l.loopLen=0; l.playAnchor=0; l.schedLast=0;
+      l.state='idle';
+      renderLooper(l);
+      toast('Loop '+String.fromCharCode(65+l.ix)+' erased');
+    }
+
+    function looperStartScheduler(l){
+      ensureAudio();
+      if(l.schedId) clearInterval(l.schedId);
+      l.schedLast = actx.currentTime;
+      l.schedId = setInterval(()=> looperSchedulerTick(l), SCHED_INTERVAL_MS);
+    }
+    function looperSchedulerTick(l){
+      if(!(l.state==='playing' || l.state==='overdub')) return;
+      if(l.loopLen<=0 || !l.events.length) return;
+      const now = actx.currentTime;
+      const t0 = l.schedLast||now;
+      const t1 = now + LOOKAHEAD;
+      const origin = l.playAnchor||now;
+      const L = l.loopLen||1;
+      // schedule occurrences within [t0, t1]
+      for(let i=0;i<l.events.length;i++){
+        const ev = l.events[i];
+        const base = origin + ev.t;
+        let nStart = Math.ceil((t0 - base) / L);
+        let nEnd = Math.floor((t1 - base) / L);
+        if(!isFinite(nStart)) nStart=0; if(!isFinite(nEnd)) nEnd=-1;
+        for(let n=nStart; n<=nEnd; n++){
+          const when = base + n*L;
+          const delay = when - now;
+          if(delay >= 0){
+            setTimeout(()=> triggerLooperEvent(ev), Math.max(0, delay*1000|0));
+          }
+        }
+      }
+      l.schedLast = t1;
+    }
+
+    function triggerLooperEvent(ev){
+      try{
+        looperInternalAction=true;
+        if(ev.kind==='pad') playPad(ev.data.pad);
+        else if(ev.kind==='cue') jumpToCue(ev.data.idx);
+      }finally{
+        looperInternalAction=false;
+      }
+    }
+
+    // Recording hooks
+    function looperNotifyPad(pad){
+      ensureAudio();
+      const now = actx.currentTime;
+      loopers.forEach(l=>{
+        if(!l) return;
+        if(l.state==='recording'){
+          looperPushHistory();
+          l.events.push({ t: Math.max(0, now - (l.recordAnchor||now)), kind:'pad', data:{pad} });
+        } else if(l.state==='overdub' && l.loopLen>0){
+          looperPushHistory();
+          const within = ((now - (l.playAnchor||now)) % l.loopLen + l.loopLen) % l.loopLen;
+          l.events.push({ t: within, kind:'pad', data:{pad} });
+        }
+      });
+    }
+    function looperNotifyCue(idx){
+      ensureAudio();
+      const now = actx.currentTime;
+      loopers.forEach(l=>{
+        if(!l) return;
+        if(l.state==='recording'){
+          looperPushHistory();
+          l.events.push({ t: Math.max(0, now - (l.recordAnchor||now)), kind:'cue', data:{idx} });
+        } else if(l.state==='overdub' && l.loopLen>0){
+          looperPushHistory();
+          const within = ((now - (l.playAnchor||now)) % l.loopLen + l.loopLen) % l.loopLen;
+          l.events.push({ t: within, kind:'cue', data:{idx} });
+        }
+      });
+    }
+
+    function handleLooperPress(l, opts){
+      const exclusive = !(opts && (opts.allowMultiple));
+      if(l.state==='idle'){
+        if(l.events.length>0 && l.loopLen>0) return looperPlay(l,{exclusive});
+        // visual flash (keyboard path)
+        try{ l.el.classList.remove('flash'); void l.el.offsetWidth; l.el.classList.add('flash'); }catch(_){ }
+        return looperStartRecord(l,{exclusive});
+      }
+      if(l.state==='recording') return looperCommitRecord(l);
+      if(l.state==='stopped') return looperPlay(l,{exclusive});
+      if(l.state==='playing' || l.state==='overdub') return looperToggleOverdub(l);
+    }
+
+    function bindLooperPointer(l){
+      const el=l.el; if(!el) return;
+      // Prevent any text selection or drag inside looper buttons (iOS long-press)
+      el.addEventListener('selectstart', (e)=>{ try{ e.preventDefault(); }catch(_){ } });
+      el.addEventListener('dragstart', (e)=>{ try{ e.preventDefault(); }catch(_){ } });
+      el.addEventListener('pointerdown', (e)=>{
+        // visual responsiveness like pads
+        try{ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }catch(_){ }
+        const now=Date.now();
+        const within = (now - (l.lastTap||0)) <= DOUBLE_MS;
+        if(within){
+          // second press started; allow hold to erase, stop on release
+          l.doubleActive=true;
+          el.classList.add('hold');
+          el.style.setProperty('--hold-ms', ERASE_HOLD_MS+'ms');
+          if(l.eraseTimer) clearTimeout(l.eraseTimer);
+          l.eraseTimer = setTimeout(()=>{ el.classList.remove('hold'); l.doubleActive=false; l.gestureErased=true; looperErase(l); l.lastTap=0; }, ERASE_HOLD_MS);
+        } else {
+          // single press: act immediately (press, not release)
+          handleLooperPress(l, { allowMultiple: (e.shiftKey||e.metaKey) });
+          l.lastTap = now;
+        }
+      }, {passive:true});
+      ['pointercancel','pointerleave'].forEach(ev=> el.addEventListener(ev, ()=>{
+        if(l.eraseTimer){ clearTimeout(l.eraseTimer); l.eraseTimer=null; }
+        el.classList.remove('hold');
+        l.doubleActive=false;
+      }));
+      el.addEventListener('pointerup', (e)=>{
+        if(l.gestureErased){
+          // ignore this release after an erase
+          l.gestureErased=false; l.lastTap=0; l.doubleActive=false; return;
+        }
+        if(l.doubleActive){
+          // second tap release: stop (unless already erased)
+          if(l.eraseTimer){ clearTimeout(l.eraseTimer); l.eraseTimer=null; }
+          el.classList.remove('hold');
+          looperStop(l);
+          l.lastTap = 0;
+          l.doubleActive=false;
+          return;
+        }
+        // single already handled on press
+      });
+    }
+
+    function setupLooperKeys(){
+      const looperKeyState = {};
+      window.addEventListener('keydown', (e)=>{
+        const active=document.activeElement; if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
+        if(!e.key) return;
+      const k=e.key.toLowerCase();
+      const ix = looperIndexFromKey(k);
+        if(ix<0) return;
+        const l=loopers[ix]; if(!l) return;
+        if(looperKeyState[k]?.down) return; // ignore repeats
+        looperKeyState[k]={ down:true, t: Date.now() };
+        const now=Date.now();
+        const within = (now - (l.lastTap||0)) <= DOUBLE_MS;
+        if(within){
+          // second press started; allow hold to erase
+          l.keyDouble=true;
+          try{ l.el.classList.add('hold'); l.el.style.setProperty('--hold-ms', ERASE_HOLD_MS+'ms'); }catch(_){ }
+          if(l.keyEraseTimer) clearTimeout(l.keyEraseTimer);
+          l.keyEraseTimer = setTimeout(()=>{ try{ l.el.classList.remove('hold'); }catch(_){ } l.keyDouble=false; l.gestureErased=true; looperErase(l); l.lastTap=0; }, ERASE_HOLD_MS);
+        } else {
+          // single press: act immediately
+          handleLooperPress(l, { allowMultiple: (e.shiftKey||e.metaKey) });
+          l.lastTap = now;
+        }
+      });
+      window.addEventListener('keyup', (e)=>{
+        const active=document.activeElement; if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
+        if(!e.key) return;
+      const k=e.key.toLowerCase();
+      const ix = looperIndexFromKey(k);
+        if(ix<0) return;
+        const l=loopers[ix]; if(!l) return;
+        looperKeyState[k]={ down:false };
+        const now=Date.now();
+        if(l.gestureErased){
+          try{ l.el.classList.remove('hold'); }catch(_){ }
+          l.gestureErased=false; l.lastTap=0; l.keyDouble=false; return; // ignore after erase
+        }
+        if(l.keyDouble){
+          if(l.keyEraseTimer){ clearTimeout(l.keyEraseTimer); l.keyEraseTimer=null; }
+          try{ l.el.classList.remove('hold'); }catch(_){ }
+          looperStop(l);
+          l.keyDouble=false; l.lastTap=0;
+        }
+        // single already handled on keydown
+      });
+    }
+
+    // ===== Keyboard key mapping (pads + actions) =====
+    const KEYMAP_KEY='bm:keymap';
+  const defaultKeyMap={ kick:'é', snare:'à', hihat:'$', loopA:'a', loopS:'s', loopD:'d', loopF:'f', rand:'', undo:'', redo:'' }; let keyMap={ ...defaultKeyMap };
+    function loadKeyMap(){ try{ const s=JSON.parse(localStorage.getItem(KEYMAP_KEY)||'null'); if(s) keyMap={...defaultKeyMap, ...s}; }catch(e){} }
+    function saveKeyMap(){ localStorage.setItem(KEYMAP_KEY, JSON.stringify(keyMap)); renderMIDILabels(); updateKeyInputs(); updateKeysSummary(); updateLooperKeyLabels(); }
+    function updateKeyInputs(){ const a=$('#map_kick'), b=$('#map_snare'), c=$('#map_hihat'), la=$('#map_loopA'), ls=$('#map_loopS'), ld=$('#map_loopD'), lf=$('#map_loopF'), r=$('#map_rand'), u=$('#map_undo'), d=$('#map_redo'); if(a) a.value=keyMap.kick; if(b) b.value=keyMap.snare; if(c) c.value=keyMap.hihat; if(la) la.value=keyMap.loopA||''; if(ls) ls.value=keyMap.loopS||''; if(ld) ld.value=keyMap.loopD||''; if(lf) lf.value=keyMap.loopF||''; if(r) r.value=keyMap.rand||''; if(u) u.value=keyMap.undo||''; if(d) d.value=keyMap.redo||''; }
+  function handlePadKey(k){ if(k===keyMap.kick){ playPad('kick'); return;} if(k===keyMap.snare){ playPad('snare'); return;} if(k===keyMap.hihat){ playPad('hihat'); return;} }
+  function bindRemap(selector, name){ const el=$(selector); if(!el) return; el.addEventListener('focus', ()=>{ el.value='(press a key…)'; }); el.addEventListener('keydown', (e)=>{ e.preventDefault(); e.stopPropagation(); keyMap[name]=e.key; saveKeyMap(); toast(name + ' → "' + e.key + '"'); el.blur(); }); }
+
+    // ===== MIDI =====
+    let midiAccess=null, midiInput=null; const MIDI_KEY='bm:midi';
+    let midiConfig = { inputId:null, channel:-1, cueNotes:[48,49,50,51,52,53,54,55,56,57], looperNotes:[60,61,62,63], kick:36, snare:38, hihat:42, shiftNote:64, randomizeNote:null, undoNote:null, redoNote:null };
+    function loadMIDI(){ try{ const s=JSON.parse(localStorage.getItem(MIDI_KEY)||'null'); if(s) midiConfig={...midiConfig, ...s}; }catch(e){} }
+    function saveMIDI(){ localStorage.setItem(MIDI_KEY, JSON.stringify(midiConfig)); renderMIDILabels(); }
+  function renderMIDILabels(){ $('#key_kick').textContent = (keyMap.kick + ' (MIDI:' + midiConfig.kick + ')'); $('#key_snare').textContent = (keyMap.snare + ' (MIDI:' + midiConfig.snare + ')'); $('#key_hihat').textContent = (keyMap.hihat + ' (MIDI:' + midiConfig.hihat + ')'); const sh=$('#shiftLabel'); if(sh) sh.textContent = (midiConfig.shiftNote!=null? midiConfig.shiftNote:'—'); renderChannelSelect(); }
+    function renderChannelSelect(){ const sel=$('#midiChannel'); if(!sel) return; sel.innerHTML=''; const make=(val, label)=>{ const o=document.createElement('option'); o.value=val; o.textContent=label; return o; };
+      sel.appendChild(make('-1','Any'));
+      for(let i=1;i<=16;i++) sel.appendChild(make(String(i), String(i)));
+      sel.value=String(midiConfig.channel);
+  sel.onchange=()=>{ midiConfig.channel = parseInt(sel.value,10); saveMIDI(); updateMidiSummary(); toast('MIDI channel: ' + (midiConfig.channel<0?'Any':midiConfig.channel)); };
+    }
+
+    let midiShiftActive=false;
+    async function initMIDI(){ if(!navigator.requestMIDIAccess){ $('#midiStatus').textContent='Web MIDI not supported in this browser'; return; } try{ midiAccess = await navigator.requestMIDIAccess(); midiAccess.onstatechange = refreshMIDIInputs; refreshMIDIInputs(); if(midiConfig.inputId) setMIDIInput(midiConfig.inputId); $('#midiStatus').textContent = 'Ready'; }catch(e){ $('#midiStatus').textContent='MIDI init failed'; } }
+  function refreshMIDIInputs(){ const sel=$('#midiInput'); sel.innerHTML=''; midiAccess.inputs.forEach((port)=>{ const o=document.createElement('option'); o.value=port.id; o.textContent=(port.name + ' (' + (port.manufacturer||'?') + ' )'); sel.appendChild(o); }); if(midiConfig.inputId){ sel.value=midiConfig.inputId; } }
+  function setMIDIInput(id){ try{ if(midiInput) midiInput.onmidimessage=null; midiInput = midiAccess.inputs.get(id); if(!midiInput){ $('#midiStatus').textContent='No device'; updateMidiSummary(); return; } midiInput.onmidimessage = onMIDIMessage; midiConfig.inputId=id; saveMIDI(); updateMidiSummary(); $('#midiStatus').textContent = 'Connected: ' + midiInput.name; }catch(e){ $('#midiStatus').textContent='Failed to connect'; }}
+
+    let learnState=null;
+    function startLearn(type){ if(type==='cues'){ learnState={type:'cues', index:0}; toast('Learning cues: hit 10 pads/keys on your controller'); } else if(type==='loops'){ learnState={type:'loops', index:0}; toast('Learning loops A/S/D/F: hit 4 notes/keys'); } else if(type==='shift'){ learnState={type:'shift', index:0}; toast('Learning MIDI Shift: hit a key to use as modifier'); } else if(type==='rand'){ learnState={type:'rand', index:0}; toast('Learning Randomize: hit a pad/key'); } else if(type==='undo'){ learnState={type:'undo', index:0}; toast('Learning Undo: hit a pad/key'); } else if(type==='redo'){ learnState={type:'redo', index:0}; toast('Learning Redo: hit a pad/key'); } else { learnState={type, index:0}; toast('Learning '+type+': hit one key'); } }
+    function onMIDIMessage(ev){ const [status, data1, data2]=ev.data; const cmd=status & 0xf0; const ch=status & 0x0f; const isNoteOn=(cmd===0x90 && data2>0); const isNoteOff=(cmd===0x80 || (cmd===0x90 && data2===0));
+      if(isNoteOn){
+        if(midiConfig.channel>=0 && ch!==midiConfig.channel) return;
+        if(learnState){
+          if(learnState.type==='cues'){ midiConfig.cueNotes[learnState.index]=data1; learnState.index++; if(learnState.index>=10){ learnState=null; toast('Cues mapped'); saveMIDI(); } else { toast('Captured cue ' + learnState.index + ' / 10'); } return; }
+          if(learnState.type==='loops'){ midiConfig.looperNotes[learnState.index]=data1; learnState.index++; if(learnState.index>=4){ learnState=null; toast('Loops mapped'); saveMIDI(); } else { toast('Captured loop ' + (['A','S','D','F'][learnState.index-1]||learnState.index) + ' / 4'); } return; }
+          if(learnState.type==='kick'){ midiConfig.kick=data1; learnState=null; saveMIDI(); toast('Kick mapped'); return; }
+          if(learnState.type==='snare'){ midiConfig.snare=data1; learnState=null; saveMIDI(); toast('Snare mapped'); return; }
+          if(learnState.type==='hihat'){ midiConfig.hihat=data1; learnState=null; saveMIDI(); toast('Hi‑Hat mapped'); return; }
+          if(learnState.type==='shift'){ midiConfig.shiftNote=data1; learnState=null; saveMIDI(); midiShiftActive=true; toast('Shift mapped (hold to set)'); return; }
+          if(learnState.type==='rand'){ midiConfig.randomizeNote=data1; learnState=null; saveMIDI(); toast('Randomize mapped'); return; }
+          if(learnState.type==='undo'){ midiConfig.undoNote=data1; learnState=null; saveMIDI(); toast('Undo mapped'); return; }
+          if(learnState.type==='redo'){ midiConfig.redoNote=data1; learnState=null; saveMIDI(); toast('Redo mapped'); return; }
+        }
+        if(data1===midiConfig.shiftNote){ midiShiftActive=true; return; }
+        if(midiConfig.randomizeNote!=null && data1===midiConfig.randomizeNote){ randomizeCues(); return; }
+        if(midiConfig.undoNote!=null && data1===midiConfig.undoNote){ undoGlobal(); return; }
+        if(midiConfig.redoNote!=null && data1===midiConfig.redoNote){ redoGlobal(); return; }
+        // Looper triggers via MIDI (press)
+        if(Array.isArray(midiConfig.looperNotes)){
+          const ix = midiConfig.looperNotes.indexOf(data1);
+          if(ix>=0 && loopers[ix]){
+            const l=loopers[ix];
+            const now=Date.now();
+            const within=(now - (l.lastTap||0)) <= DOUBLE_MS;
+            if(within){
+              // second press: allow hold to erase, stop on release
+              l.midiDouble=true;
+              try{ l.el.classList.add('hold'); l.el.style.setProperty('--hold-ms', ERASE_HOLD_MS+'ms'); }catch(_){ }
+              if(l.midiEraseTimer) clearTimeout(l.midiEraseTimer);
+              l.midiEraseTimer = setTimeout(()=>{ try{ l.el.classList.remove('hold'); }catch(_){ } l.midiDouble=false; l.gestureErased=true; looperErase(l); l.lastTap=0; }, ERASE_HOLD_MS);
+            } else {
+              handleLooperPress(l, { allowMultiple: midiShiftActive });
+              l.lastTap = now;
+            }
+            return;
+          }
+        }
+        if(data1===midiConfig.kick){ playPad('kick'); return; }
+        if(data1===midiConfig.snare){ playPad('snare'); return; }
+        if(data1===midiConfig.hihat){ playPad('hihat'); return; }
+        const idx = midiConfig.cueNotes.indexOf(data1);
+  if(idx>=0){ const cur=(player&&player.getCurrentTime? player.getCurrentTime():0)||0; const isUnset = cueState.list[idx]==null; if(midiShiftActive || cueMode==='set' || isUnset){ setCue(idx,cur,{record:true}); toast('Set cue ' + (idx===9?0:idx+1) + ' @ ' + fmt(cur));} else { jumpToCue(idx); } }
+      }
+      if(isNoteOff){
+        if(data1===midiConfig.shiftNote){ midiShiftActive=false; }
+        // Double‑tap stop on release for loopers
+        if(Array.isArray(midiConfig.looperNotes)){
+          const ix = midiConfig.looperNotes.indexOf(data1);
+          if(ix>=0 && loopers[ix]){
+            const l=loopers[ix];
+            if(l.gestureErased){ try{ l.el.classList.remove('hold'); }catch(_){ } l.gestureErased=false; l.lastTap=0; l.midiDouble=false; return; }
+            if(l.midiDouble){
+              if(l.midiEraseTimer){ clearTimeout(l.midiEraseTimer); l.midiEraseTimer=null; }
+              try{ l.el.classList.remove('hold'); }catch(_){ }
+              looperStop(l);
+              l.midiDouble=false; l.lastTap=0;
+            }
+          }
+        }
+      }
+    }
+
+    function wireUI(){
+      $('#themeToggle').addEventListener('click', toggleTheme, {passive:true});
+  $('#playPause').addEventListener('pointerdown', ()=>{ ensureAudio(); try{ const s=(player.getPlayerState&&player.getPlayerState())||state; if(s===1){ player.pauseVideo(); stopAllLoopers(); } else { player.playVideo(); } }catch(e){} });
+  $('#audioBtn').addEventListener('pointerdown', ()=>{ ensureAudio(); try{ player.unMute?.(); }catch(e){} toast('Audio enabled'); $('#audioBtn').classList.add('affirm'); });
+  $('#clearCues').addEventListener('pointerdown', ()=>{ ensureAudio(); clearCues(); });
+  $('#randomize').addEventListener('pointerdown', ()=>{ ensureAudio(); randomizeCues(); });
+  $('#undo').addEventListener('pointerdown', ()=>{ ensureAudio(); undoGlobal(); });
+  $('#redo').addEventListener('pointerdown', ()=>{ ensureAudio(); redoGlobal(); });
+      // Header controls collapse toggle
+      $('#controlsToggle').addEventListener('click', ()=>{ controlsCollapsed = !controlsCollapsed; saveControls(); applyControls(); });
+      $('#exportLinkBtn').addEventListener('click', ()=>{ const url=buildCuesLink(); if(url) showLinkModal(url); });
+      $('#importLinkBtn').addEventListener('click', ()=>{ showImportLinkModal(); });
+      $('#linkCopyBtn').addEventListener('click', async ()=>{ const o=$('#linkOutput'); const ok=await copyText(o?.value||''); toast(ok? 'Link copied' : 'Copy failed'); });
+      $('#linkOpenBtn').addEventListener('click', ()=>{ const o=$('#linkOutput'); const url=o?.value||''; if(url) window.open(url, '_blank', 'noopener'); });
+      $('#linkCloseBtn').addEventListener('click', hideLinkModal);
+      $('#linkModal').addEventListener('pointerdown', (e)=>{ if(e.target && e.target.id==='linkModal') hideLinkModal(); }, {passive:true});
+      $('#importLinkCloseBtn').addEventListener('click', hideImportLinkModal);
+      $('#importLinkModal').addEventListener('pointerdown', (e)=>{ if(e.target && e.target.id==='importLinkModal') hideImportLinkModal(); }, {passive:true});
+      $('#importLinkPasteBtn').addEventListener('click', async ()=>{ try{ const t=await navigator.clipboard.readText(); const i=$('#importLinkInput'); if(i){ i.value=t; i.focus(); i.select(); } }catch(_){ toast('Clipboard not available'); } });
+      $('#importLinkApplyBtn').addEventListener('click', ()=>{ const i=$('#importLinkInput'); const chk=$('#importLinkLoadVideo'); const val=i?.value||''; const load=!!chk?.checked; if(!val){ toast('Paste a cues link'); return; } hideImportLinkModal(); importCuesFromLink(val,{loadVideo:load}); });
+      $('#modeToggle').addEventListener('click', ()=>{ cueMode = cueMode==='play'? 'set':'play'; $('#modeLabel').textContent = cueMode==='play'? 'Play':'Set'; $('#modeToggle').setAttribute('aria-pressed', cueMode==='set'); toast('Mode: '+(cueMode==='play'?'Play':'Set')); });
+  document.querySelectorAll('.pad').forEach(p=>{
+    p.addEventListener('pointerdown', (e)=>{ try{ e.preventDefault(); }catch(_){ } ensureAudio(); const n=p.dataset.pad; if(n) playPad(n); }, {passive:false});
+    // Guard against click default behaviors on some mobile browsers
+    p.addEventListener('click', (e)=>{ try{ e.preventDefault(); }catch(_){ } }, {passive:false});
+  });
+
+      $('#midiRefresh').addEventListener('click', refreshMIDIInputs);
+      $('#midiConnect').addEventListener('click', ()=>{ const id=$('#midiInput').value; if(id) setMIDIInput(id); });
+      $('#learnCues').addEventListener('click', ()=> startLearn('cues'));
+      $('#learnLoops').addEventListener('click', ()=> startLearn('loops'));
+      $('#learnKick').addEventListener('click', ()=> startLearn('kick'));
+      $('#learnSnare').addEventListener('click', ()=> startLearn('snare'));
+      $('#learnHihat').addEventListener('click', ()=> startLearn('hihat'));
+      $('#learnShift').addEventListener('click', ()=> startLearn('shift'));
+      $('#learnRand').addEventListener('click', ()=> startLearn('rand'));
+      $('#learnUndo').addEventListener('click', ()=> startLearn('undo'));
+      $('#learnRedo').addEventListener('click', ()=> startLearn('redo'));
+      $('#resetMidi').addEventListener('click', ()=>{ midiConfig={ inputId:midiConfig.inputId, channel:-1, cueNotes:[48,49,50,51,52,53,54,55,56,57], looperNotes:[60,61,62,63], kick:36, snare:38, hihat:42, shiftNote:64, randomizeNote:null, undoNote:null, redoNote:null }; midiShiftActive=false; saveMIDI(); renderChannelSelect(); updateMidiSummary(); toast('MIDI map reset'); });
+
+      bindRemap('#map_kick','kick');
+      bindRemap('#map_snare','snare');
+      bindRemap('#map_hihat','hihat');
+      bindRemap('#map_loopA','loopA');
+      bindRemap('#map_loopS','loopS');
+      bindRemap('#map_loopD','loopD');
+      bindRemap('#map_loopF','loopF');
+      bindRemap('#map_rand','rand');
+      bindRemap('#map_undo','undo');
+      bindRemap('#map_redo','redo');
+      $('#resetKeys').addEventListener('click', ()=>{ keyMap={...defaultKeyMap}; saveKeyMap(); toast('Keyboard keys reset'); });
+
+  // Audio controls
+  const g=$('#gainCtl'), th=$('#compThresh'), kn=$('#compKnee'), ra=$('#compRatio'), at=$('#compAttack'), re=$('#compRelease');
+  if(g){ g.value=audioCfg.gain; g.addEventListener('input', ()=>{ audioCfg.gain=parseFloat(g.value); saveAudioCfg(); applyAudioCfg(); }); }
+  if(th){ th.value=audioCfg.threshold; th.addEventListener('input', ()=>{ audioCfg.threshold=parseFloat(th.value); saveAudioCfg(); applyAudioCfg(); }); }
+  if(kn){ kn.value=audioCfg.knee; kn.addEventListener('input', ()=>{ audioCfg.knee=parseFloat(kn.value); saveAudioCfg(); applyAudioCfg(); }); }
+  if(ra){ ra.value=audioCfg.ratio; ra.addEventListener('input', ()=>{ audioCfg.ratio=parseFloat(ra.value); saveAudioCfg(); applyAudioCfg(); }); }
+  if(at){ at.value=audioCfg.attack; at.addEventListener('input', ()=>{ audioCfg.attack=parseFloat(at.value); saveAudioCfg(); applyAudioCfg(); }); }
+  if(re){ re.value=audioCfg.release; re.addEventListener('input', ()=>{ audioCfg.release=parseFloat(re.value); saveAudioCfg(); applyAudioCfg(); }); }
+  $('#audioReset').addEventListener('click', ()=>{ audioCfg={ gain:0.9, threshold:-24, knee:18, ratio:4, attack:0.003, release:0.25 }; saveAudioCfg(); applyAudioCfg(); if(g) g.value=audioCfg.gain; if(th) th.value=audioCfg.threshold; if(kn) kn.value=audioCfg.knee; if(ra) ra.value=audioCfg.ratio; if(at) at.value=audioCfg.attack; if(re) re.value=audioCfg.release; toast('Audio reset'); });
+
+      // Audio gate overlay
+  $('#gateBtn').addEventListener('pointerdown', ()=>{ ensureAudio(); try{ player.unMute?.(); }catch(e){} hideGate(); toast('Audio enabled'); });
+
+  // View (UI scale)
+  const uiIn=$('#uiScale'), uiReset=$('#uiReset'); if(uiIn){ uiIn.value = uiCfg.scale; uiIn.addEventListener('input', ()=>{ uiCfg.scale = parseFloat(uiIn.value)||0.95; applyUiScale(); saveUiCfg(); }); }
+  if(uiReset){ uiReset.addEventListener('click', ()=>{ uiCfg.scale=0.95; applyUiScale(); saveUiCfg(); if(uiIn) uiIn.value=uiCfg.scale; toast('Scale reset to 95%'); }); }
+
+  // Samples UI
+  setupSamplesUI();
+    }
+
+    // Scrubbing + time bubble
+    (function(){
+      const bubble=$('#timeBubble');
+      const barEl=$('#bar');
+      const move=(x)=>{
+        const rect=barEl.getBoundingClientRect();
+        const pct=clamp((x-rect.left)/rect.width,0,1);
+  const t=(pct*(duration||0));
+        if(bubble){ bubble.style.left=(pct*100)+'%'; bubble.textContent=fmt(t||0); }
+        if(!isNaN(t)) try{ player.seekTo(t,true);}catch(e){}
+      };
+      let dragging=false;
+      window.addEventListener('pointerdown',(e)=>{ if(e.target.closest && e.target.closest('#bar')){ dragging=true; bubble?.classList.add('show'); move(e.clientX); }});
+      window.addEventListener('pointermove',(e)=>{ if(dragging) move(e.clientX); }, {passive:true});
+      const endDrag=()=>{ dragging=false; bubble?.classList.remove('show'); };
+      window.addEventListener('pointerup', endDrag, {passive:true});
+      window.addEventListener('pointercancel', endDrag, {passive:true});
+    })();
+
+    // Keep progress bar visible: adjust player height and reserve space for sticky transport
+    function adjustPlayerLayout(){
+      // Keep native aspect ratio (CSS) and avoid JS height changes
+      try{
+        const playerEl = document.querySelector('#player');
+        if(playerEl) playerEl.style.height = '';
+        const wrap = document.querySelector('.video-wrap');
+        if(wrap) wrap.style.paddingBottom = '0px';
+      }catch(_){ /* ignore */ }
+    }
+
+    let toastTimer=null; function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=> t.classList.remove('show'),2200); }
+
+    // Audio gate helpers
+    function isiOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
+    function showGate(){ const g=$('#audioGate'); g.classList.add('show'); g.setAttribute('aria-hidden','false'); }
+    function hideGate(){ const g=$('#audioGate'); g.classList.remove('show'); g.setAttribute('aria-hidden','true'); }
+    function resumeAudioOnce(){ ensureAudio(); primePlayer(true); window.removeEventListener('pointerdown', resumeAudioOnce); window.removeEventListener('touchstart', resumeAudioOnce); }
+    window.addEventListener('pointerdown', resumeAudioOnce, {passive:true});
+    window.addEventListener('touchstart', resumeAudioOnce, {passive:true});
+    window.addEventListener('touchend', resumeAudioOnce, {passive:true});
+
+    function updateMidiSummary(){
+      try{
+        let t='Closed';
+        if(midiConfig && midiAccess && midiConfig.inputId){
+          const port=midiAccess.inputs.get(midiConfig.inputId);
+          if(port){ t=port.name + (midiConfig.channel>=0? (' • Ch ' + midiConfig.channel) : ''); }
+        }
+        const el=document.querySelector('#midiSummary'); if(el) el.textContent=t;
+      }catch(e){}
+    }
+    function updateKeysSummary(){
+      try{
+        const keys=[keyMap.kick,keyMap.snare,keyMap.hihat,keyMap.loopA,keyMap.loopS,keyMap.loopD,keyMap.loopF].filter(Boolean);
+        const el=document.querySelector('#keysSummary'); if(el) el.textContent = (keys.length + ' keys set');
+      }catch(e){}
+    }
+
+  // UI scale persistence
+  const UI_KEY='bm:ui'; let uiCfg={ scale:0.95 };
+  function loadUiCfg(){ try{ const s=JSON.parse(localStorage.getItem(UI_KEY)||'null'); if(s) uiCfg={...uiCfg, ...s}; }catch(e){} }
+  function saveUiCfg(){ localStorage.setItem(UI_KEY, JSON.stringify(uiCfg)); const el=$('#viewSummary'); if(el) el.textContent = `Scale ${Math.round(uiCfg.scale*100)}%`; }
+  function applyUiScale(){ document.documentElement.style.setProperty('--ui-scale', String(uiCfg.scale)); saveUiCfg(); }
+
+    (async function(){
+  loadAudioCfg();
+  // Pre-initialize AudioContext/graph so first tap is instant
+  try{ initAudioContext(); }catch(_){ }
+  loadSamplesCfg();
+  // Pre-decode selected custom samples (if any)
+  prewarmSamples();
+  loadUiCfg();
+      loadTheme();
+      loadKeyMap();
+      loadControls();
+      loadMIDI();
+      setupLoopers();
+      updateLooperKeyLabels();
+      setupLooperKeys();
+      renderMIDILabels(); updateMidiSummary();
+  updateAudioSummary();
+  updateSamplesSummary();
+  applyUiScale();
+      updateKeyInputs(); updateKeysSummary();
+      loadPanels();
+      document.querySelector('#midiPanel')?.addEventListener('toggle', savePanels);
+      document.querySelector('#keysPanel')?.addEventListener('toggle', savePanels);
+      wireUI();
+      await initMIDI();
+      const res = await loadYT();
+      if(res!=='ok' || !window.YT){
+        toast('Using CSP‑safe YouTube mode');
+        initLiteIfNeeded();
+      }
+      if(isiOS()) showGate();
+
+      // Prevent iOS double-tap zoom while preserving single tap latency
+      let lastTouchTime = 0;
+      window.addEventListener('touchend', (e)=>{
+        const now = Date.now();
+        if(now - lastTouchTime < 300){ e.preventDefault(); }
+        lastTouchTime = now;
+      }, {passive:false});
+      // Ensure CSS aspect ratio controls height; no JS resizing
+      adjustPlayerLayout();
+    })();
+  </script>
+</body>
+</html>

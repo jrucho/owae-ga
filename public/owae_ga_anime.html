@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>owae.ga — Minimal site powered by anime.js</title>
+<meta name="description" content="owae.ga — Swiss‑lofi creative lab. All animations powered by anime.js.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e14;
+    --ink:#eaeef2;
+    --muted:#a8b3c1;
+    --mint:#8fe3cf;     /* sea‑foam / mint accent */
+    --sepia:#e8c48c;    /* warm sepia accent */
+    --grid:12;
+    --pad:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;scroll-behavior:smooth;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 var(--pad)}
+  header{
+    position:sticky;top:0;z-index:10;
+    backdrop-filter:saturate(140%) blur(8px);
+    background:linear-gradient(180deg,rgba(11,14,20,.9),rgba(11,14,20,.65));
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .dot{width:14px;height:14px;border-radius:50%;background:var(--mint);box-shadow:0 0 24px var(--mint)}
+  .brand b{letter-spacing:.5px}
+  .menu a{margin-left:18px;font-weight:600;opacity:.85}
+  .menu a:hover{opacity:1}
+  /* sections */
+  section{padding:96px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  section:last-of-type{border-bottom:0}
+  h1,h2{margin:0 0 12px 0;line-height:1}
+  h1{font-size:clamp(32px,6vw,64px);font-weight:800}
+  h2{font-size:clamp(20px,3.2vw,34px);font-weight:800;letter-spacing:.2px}
+  p{color:var(--muted);margin:8px 0 0 0;max-width:70ch}
+  .tag{display:inline-block;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:#111;background:var(--mint);padding:6px 10px;border-radius:999px;font-weight:700}
+  .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center}
+  .cta{display:flex;gap:14px;margin-top:24px}
+  .btn{border:1px solid rgba(255,255,255,.2);padding:12px 16px;border-radius:10px;font-weight:700}
+  .btn.primary{background:var(--mint);color:#102a26;border-color:transparent}
+  .btn:hover{transform:translateY(-1px)}
+  .panel{
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px
+  }
+  /* grid cards */
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:24px}
+  .col-4{grid-column:span 4}
+  .col-6{grid-column:span 6}
+  .col-12{grid-column:span 12}
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr}
+    .col-4,.col-6{grid-column:span 12}
+  }
+
+  .card{
+    position:relative;overflow:hidden;min-height:180px;border-radius:14px;
+    background:radial-gradient(120% 120% at 0% 0%,rgba(143,227,207,.15),rgba(232,196,140,.08) 40%,rgba(255,255,255,.02) 100%);
+    border:1px solid rgba(255,255,255,.08);padding:18px;
+  }
+  .card h3{margin:0 0 6px 0}
+  .card p{margin:0;color:var(--muted)}
+  .badge{
+    position:absolute;top:12px;right:12px;font-size:11px;padding:6px 10px;border-radius:999px;
+    background:rgba(143,227,207,.16);border:1px solid rgba(143,227,207,.35);color:var(--mint);font-weight:700;letter-spacing:.6px
+  }
+  /* SVG wordmark */
+  .wordmark{width:100%;height:auto;display:block}
+  /* footer */
+  footer{padding:48px 0 80px 0;color:var(--muted);text-align:center}
+  .small{font-size:12px;color:#8793a1}
+  /* reveal utility */
+  .reveal{opacity:0;transform:translateY(18px)}
+  /* marquee */
+  .marquee{overflow:hidden;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02)}
+  .marquee .track{display:flex;gap:40px;white-space:nowrap;will-change:transform;padding:12px 0;font-weight:700;letter-spacing:.8px}
+  /* contact */
+  form{display:grid;gap:12px;margin-top:12px}
+  input,textarea{background:#0f141b;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px;color:var(--ink);font:inherit}
+  textarea{min-height:120px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">
+        <span class="dot" aria-hidden="true"></span>
+        <b>owae.ga</b>
+      </div>
+      <div class="menu" role="navigation" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#lab">Lab</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap" id="home">
+    <div class="hero">
+      <div>
+        <span class="tag reveal">Swiss‑lofi creative lab</span>
+        <h1 class="reveal">Crafting visuals, music & playful web tools — with <span style="color:var(--mint)">precision</span> and <span style="color:var(--sepia)">soul</span>.</h1>
+        <p class="reveal">Minimal design, brutalist nuances, and soft mint/sepia glows. Everything animated by <b>anime.js</b> — no other effects libraries.</p>
+        <div class="cta reveal">
+          <a class="btn primary" href="#work">See work</a>
+          <a class="btn" href="#lab">Enter the Lab</a>
+        </div>
+      </div>
+      <div class="panel reveal" aria-label="Animated wordmark">
+        <!-- SVG wordmark with stroke‑draw animation -->
+        <svg class="wordmark" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title desc">
+          <title id="title">owae.ga wordmark</title>
+          <desc id="desc">Custom outline wordmark to animate with stroke drawing.</desc>
+          <g stroke="url(#grad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path class="wm" d="M70 210c0-77 63-140 140-140s140 63 140 140-63 140-140 140S70 287 70 210Z"/>
+            <path class="wm" d="M420 110l60 200 60-200 60 200 60-200"/>
+            <path class="wm" d="M825 95c-68 0-123 55-123 123s55 123 123 123c37 0 69-16 91-42M1015 95v246"/>
+            <path class="wm" d="M1060 340c42 0 76-34 76-76s-34-76-76-76c-30 0-56 18-68 44"/>
+          </g>
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#8fe3cf"/>
+              <stop offset="100%" stop-color="#e8c48c"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <h2 class="reveal">Selected work</h2>
+      <p class="reveal">A few modular pieces. Hover to feel the subtle parallax—animated with anime.js transforms.</p>
+      <div class="grid">
+        <article class="card col-6 reveal" data-parallax>
+          <span class="badge">Video</span>
+          <h3>Institutional film</h3>
+          <p>Quiet geometry, human scale, mint lights. Editing & motion.</p>
+        </article>
+        <article class="card col-6 reveal" data-parallax>
+          <span class="badge">Web</span>
+          <h3>Swiss VJ</h3>
+          <p>Minimal projection tools for live sets — canvas & WebGL.</p>
+        </article>
+        <article class="card col-4 reveal" data-parallax>
+          <span class="badge">Music</span>
+          <h3>Santo Frío</h3>
+          <p>Lo‑fi hip‑hop textures and sacred‑urban imagery.</p>
+        </article>
+        <article class="card col-4 reveal" data-parallax>
+          <span class="badge">Plugin</span>
+          <h3>Beatmaker Cues</h3>
+          <p>Sample, loop, and perform — inside YouTube.</p>
+        </article>
+        <article class="card col-4 reveal" data-parallax>
+          <span class="badge">Print</span>
+          <h3>Swiss‑art posters</h3>
+          <p>Grids, type, and hand‑ink textures.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="wrap">
+      <div class="track" id="marqueeTrack">
+        <span>owae.ga — creative lab</span>
+        <span>•</span>
+        <span>lo‑fi × swiss</span>
+        <span>•</span>
+        <span>anime.js only animations</span>
+        <span>•</span>
+        <span>mint + sepia</span>
+        <span>•</span>
+        <span>Lausanne → Compostela</span>
+        <span>•</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="lab">
+    <div class="wrap">
+      <h2 class="reveal">Lab</h2>
+      <p class="reveal">Small experiments and tools. Click to trigger micro‑timelines.</p>
+      <div class="grid">
+        <button class="card col-6 reveal btn-lab" data-lab="pulse">
+          <h3>Mint pulse</h3>
+          <p>Ambient glow + scale ripple.</p>
+        </button>
+        <button class="card col-6 reveal btn-lab" data-lab="shuffle">
+          <h3>Grid shuffle</h3>
+          <p>Staggered translate/rotate shuffle.</p>
+        </button>
+        <button class="card col-12 reveal btn-lab" data-lab="draw">
+          <h3>Draw wordmark</h3>
+          <p>Replays the stroke animation timeline.</p>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap">
+      <h2 class="reveal">About</h2>
+      <p class="reveal">owae.ga is a small Swiss‑based studio weaving music, moving images and web tools into cohesive artifacts. The aesthetic blends clean grids with worn textures, mint with sepia, silence with impact.</p>
+      <div class="grid">
+        <div class="panel col-4 reveal">
+          <h3>Focus</h3>
+          <p>Design systems, editorial video, audio tools.</p>
+        </div>
+        <div class="panel col-4 reveal">
+          <h3>Approach</h3>
+          <p>One‑file prototypes, offline‑first, human‑scale UX.</p>
+        </div>
+        <div class="panel col-4 reveal">
+          <h3>Stack</h3>
+          <p>Canvas/WebGL, Web Audio, and pragmatic vanilla JS.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <h2 class="reveal">Contact</h2>
+      <p class="reveal">Say hello. A minimal form (no backend, demo only).</p>
+      <form class="reveal" onsubmit="event.preventDefault(); anime({targets: this, scale:[1,1.02,1], duration:400, easing:'easeInOutQuad'});">
+        <input type="text" placeholder="Name">
+        <input type="email" placeholder="Email">
+        <textarea placeholder="Message"></textarea>
+        <button class="btn primary" type="submit">Send</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="small">© <span id="year"></span> owae.ga — Built with anime.js</div>
+  </div>
+</footer>
+
+<!-- anime.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha512-4bog0kPp7hFvA+Yq1dpwJh6LqT5MTaYNmMLG0qC4dGm9mGgq+LUpYg9s7A1z7n6r7z8Q4eNo+uN4wZkQfL5Y3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  // Year
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Intro: draw the SVG wordmark
+  const paths = document.querySelectorAll('.wm');
+  paths.forEach(p => {
+    const len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+  });
+  const drawTL = anime.timeline({autoplay:true});
+  drawTL.add({
+    targets: '.wm',
+    strokeDashoffset: [anime.setDashoffset, 0],
+    duration: 1200,
+    delay: anime.stagger(160),
+    easing: 'easeInOutSine'
+  }).add({
+    targets: '.wm',
+    filter: ['drop-shadow(0 0 0 rgba(143,227,207,0))','drop-shadow(0 0 18px rgba(143,227,207,.45))'],
+    duration: 600,
+    easing: 'easeOutQuad'
+  }, '-=400');
+
+  // Reveal on load for hero bits
+  anime({
+    targets: '#home .reveal',
+    opacity: [0,1],
+    translateY: [18, 0],
+    duration: 800,
+    delay: anime.stagger(120, {start: 200}),
+    easing: 'easeOutCubic'
+  });
+
+  // Intersection reveal for other sections (all animations handled by anime.js)
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        anime({
+          targets: entry.target,
+          opacity: [0,1],
+          translateY: [18, 0],
+          duration: 700,
+          easing: 'easeOutQuad'
+        });
+        io.unobserve(entry.target);
+      }
+    });
+  }, {threshold: 0.15});
+  document.querySelectorAll('section .reveal, .card.reveal, .panel.reveal, form.reveal, h2.reveal, p.reveal').forEach(el=>io.observe(el));
+
+  // Card parallax on hover using anime.js
+  document.querySelectorAll('[data-parallax]').forEach(card=>{
+    card.addEventListener('mouseenter', ()=>{
+      anime({targets: card, translateY: -6, scale: 1.02, rotateZ: [-0.2,0.2], duration: 450, easing:'easeOutQuad'});
+    });
+    card.addEventListener('mouseleave', ()=>{
+      anime({targets: card, translateY: 0, scale: 1, rotateZ: 0, duration: 450, easing:'easeOutQuad'});
+    });
+  });
+
+  // Marquee using anime.js (infinite loop)
+  const track = document.getElementById('marqueeTrack');
+  anime({
+    targets: track,
+    translateX: ['0%', '-50%'],
+    duration: 20000,
+    easing: 'linear',
+    loop: true
+  });
+
+  // Lab buttons
+  const lab = {
+    pulse(){
+      anime({
+        targets: '.dot',
+        scale: [{value: 1.0, duration: 0}, {value: 1.25, duration: 300}, {value:1, duration: 500}],
+        boxShadow: [
+          {value:'0 0 16px rgba(143,227,207,.6)', duration:0},
+          {value:'0 0 28px rgba(143,227,207,.9)', duration:300},
+          {value:'0 0 16px rgba(143,227,207,.6)', duration:500},
+        ],
+        easing:'easeInOutQuad'
+      });
+    },
+    shuffle(){
+      anime({
+        targets: '.card[data-parallax]',
+        translateX: function(){ return anime.random(-12,12); },
+        translateY: function(){ return anime.random(-12,12); },
+        rotate: function(){ return anime.random(-2,2); },
+        duration: 500,
+        easing: 'easeInOutQuad',
+        direction:'alternate'
+      });
+    },
+    draw(){
+      // Replay the wordmark draw timeline
+      paths.forEach(p => {
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len;
+        p.style.strokeDashoffset = len;
+      });
+      drawTL.restart();
+    }
+  };
+  document.querySelectorAll('.btn-lab').forEach(btn=>{
+    btn.addEventListener('click', ()=> lab[btn.dataset.lab] && lab[btn.dataset.lab]());
+  });
+
+  // Smooth scroll accent using anime (override default for a nice ease)
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click', e=>{
+      const id = a.getAttribute('href');
+      const el = document.querySelector(id);
+      if(!el) return;
+      e.preventDefault();
+      const top = el.getBoundingClientRect().top + window.scrollY - 70;
+      anime({targets:[document.documentElement, document.body], scrollTop: top, duration: 700, easing:'easeInOutCubic'});
+    });
+  });
+</script>
+</body>
+</html>

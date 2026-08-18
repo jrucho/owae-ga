@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Setlist Architect</title>
+<meta name="color-scheme" content="light dark">
+<style>
+  /* --- CSS VARIABLES --- */
+  :root{
+    --bg: #0f1216;
+    --card:#171b21;
+    --text:#e9eef5;
+    --muted:#a9b3c2;
+    --accent:#5cc8ff;
+    --accent-2:#9bff89;
+    --bad:#ff5c7a;
+    --good:#69e28f;
+    --warn:#ffd166;
+    --border:#273142;
+    --focus:#ffd166;
+  }
+  :root.light{
+    --bg:#f7f9fc; --card:#ffffff; --text:#0f1720; --muted:#4b5563; --accent:#0ea5e9; --accent-2:#10b981; --bad:#dc2626; --good:#059669; --warn:#d97706; --border:#e5e7eb; --focus:#0ea5e9;
+  }
+  html,body{height:100%;}
+  body{margin:0;font:500 16px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--text);} 
+  *{box-sizing:border-box}
+  a{color:var(--accent)}
+  /* Layout */
+  header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg, rgba(0,0,0,.25), transparent), var(--bg);border-bottom:1px solid var(--border);} 
+  .bar{display:flex;gap:.75rem;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:.75rem 1rem;}
+  .bar .left,.bar .right{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  h1{font-size:1.05rem;margin:0;letter-spacing:.2px;display:flex;align-items:center;gap:.5rem}
+  .badge{font-size:.7rem;padding:.2rem .45rem;border:1px solid var(--border);border-radius:.5rem;color:var(--muted)}
+  .container{max-width:1200px;margin:0 auto;padding:1rem;display:grid;grid-template-columns: 1.1fr .9fr;gap:1rem}
+  @media (max-width: 980px){.container{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 0 rgba(0,0,0,.06);}
+  .card h2{font-size:.95rem;margin:0;padding:.9rem 1rem;border-bottom:1px solid var(--border)}
+  .card .body{padding:1rem}
+  /* Controls */
+  .btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--text);padding:.55rem .8rem;border-radius:.65rem;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#081018}
+  .btn.good{background:var(--good);border-color:var(--good);color:#07130c}
+  .btn.bad{background:var(--bad);border-color:var(--bad);color:white}
+  .btn.small{padding:.35rem .6rem;font-size:.85rem;border-radius:.5rem}
+  .btn.ghost{border-color:transparent}
+  .btn[disabled]{opacity:.6;cursor:not-allowed}
+  label{font-size:.8rem;color:var(--muted);display:block;margin:.25rem 0}
+  input, select{width:100%;padding:.5rem .6rem;border-radius:.6rem;border:1px solid var(--border);background:transparent;color:var(--text)}
+  input::placeholder{color:#8893a6}
+  .row{display:grid;grid-template-columns:repeat(12,1fr);gap:.5rem}
+  .row > *{grid-column: span 12}
+  .sp-6{grid-column: span 6}
+  .sp-4{grid-column: span 4}
+  .sp-3{grid-column: span 3}
+  .sp-2{grid-column: span 2}
+  .muted{color:var(--muted)}
+  .pill{padding:.15rem .45rem;border-radius:.5rem;border:1px solid var(--border);font-size:.75rem;color:var(--muted)}
+  .divider{height:1px;background:var(--border);margin:1rem 0}
+  .list{display:flex;flex-direction:column;gap:.5rem}
+  .track{display:grid;grid-template-columns: 26px 1fr auto; gap:.6rem; align-items:center; padding:.5rem; border:1px solid var(--border); border-radius:.7rem; background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));}
+  .drag-handle{cursor:grab;user-select:none;text-align:center;color:var(--muted)}
+  .track.dragging{opacity:.6}
+  .track .meta{display:flex; flex-wrap:wrap; gap:.4rem .6rem; align-items:center}
+  .meta .kv{display:inline-flex;align-items:center;gap:.35rem}
+  .meta .kv b{font-weight:600}
+  .track-title{font-weight:650}
+  .track-actions{display:flex;gap:.35rem; align-items:center}
+  .track-actions .btn.small{white-space:nowrap}
+  .compat{font-size:.8rem}
+  .compat b{font-weight:700}
+  .compat .tip{display:block;color:var(--muted)}
+  .warn{color:var(--warn)}
+  .danger{color:var(--bad)}
+  .ok{color:var(--good)}
+  .kbd{font:600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; border:1px solid var(--border); padding:.15rem .35rem; border-radius:.35rem; color:var(--muted)}
+  .footerbar{display:flex;gap:.5rem;align-items:center;justify-content:space-between;margin-top:.75rem}
+  .sum{display:flex;gap:1rem;flex-wrap:wrap}
+  .sum .box{padding:.5rem .7rem;border:1px solid var(--border);border-radius:.6rem}
+  .over{font-weight:700}
+  /* Tech sheet & print */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+  @media (max-width: 800px){.grid2{grid-template-columns:1fr}}
+  textarea{width:100%;min-height:120px;padding:.6rem;border-radius:.6rem;border:1px solid var(--border);background:transparent;color:var(--text)}
+  .print-area{display:none}
+  @media print{
+    header, .no-print{display:none !important}
+    body{background:white;color:black}
+    .container{max-width:100%;padding:0;margin:0}
+    .print-area{display:block;padding:1cm}
+    h1,h2,h3{color:black}
+    .print-table{width:100%;border-collapse:collapse;font-size:12px}
+    .print-table th,.print-table td{border:1px solid #000;padding:.25rem .35rem;text-align:left}
+    .print-section{margin:0 0 16px 0}
+  }
+  /* Focus visibility */
+  :focus-visible{outline:3px solid var(--focus); outline-offset:2px; border-radius:6px}
+</style>
+</head>
+<body>
+<a class="kbd no-print" href="#main" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
+<header>
+  <div class="bar" role="toolbar" aria-label="App toolbar">
+    <div class="left">
+      <h1 aria-label="Setlist Architect"><span aria-hidden="true">🎛️</span> Setlist Architect <span class="badge" title="WCAG 2.2 AA">v1</span></h1>
+      <button id="themeBtn" class="btn small" aria-pressed="false" title="Toggle theme (Alt+T)">Theme</button>
+      <label class="pill" for="presetLength">Preset length</label>
+      <select id="presetLength" aria-label="Common show length">
+        <option value="30">30 min</option>
+        <option value="45">45 min</option>
+        <option value="60" selected>60 min</option>
+        <option value="75">75 min</option>
+        <option value="90">90 min</option>
+      </select>
+      <span class="pill" id="offlineStatus" role="status" aria-live="polite" title="Offline readiness">offline: unknown</span>
+    </div>
+    <div class="right">
+      <button id="importCsvBtn" class="btn small" title="Import CSV">Import CSV</button>
+      <button id="exportCsvBtn" class="btn small" title="Export CSV">Export CSV</button>
+      <button id="exportZipBtn" class="btn small" title="Export bundle (ZIP)">Export Bundle</button>
+      <button id="printBtn" class="btn primary small" title="Print tech sheet">Print Tech Sheet</button>
+    </div>
+  </div>
+</header>
+<main id="main" class="container" tabindex="-1">
+  <!-- LEFT: Setlist builder -->
+  <section class="card" aria-labelledby="setlistH">
+    <h2 id="setlistH">Setlist</h2>
+    <div class="body">
+      <form id="addForm" class="row no-print" aria-label="Add track">
+        <div class="sp-4"><label for="title">Title</label><input id="title" name="title" placeholder="Song title" required></div>
+        <div class="sp-2"><label for="key">Key</label><input id="key" name="key" placeholder="e.g. C, F#m" aria-describedby="keyHelp"><div id="keyHelp" class="muted" style="font-size:.75rem">Major: C, D♭, F# · Minor: Am, F#m</div></div>
+        <div class="sp-2"><label for="bpm">BPM</label><input id="bpm" name="bpm" type="number" inputmode="numeric" placeholder="120" min="30" max="300"></div>
+        <div class="sp-2"><label for="duration">Duration</label><input id="duration" name="duration" placeholder="mm:ss" pattern="^\\d{1,2}:[0-5]\\d$" title="mm:ss"></div>
+        <div class="sp-2"><label for="energy">Energy</label>
+          <select id="energy" name="energy">
+            <option>Chill</option>
+            <option>Groove</option>
+            <option selected>Hype</option>
+          </select>
+        </div>
+        <div class="sp-12" style="display:flex;gap:.5rem;align-items:end">
+          <button class="btn good" type="submit" id="addBtn"><span aria-hidden="true">＋</span> Add track</button>
+          <button class="btn" type="button" id="addBreakBtn" title="Insert a break after the last selected item">Add break</button>
+        </div>
+      </form>
+      <div id="setlist" class="list" role="list" aria-label="Track list"></div>
+      <div class="footerbar">
+        <div class="sum" aria-live="polite">
+          <div class="box">Tracks: <b id="count">0</b></div>
+          <div class="box">Total time: <b id="total">00:00</b></div>
+          <div class="box">Target: <b id="target">60:00</b></div>
+          <div class="box over" id="overBox">+<span id="over">00:00</span></div>
+        </div>
+        <div>
+          <span class="muted">Keyboard:</span> <span class="kbd">↑/↓</span> select · <span class="kbd">⌥T</span> theme · <span class="kbd">⌥N</span> new
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- RIGHT: MIDI + Tech sheet -->
+  <aside class="card" aria-labelledby="midiH">
+    <h2 id="midiH">Show tools</h2>
+    <div class="body">
+      <div class="card" style="margin-bottom:.75rem">
+        <h2 style="border:none">MIDI deck</h2>
+        <div class="body">
+          <div class="row">
+            <div class="sp-12"><label for="midiOut">Output device</label>
+              <select id="midiOut" aria-label="MIDI output"></select>
+              <div id="midiStatus" class="muted" role="status" aria-live="polite" style="margin-top:.25rem">Web MIDI: checking…</div>
+            </div>
+            <div class="sp-12" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+              <button class="btn small" id="sendTest">Send Test PC</button>
+              <button class="btn small" id="panicBtn">All Notes Off</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="border:none">Tech sheet</h2>
+        <div class="body">
+          <div class="grid2">
+            <div>
+              <label for="patchList">Patch list (one per line: Ch. — Source — Mic/DI)</label>
+              <textarea id="patchList" placeholder="1 — Lead Vocal — SM58\n2 — Guitar — DI\n3 — Synth — DI + phantom"></textarea>
+            </div>
+            <div>
+              <label for="backline">Backline</label>
+              <textarea id="backline" placeholder="Drum kit (no cymbals), 1x guitar amp, 2x keyboard stands"></textarea>
+            </div>
+            <div>
+              <label for="power">Power / DI / Phantom needs</label>
+              <textarea id="power" placeholder="3× DI with phantom (synths), 4× IEC power, 1× power strip stage left"></textarea>
+            </div>
+            <div>
+              <label for="notes">Notes</label>
+              <textarea id="notes" placeholder="Changeover 15 min. FOH scenes preloaded."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+</main>
+
+<!-- Print-only area -->
+<section class="print-area" aria-hidden="true">
+  <h1>Tech Sheet — Setlist Architect</h1>
+  <div class="print-section">
+    <h2>Setlist Summary</h2>
+    <table class="print-table" id="printSet"></table>
+    <p><b>Total time:</b> <span id="printTotal">00:00</span> — <b>Target:</b> <span id="printTarget">00:00</span></p>
+  </div>
+  <div class="print-section">
+    <h2>Patch List</h2>
+    <pre id="printPatch"></pre>
+  </div>
+  <div class="print-section">
+    <h2>Backline</h2>
+    <pre id="printBackline"></pre>
+  </div>
+  <div class="print-section">
+    <h2>DI / Phantom / Power</h2>
+    <pre id="printPower"></pre>
+  </div>
+  <div class="print-section">
+    <h2>Notes</h2>
+    <pre id="printNotes"></pre>
+  </div>
+</section>
+
+<!-- Import CSV dialog (lightweight) -->
+<dialog id="csvDialog" class="card">
+  <h2 style="margin:0;padding:1rem;border-bottom:1px solid var(--border)">Import CSV</h2>
+  <div class="body">
+    <p class="muted" style="margin-top:0">Columns: Title, Key, BPM, Duration(mm:ss), Energy, BankMSB, BankLSB, Program</p>
+    <input type="file" id="csvFile" accept=".csv" />
+    <div style="margin-top:.75rem;display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn" id="cancelCsv">Cancel</button>
+      <button class="btn primary" id="doImport">Import</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+// ===== Utilities =====
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const fmtTime = secs => {
+  const m = Math.floor(secs/60), s = secs%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+};
+const parseTime = str => { if(!str) return 0; const [m,s] = (str||'0:00').split(':').map(x=>parseInt(x,10)||0); return m*60+s; };
+const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+const uid = ()=>'id-'+Math.random().toString(36).slice(2,9);
+
+// ===== Minimal music theory helpers (fallback if Tonal.js not present) =====
+const NOTE_INDEX = {C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
+const INDEX_NOTE = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function parseKey(str){
+  if(!str) return null; str = str.trim();
+  const m = str.match(/^([A-Ga-g])([#b♭]?)(m|min)?$/);
+  if(!m) return null; let n = m[1].toUpperCase() + (m[2]==='b'||m[2]==='♭'?'b':m[2]||'');
+  let mode = (m[3]? 'minor':'major');
+  let idx = NOTE_INDEX[n];
+  if(idx==null){ // try flats to sharps
+    if(n.endsWith('b')) idx = (NOTE_INDEX[n[0]] + 11) % 12;
+  }
+  return { tonic:n.replace('♭','b'), index:idx, mode };
+}
+function isRelative(k1,k2){
+  if(!k1||!k2) return false; if(k1.mode===k2.mode) return false;
+  // major -> rel minor is -3 semitones; minor -> rel major is +3
+  if(k1.mode==='major' && k2.mode==='minor') return ((k1.index + 9) % 12)===k2.index; // -3
+  if(k1.mode==='minor' && k2.mode==='major') return ((k1.index + 3) % 12)===k2.index; // +3
+  return false;
+}
+function fifthsDist(i,j){
+  // distance around circle of fifths
+  const FIFTH = 7; // mod 12
+  let best = 12; for(let k=0;k<12;k++){ const a=(i + k*FIFTH)%12; const d = Math.min((a-j+12)%12,(j-a+12)%12); best=Math.min(best,d);} return best;
+}
+function keyScore(k1,k2){
+  if(!k1||!k2) return 0.5;
+  if(k1.index===k2.index && k1.mode===k2.mode) return 1.0;
+  if(isRelative(k1,k2)) return 0.9;
+  const dF = fifthsDist(k1.index,k2.index);
+  if(dF===1 && k1.mode===k2.mode) return 0.85; // +/- fifth
+  const semi = Math.min((k1.index-k2.index+12)%12,(k2.index-k1.index+12)%12);
+  if(semi===1) return 0.65;
+  if(semi===6) return 0.45; // tritone
+  return 0.6 - 0.02*semi + 0.03*(3-dF); // heuristic
+}
+function bpmScore(a,b){ if(!a||!b) return 0.6; const diff = Math.abs(a-b); if(diff<=2) return 1; if(diff<=5) return .9; if(diff<=8) return .8; if(diff<=12) return .65; return .45; }
+function energyScore(e1,e2){ const map={Chill:0,Groove:1,Hype:2,Break: -1}; const a=map[e1]??1,b=map[e2]??1; const d=Math.abs(a-b); if(d===0) return 1; if(d===1) return .85; if(a>b) return .7; return .6; }
+function compatibility(a,b){
+  const ks = keyScore(parseKey(a.key), parseKey(b.key));
+  const bs = bpmScore(+a.bpm||0, +b.bpm||0);
+  const es = energyScore(a.energy,b.energy);
+  return Math.round((ks*.5 + bs*.3 + es*.2) * 100);
+}
+function transitionTip(a,b){
+  const k1=parseKey(a.key), k2=parseKey(b.key); const diffBPM=Math.abs((+a.bpm||0)-(+b.bpm||0));
+  let tips=[];
+  if(k1 && k2){
+    if(k1.index===k2.index && k1.mode!==k2.mode) tips.push("parallel switch for color");
+    else if(isRelative(k1,k2)) tips.push("relative key blend");
+    else if(fifthsDist(k1.index,k2.index)===1) tips.push("V→I style cadence");
+    else if(Math.min((k1.index-k2.index+12)%12,(k2.index-k1.index+12)%12)===1) tips.push("+1 semitone lift");
+    else tips.push("filter sweep + riser");
+  }
+  if(diffBPM<=2) tips.push("straight beatmatch");
+  else if(diffBPM<=8) tips.push("tempo ramp ±"+diffBPM+" BPM");
+  else tips.push("breakdown / pause, reset tempo");
+  if(energyScore(a.energy,b.energy)<.75){ if(a.energy==='Hype' && b.energy!=='Hype') tips.push("end on impact then tails"); else tips.push("short breakdown"); }
+  return tips.join(" · ");
+}
+
+// ===== State =====
+let state = {
+  targetMinutes: 60,
+  theme: (localStorage.getItem('theme')||'dark'),
+  setlist: [],
+  tech: {patchList:'',backline:'',power:'',notes:''},
+  selectedId: null,
+  midi: { access:null, out:null }
+};
+
+// ===== Storage (IndexedDB via idb-keyval if available, else localStorage) =====
+let kv = null; // will hold idb-keyval
+async function storageInit(){
+  try {
+    if(window.idbKeyval){ kv = window.idbKeyval; } else {
+      // dynamically load idb-keyval
+      await loadScript('https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/idb-keyval-iife.min.js');
+      kv = window.idbKeyval;
+    }
+  } catch(e){ kv = null; }
+}
+async function saveAll(){
+  const payload = { targetMinutes:state.targetMinutes, theme:state.theme, setlist:state.setlist, tech:state.tech };
+  if(kv){ await kv.set('setlist-architect', payload); }
+  else { localStorage.setItem('setlist-architect', JSON.stringify(payload)); }
+}
+async function loadAll(){
+  let data=null;
+  if(kv){ data = await kv.get('setlist-architect'); }
+  else { try{ data = JSON.parse(localStorage.getItem('setlist-architect')||'null'); }catch(e){} }
+  if(data){ Object.assign(state, data); }
+}
+const saveDebounced = debounce(saveAll, 350);
+
+// ===== Dynamic loaders =====
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s); }); }
+
+// ===== Service Worker (cache libs when on secure origin) =====
+async function setupSW(){
+  const secure = location.protocol.startsWith('https') || location.hostname==='localhost';
+  if(!('serviceWorker' in navigator) || !secure){ $('#offlineStatus').textContent = 'offline: local only'; return; }
+  const swCode = `const CACHE='setlist-architect-v1'; const ASSETS=[self.registration.scope, 
+    'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+    'https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/idb-keyval-iife.min.js',
+    'https://cdn.jsdelivr.net/npm/@tonaljs/tonal@4.12.0/dist/tonal.min.js'
+  ];
+  self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())); });
+  self.addEventListener('activate',e=>{ e.waitUntil(self.clients.claim()); });
+  self.addEventListener('fetch',e=>{ const u=new URL(e.request.url); if(u.origin===location.origin || ASSETS.includes(e.request.url)){
+    e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request).then(resp=>{ const copy=resp.clone(); caches.open(CACHE).then(c=>c.put(e.request,copy)); return resp; }).catch(()=>caches.match(e.request)) ));
+  }});
+  `;
+  try{
+    const blobUrl = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
+    const reg = await navigator.serviceWorker.register(blobUrl);
+    $('#offlineStatus').textContent = 'offline: cached';
+  }catch(err){ $('#offlineStatus').textContent = 'offline: not cached'; }
+}
+
+// ===== Rendering =====
+function render(){
+  document.documentElement.classList.toggle('light', state.theme==='light');
+  $('#target').textContent = fmtTime(state.targetMinutes*60);
+  $('#printTarget').textContent = fmtTime(state.targetMinutes*60);
+
+  // Setlist list
+  const list = $('#setlist'); list.innerHTML='';
+  state.setlist.forEach((t,idx)=>{
+    const el = document.createElement('div'); el.className='track'; el.setAttribute('role','listitem'); el.draggable=true; el.dataset.id=t.id;
+    el.innerHTML = `
+      <div class="drag-handle" title="Drag to reorder" aria-hidden="true">⋮⋮</div>
+      <div>
+        <div class="track-title">${t.title||'Untitled'} ${t.type==='break'?'<span class="pill">Break</span>':''}</div>
+        <div class="meta">
+          ${t.type==='break'? '' : `
+          <span class="kv"><b>Key</b> ${t.key||'—'}</span>
+          <span class="kv"><b>BPM</b> ${t.bpm||'—'}</span>
+          <span class="kv"><b>Energy</b> ${t.energy||'—'}</span>`}
+          <span class="kv"><b>Dur</b> ${t.duration||'00:00'}</span>
+          ${t.type==='break'? '' : `<span class="kv" title="MIDI Program Change"><b>PC</b> ${t.bankMSB??0}/${t.bankLSB??0}/${t.program??0}</span>`}
+        </div>
+        ${idx<state.setlist.length-1 && t.type!=='break' && state.setlist[idx+1].type!=='break' ? (()=>{
+          const next = state.setlist[idx+1]; const score = compatibility(t,next); const tip = transitionTip(t,next);
+          return `<div class="compat">→ Next: <b>${score}%</b> <span class="tip">${tip}</span></div>`;
+        })() : ''}
+      </div>
+      <div class="track-actions">
+        <button class="btn small ghost" data-act="edit" aria-label="Edit ${t.title}">✎</button>
+        <button class="btn small ghost" data-act="dup" aria-label="Duplicate ${t.title}">⧉</button>
+        <button class="btn small ghost" data-act="up" aria-label="Move up">↑</button>
+        <button class="btn small ghost" data-act="down" aria-label="Move down">↓</button>
+        <button class="btn small bad" data-act="del" aria-label="Delete ${t.title}">Delete</button>
+      </div>`;
+    // selection
+    el.tabIndex=0; el.addEventListener('focus',()=>{ state.selectedId=t.id; });
+    // drag events
+    el.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', t.id); el.classList.add('dragging'); });
+    el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+    el.addEventListener('dragover', e=>{ e.preventDefault(); const dragging = $('.track.dragging'); if(!dragging) return; const rect = el.getBoundingClientRect(); const after = (e.clientY - rect.top) > rect.height/2; list.insertBefore(dragging, after ? el.nextSibling : el); });
+    el.addEventListener('drop', ()=>{ // compute new order by DOM
+      const ids = $$('#setlist .track').map(n=>n.dataset.id); state.setlist.sort((a,b)=> ids.indexOf(a.id)-ids.indexOf(b.id)); saveDebounced(); render(); });
+    // actions
+    el.addEventListener('click', (ev)=>{
+      const act = ev.target.closest('[data-act]')?.dataset.act; if(!act) return; ev.preventDefault();
+      const i = state.setlist.findIndex(x=>x.id===t.id);
+      if(act==='del'){ state.setlist.splice(i,1); }
+      if(act==='up' && i>0){ const [x]=state.setlist.splice(i,1); state.setlist.splice(i-1,0,x); }
+      if(act==='down' && i<state.setlist.length-1){ const [x]=state.setlist.splice(i,1); state.setlist.splice(i+1,0,x); }
+      if(act==='dup'){ const copy = JSON.parse(JSON.stringify(t)); copy.id=uid(); copy.title += ' (copy)'; state.setlist.splice(i+1,0,copy); }
+      if(act==='edit'){ openEditor(t); }
+      saveDebounced(); render();
+    });
+    list.appendChild(el);
+  });
+
+  // totals
+  $('#count').textContent = state.setlist.filter(t=>t.type!=='break').length;
+  const totalSecs = state.setlist.reduce((s,t)=> s + parseTime(t.duration), 0);
+  $('#total').textContent = fmtTime(totalSecs);
+  $('#printTotal').textContent = fmtTime(totalSecs);
+  const over = totalSecs - state.targetMinutes*60; $('#over').textContent = fmtTime(Math.abs(over));
+  $('#overBox').style.color = over>0? 'var(--bad)': 'var(--good)';
+
+  // print set table
+  const tbl = $('#printSet');
+  tbl.innerHTML = '<tr><th>#</th><th>Title</th><th>Key</th><th>BPM</th><th>Dur</th><th>Energy</th><th>PC (MSB/LSB/Prog)</th></tr>'+
+    state.setlist.map((t,i)=>`<tr><td>${i+1}</td><td>${t.title}</td><td>${t.key||''}</td><td>${t.bpm||''}</td><td>${t.duration||''}</td><td>${t.energy||''}</td><td>${t.type==='break'?'—':`${t.bankMSB??0}/${t.bankLSB??0}/${t.program??0}`}</td></tr>`).join('');
+  $('#printPatch').textContent = state.tech.patchList||'';
+  $('#printBackline').textContent = state.tech.backline||'';
+  $('#printPower').textContent = state.tech.power||'';
+  $('#printNotes').textContent = state.tech.notes||'';
+}
+
+// Editor dialog (lightweight prompt-based to keep single-file minimal)
+function openEditor(t){
+  const fields = [
+    ['Title','title'],['Key (e.g., C, F#m)','key'],['BPM','bpm'],['Duration mm:ss','duration'],['Energy (Chill/Groove/Hype)','energy'],['Bank MSB','bankMSB'],['Bank LSB','bankLSB'],['Program','program']
+  ];
+  (async()=>{
+    for(const [label, key] of fields){
+      let def = t[key]??''; const val = prompt(label, String(def)); if(val===null) break; if(key==='bpm'||key==='bankMSB'||key==='bankLSB'||key==='program'){ t[key]=val===''?null:parseInt(val,10); } else { t[key]=val; }
+    }
+    saveDebounced(); render();
+  })();
+}
+
+// ===== MIDI =====
+async function midiInit(){
+  const el = $('#midiStatus');
+  try{
+    if(!('requestMIDIAccess' in navigator)){ el.textContent = 'Web MIDI: not supported (use Chrome/Edge on https)'; return; }
+    const access = await navigator.requestMIDIAccess({ sysex:false }); state.midi.access = access;
+    const outs = Array.from(access.outputs.values()); const sel = $('#midiOut'); sel.innerHTML = outs.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+    el.textContent = outs.length? 'MIDI ready — select an output' : 'No MIDI outputs detected';
+    sel.addEventListener('change', ()=>{ const id = sel.value; state.midi.out = access.outputs.get(id)||null; });
+    if(outs[0]){ sel.value=outs[0].id; state.midi.out=outs[0]; }
+  }catch(err){ el.textContent = 'Web MIDI error'; }
+}
+function sendProgramChange(msb=0,lsb=0,prog=0,channel=0){
+  const out = state.midi.out; if(!out) return false; // raw Web MIDI msg: CC 0/32 then PC
+  // Bank Select MSB (CC 0), LSB (CC 32)
+  out.send([0xB0 + channel, 0x00, clamp(msb,0,127)]);
+  out.send([0xB0 + channel, 0x20, clamp(lsb,0,127)]);
+  out.send([0xC0 + channel, clamp(prog,0,127)]);
+  return true;
+}
+
+// ===== CSV & ZIP =====
+function toCSV(){
+  const head = ['Title','Key','BPM','Duration','Energy','BankMSB','BankLSB','Program'];
+  const rows = state.setlist.map(t=>[t.title,t.key||'',t.bpm||'',t.duration||'',t.energy||'',t.bankMSB??'',t.bankLSB??'',t.program??'']);
+  return [head.join(','), ...rows.map(r=>r.map(v=>String(v).includes(',')?`"${String(v).replace(/"/g,'""')}"`:String(v)).join(','))].join('\n');
+}
+function parseCSV(text){
+  // minimal parser for simple CSV
+  const lines = text.split(/\r?\n/).filter(Boolean); if(!lines.length) return [];
+  const out=[]; const parseLine = ln=>{ const cells=[]; let cur='', q=false; for(let i=0;i<ln.length;i++){ const ch=ln[i]; if(ch==='"'){ if(q && ln[i+1]==='"'){ cur+='"'; i++; } else q=!q; } else if(ch===',' && !q){ cells.push(cur); cur=''; } else cur+=ch; } cells.push(cur); return cells; };
+  const header = parseLine(lines[0]).map(h=>h.trim().toLowerCase());
+  for(let i=1;i<lines.length;i++){ const cells = parseLine(lines[i]); const row={}; header.forEach((h,idx)=> row[h]=cells[idx]??''); out.push(row); }
+  return out;
+}
+async function exportZip(){
+  // load JSZip lazily
+  if(!window.JSZip){ await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'); }
+  const zip = new JSZip();
+  const bundle = { meta:{ exportedAt: new Date().toISOString(), app:'Setlist Architect v1' }, settings:{ targetMinutes:state.targetMinutes, theme:state.theme }, setlist:state.setlist, tech:state.tech };
+  zip.file('setlist.json', JSON.stringify(bundle, null, 2));
+  zip.file('setlist.csv', toCSV());
+  const techMd = `# Tech Sheet\n\n## Setlist Summary\n${state.setlist.map((t,i)=>`${i+1}. ${t.title} — ${t.key||''} ${t.bpm?('('+t.bpm+' BPM)'):''} — ${t.duration||''}`).join('\n')}\n\n**Total:** ${$('#total').textContent} / **Target:** ${$('#target').textContent}\n\n## Patch List\n${state.tech.patchList||''}\n\n## Backline\n${state.tech.backline||''}\n\n## DI/Phantom/Power\n${state.tech.power||''}\n\n## Notes\n${state.tech.notes||''}\n`;
+  zip.file('tech-sheet.md', techMd);
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='setlist-architect-bundle.zip'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ===== Event wiring =====
+function bind(){
+  // Theme
+  $('#themeBtn').addEventListener('click',()=>{ state.theme = (state.theme==='light'?'dark':'light'); render(); saveDebounced(); });
+  document.addEventListener('keydown', (e)=>{ if(e.altKey && (e.key==='t'||e.key==='T')){ e.preventDefault(); $('#themeBtn').click(); } });
+
+  // Preset length
+  $('#presetLength').value = String(state.targetMinutes);
+  $('#presetLength').addEventListener('change', e=>{ state.targetMinutes = parseInt(e.target.value,10)||60; render(); saveDebounced(); });
+
+  // Add track
+  $('#addForm').addEventListener('submit', e=>{ e.preventDefault(); const f=e.target; const t={ id:uid(), title:f.title.value.trim()||'Untitled', key:f.key.value.trim(), bpm: f.bpm.value?parseInt(f.bpm.value,10):null, duration: f.duration.value||'03:30', energy: f.energy.value||'Groove', bankMSB:0, bankLSB:0, program:0 };
+    state.setlist.push(t); f.reset(); f.energy.value='Hype'; render(); saveDebounced(); });
+  $('#addBreakBtn').addEventListener('click',()=>{ const t={ id:uid(), type:'break', title:'Break', duration:'10:00', energy:'Break' }; const i = state.setlist.findIndex(x=>x.id===state.selectedId); if(i>=0){ state.setlist.splice(i+1,0,t);} else { state.setlist.push(t);} render(); saveDebounced(); });
+
+  // Import CSV
+  $('#importCsvBtn').addEventListener('click',()=>{ $('#csvDialog').showModal(); });
+  $('#cancelCsv').addEventListener('click',()=> $('#csvDialog').close());
+  $('#doImport').addEventListener('click', async ()=>{
+    const f = $('#csvFile').files[0]; if(!f){ alert('Choose a CSV file first.'); return; }
+    const text = await f.text(); const rows = parseCSV(text); const items = rows.map(r=>({ id:uid(), title:r.title||'Untitled', key:r.key||'', bpm:r.bpm?parseInt(r.bpm,10):null, duration:r.duration||'03:00', energy:r.energy||'Groove', bankMSB:r.bankmsb?parseInt(r.bankmsb,10):0, bankLSB:r.banklsb?parseInt(r.banklsb,10):0, program:r.program?parseInt(r.program,10):0 }));
+    state.setlist.push(...items); $('#csvDialog').close(); render(); saveDebounced(); });
+
+  // Export CSV
+  $('#exportCsvBtn').addEventListener('click',()=>{ const blob = new Blob([toCSV()], {type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='setlist.csv'; a.click(); URL.revokeObjectURL(a.href); });
+
+  // Bundle ZIP
+  $('#exportZipBtn').addEventListener('click', exportZip);
+
+  // Print
+  $('#printBtn').addEventListener('click',()=>{ window.print(); });
+
+  // MIDI deck
+  $('#sendTest').addEventListener('click',()=>{
+    const sel = state.setlist.find(x=>x.id===state.selectedId) || state.setlist[0];
+    if(!sel || sel.type==='break'){ alert('Select a song to send Program Change.'); return; }
+    const ok = sendProgramChange(sel.bankMSB||0, sel.bankLSB||0, sel.program||0, 0);
+    if(!ok) alert('No MIDI output selected or Web MIDI unavailable.');
+  });
+  $('#panicBtn').addEventListener('click',()=>{ const out = state.midi.out; if(out){ for(let ch=0; ch<16; ch++){ out.send([0xB0+ch, 123, 0]); } } });
+
+  // Keyboard selection up/down
+  document.addEventListener('keydown', (e)=>{
+    const tracks = state.setlist; if(!tracks.length) return; const idx = tracks.findIndex(x=>x.id===state.selectedId);
+    if(e.key==='ArrowDown'){ e.preventDefault(); const next = Math.min((idx<0?0:idx+1), tracks.length-1); state.selectedId = tracks[next].id; focusById(state.selectedId); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); const prev = Math.max((idx<0?0:idx-1), 0); state.selectedId = tracks[prev].id; focusById(state.selectedId); }
+    if(e.altKey && (e.key==='n'||e.key==='N')){ e.preventDefault(); $('#title').focus(); }
+  });
+
+  // Tech sheet bind
+  ['patchList','backline','power','notes'].forEach(id=>{
+    $('#'+id).value = state.tech[id]||'';
+    $('#'+id).addEventListener('input', (e)=>{ state.tech[id]=e.target.value; saveDebounced(); render(); });
+  });
+}
+function focusById(id){ const el = $(`#setlist .track[data-id="${id}"]`); if(el){ el.focus(); el.scrollIntoView({block:'nearest'}); }}
+
+// ===== Boot =====
+(async function init(){
+  // Theme
+  if(state.theme==='light') document.documentElement.classList.add('light');
+
+  // Storage
+  await storageInit(); await loadAll();
+
+  // External libs (lazy + optional)
+  // Tonal.js used only if present; our heuristics work otherwise
+  loadScript('https://cdn.jsdelivr.net/npm/@tonaljs/tonal@4.12.0/dist/tonal.min.js').catch(()=>{});
+
+  // JSZip on demand in exportZip
+
+  // MIDI
+  midiInit();
+
+  // SW
+  setupSW();
+
+  // Bind + render
+  bind(); render();
+})();
+
+// ===== Helpers =====
+function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), ms); } }
+</script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Time Capsule AI — Single File</title>
+<meta name="theme-color" content="#7b5d41" />
+<style>
+  :root{
+    --bg:#fffaf3;          /* warm paper */
+    --ink:#2b2a28;         /* soft black */
+    --muted:#6d665d;       /* quiet text */
+    --brand:#7b5d41;       /* warm brown */
+    --accent:#b6875a;      /* lighter brown */
+    --ok:#2e7d32;          /* green */
+    --warn:#e07a18;        /* amber */
+    --bad:#b00020;         /* red */
+    --card:#fffdf8;
+    --ring: rgba(123,93,65,.35);
+  }
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif}
+  *{box-sizing:border-box}
+  a{color:var(--brand)}
+  .app{max-width:1000px;margin:0 auto;padding:16px 14px 110px}
+  header{
+    position:sticky;top:0;background:linear-gradient(180deg, var(--bg), #fffaf300);
+    backdrop-filter:saturate(1.2) blur(6px);z-index:10
+  }
+  .title{display:flex;align-items:center;gap:.6rem;padding:.8rem .2rem}
+  .logo{width:36px;height:36px;border-radius:12px;background:conic-gradient(from 120deg at 50% 50%, var(--accent), var(--brand));
+        box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .title h1{margin:0;font-size:1.25rem;letter-spacing:.2px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0 10px}
+  .tab{appearance:none;border:1px solid #0000;background:var(--card);padding:.6rem .8rem;border-radius:12px;cursor:pointer;
+       box-shadow:0 2px 10px rgba(0,0,0,.06);font-weight:600;color:var(--ink)}
+  .tab[aria-current="page"]{outline:2px solid var(--ring);border-color:var(--ring)}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:860px){.grid{grid-template-columns:1.2fr .8fr}}
+  .card{background:var(--card);border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:14px 14px 12px;box-shadow:0 5px 30px rgba(0,0,0,.06)}
+  .card h2{margin:.2rem 0 .6rem;font-size:1.05rem}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row.spread{justify-content:space-between}
+  .muted{color:var(--muted)}
+  textarea{width:100%;min-height:180px;border-radius:12px;border:1px solid rgba(0,0,0,.08);padding:10px;font:inherit;background:#fff;resize:vertical}
+  textarea:focus, input:focus, select:focus, button:focus{outline:3px solid var(--ring)}
+  input[type="text"], input[type="password"], input[type="file"], select{
+    width:100%;border-radius:12px;border:1px solid rgba(0,0,0,.08);padding:.6rem .7rem;background:#fff
+  }
+  .btn{appearance:none;border:1px solid rgba(0,0,0,.08);background:#fff;padding:.6rem .9rem;border-radius:12px;cursor:pointer;font-weight:600}
+  .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .btn.ghost{background:transparent;border-color:rgba(0,0,0,.12)}
+  .btn.warn{background:var(--warn);border-color:var(--warn);color:#fff}
+  .btn.good{background:var(--ok);border-color:var(--ok);color:#fff}
+  .pill{padding:.2rem .55rem;border-radius:999px;font-size:.85rem;border:1px solid rgba(0,0,0,.08);background:#fff}
+  .mood{-webkit-user-select:none;user-select:none}
+  .mood.good{background:#e9f5ec;border-color:#d1ead6;color:var(--ok)}
+  .mood.ok{background:#fff7e8;border-color:#ffe1b5;color:var(--warn)}
+  .mood.bad{background:#fdecef;border-color:#f8cbd3;color:var(--bad)}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .entryItem{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid rgba(0,0,0,.06);border-radius:12px;background:#fff}
+  .entryItem time{font-variant-numeric:tabular-nums}
+  .spark{width:100%;height:68px}
+  .chip{border-radius:999px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:.25rem .55rem;font-size:.8rem}
+  .footerTabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,250,243,.88);backdrop-filter: blur(6px);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px;border-top:1px solid rgba(0,0,0,.08)}
+  .footerTabs button{padding:.6rem;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#fff;font-weight:600}
+  .footerTabs button[aria-current="page"]{outline:3px solid var(--ring)}
+  video, audio{width:100%}
+  .hint{font-size:.9rem}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:.25rem .5rem;background:#0000000a;border:1px solid #00000012;border-radius:10px}
+  .kbd{font-variant:tabular-nums;background:#fff;border:1px solid rgba(0,0,0,.15);padding:.05rem .35rem;border-radius:6px;box-shadow:0 1px 0 #fff inset, 0 1px 0 rgba(0,0,0,.08)}
+  .divider{height:1px;background:linear-gradient(90deg, #0000, rgba(0,0,0,.08), #0000);margin:10px 0}
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="title">
+        <div class="logo" aria-hidden="true"></div>
+        <h1>Time Capsule AI</h1>
+        <span class="badge" style="margin-left:auto"><span class="muted">Local‑first</span></span>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Main sections">
+        <button class="tab" data-v="write" aria-current="page">Write</button>
+        <button class="tab" data-v="timeline">Timeline</button>
+        <button class="tab" data-v="replay">Replay</button>
+        <button class="tab" data-v="settings">Settings</button>
+      </nav>
+    </header>
+
+    <main id="views">
+      <!-- WRITE VIEW -->
+      <section class="grid" data-view="write" aria-label="Write view">
+        <div class="card" id="composeCard">
+          <h2>Today's entry</h2>
+          <div class="row spread">
+            <div class="muted" id="todayStamp"></div>
+            <div class="row">
+              <span class="chip" id="autoMood">Mood: —</span>
+              <button class="btn ghost" id="analyzeBtn" title="Analyze">Analyze</button>
+            </div>
+          </div>
+          <label class="muted" for="entryText">Write your thoughts</label>
+          <textarea id="entryText" placeholder="Type freely…"></textarea>
+
+          <div class="divider"></div>
+
+          <div class="row">
+            <button class="btn" id="micBtn">🎤 Record Voice</button>
+            <button class="btn" id="stopMicBtn" disabled>⏹ Stop</button>
+            <button class="btn" id="transcribeBtn">✨ Voice→Text</button>
+          </div>
+          <div id="micArea" class="hint muted" aria-live="polite" style="margin:.5rem 0">Microphone idle.</div>
+          <audio id="audioPreview" controls style="display:none"></audio>
+
+          <div class="divider"></div>
+
+          <div class="row">
+            <button class="btn" id="camBtn">🎥 Record Video</button>
+            <button class="btn" id="stopCamBtn" disabled>⏹ Stop</button>
+          </div>
+          <div id="camWrap" style="display:none;margin-top:.5rem">
+            <video id="videoPreview" playsinline controls></video>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="row spread">
+            <div class="row" id="themesWrap"></div>
+            <div class="row">
+              <button class="btn ghost" id="clearBtn">Clear</button>
+              <button class="btn primary" id="saveBtn">Save Entry</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card">
+          <h2>Analysis</h2>
+          <div class="row" style="gap:6px;margin-bottom:.4rem">
+            <span class="pill mood" id="moodPill">—</span>
+            <span class="pill" id="scorePill" title="Sentiment score -1..+1">score: —</span>
+          </div>
+          <div class="muted" id="emoBreakdown">Emotions: —</div>
+          <div style="margin-top:.6rem">
+            <div id="keywords" class="row" style="gap:6px;flex-wrap:wrap"></div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- TIMELINE VIEW -->
+      <section class="grid" data-view="timeline" hidden>
+        <div class="card">
+          <h2>Timeline</h2>
+          <canvas id="spark" class="spark" aria-label="Mood trend chart"></canvas>
+          <div class="hint muted">Mood over time (−1 = low, +1 = high). Tap an entry to view.</div>
+          <div class="divider"></div>
+          <div id="entryList" class="list" aria-live="polite"></div>
+        </div>
+        <aside class="card">
+          <h2>Selected</h2>
+          <div id="selectedArea" class="muted">Choose an entry to see details.</div>
+        </aside>
+      </section>
+
+      <!-- REPLAY VIEW -->
+      <section class="grid" data-view="replay" hidden>
+        <div class="card">
+          <h2>Replay past self</h2>
+          <div class="row">
+            <select id="replaySelect"></select>
+            <button class="btn" id="replayGen">Generate Conversation</button>
+          </div>
+          <div id="chatBox" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <aside class="card">
+          <h2>Tip</h2>
+          <div class="muted">This mode reformulates an old entry as a dialogue between <b>Past You</b> and <b>Present You</b>. It is fully local and heuristic (no cloud AI).</div>
+        </aside>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section class="grid" data-view="settings" hidden>
+        <div class="card">
+          <h2>Export / Import</h2>
+          <p class="muted">Create an <b>encrypted .zip</b> archive with all entries + metadata. Your password derives a key locally (AES‑GCM).</p>
+          <label>Password for export</label>
+          <input type="password" id="zipPassword" placeholder="Choose a strong password" />
+          <div class="row" style="margin-top:8px">
+            <button class="btn good" id="exportBtn">Export Encrypted .zip</button>
+            <input type="file" id="importFile" accept=".zip" hidden />
+            <button class="btn" id="importBtn">Import Encrypted .zip</button>
+          </div>
+          <div id="exportStatus" class="muted" style="margin-top:6px">—</div>
+          <div class="divider"></div>
+          <button class="btn warn" id="wipeBtn">Erase all local data</button>
+        </div>
+        <aside class="card">
+          <h2>Offline & Privacy</h2>
+          <ul class="muted">
+            <li>All data stays in your browser (IndexedDB).</li>
+            <li>No trackers, no network calls.</li>
+            <li>Works as a single file. If hosted over HTTPS, it can install as a PWA.</li>
+          </ul>
+        </aside>
+      </section>
+    </main>
+
+    <nav class="footerTabs" role="tablist" aria-label="Bottom navigation">
+      <button data-v="write" aria-current="page">Write</button>
+      <button data-v="timeline">Timeline</button>
+      <button data-v="replay">Replay</button>
+      <button data-v="settings">Settings</button>
+    </nav>
+  </div>
+
+<script>
+/* ==========================
+   Utility helpers
+========================== */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const fmtDate = ts => new Date(ts).toLocaleString([], {dateStyle:'medium', timeStyle:'short'});
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ==========================
+   Minimal IndexedDB layer
+========================== */
+const DB_NAME = 'timecapsule.db';
+const DB_VER = 1;
+let db;
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = (e)=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('entries')) d.createObjectStore('entries', {keyPath:'id'});
+      if(!d.objectStoreNames.contains('blobs')) d.createObjectStore('blobs', {keyPath:'id'});
+    };
+    req.onsuccess = ()=>{ db = req.result; resolve(db)};
+    req.onerror = ()=>reject(req.error);
+  });
+}
+function tx(store,mode='readonly'){return db.transaction(store, mode).objectStore(store)}
+const put = (store,obj)=>new Promise((res,rej)=>{const r=tx(store,'readwrite').put(obj);r.onsuccess=()=>res(obj);r.onerror=()=>rej(r.error)});
+const get = (store,id)=>new Promise((res,rej)=>{const r=tx(store).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const all = (store)=>new Promise((res,rej)=>{const r=tx(store).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)});
+const delAll = (store)=>new Promise((res,rej)=>{const r=tx(store,'readwrite').clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+
+/* ==========================
+   Heuristic sentiment & theme extraction (local-only)
+========================== */
+const POSITIVE = ['joy','happy','glad','love','peace','grateful','excited','great','good','proud','calm','hope','optimistic','content','satisfied','energized','inspired','fun','smile','laugh','sunny','progress','win','kind'];
+const NEGATIVE = ['sad','down','angry','upset','hate','anxious','tired','worried','stressed','awful','bad','guilty','lonely','overwhelmed','lost','hurt','regret','cry','fear','panic','blocked','stuck','sick'];
+const EMO = {
+  joy:['joy','happy','grateful','smile','love','fun','excited','proud','celebrate'],
+  sadness:['sad','down','cry','lonely','blue','regret','loss','miss'],
+  anger:['angry','mad','furious','irritated','annoyed','rage'],
+  fear:['fear','afraid','anxious','panic','worry','scared'],
+  surprise:['surprise','wow','unexpected','shock','amazed'],
+  calm:['calm','peace','relaxed','serene','chill','quiet','still']
+};
+const STOPWORDS = new Set('i me my we our you your he she it they them this that a an the and or but if then so because as of at by for with about into from to in on over under again more most some such no nor not only own same too very can will just don\'t should now today yesterday tomorrow is are was were be been being have has had do did doing would could should than when where how what who which while'.split(/\s+/));
+
+function analyzeText(text){
+  const t = (text||'').toLowerCase();
+  const words = t.match(/[a-zA-ZÀ-ÿ']+/g)||[];
+  let pos=0, neg=0;
+  for(const w of words){ if(POSITIVE.includes(w)) pos++; if(NEGATIVE.includes(w)) neg++; }
+  const score = (pos - neg) / Math.max(1,(pos+neg)); // -1..+1 approx
+  const label = score>0.25? 'Positive': score<-0.25? 'Negative':'Neutral';
+  // emotions
+  const emoScores = {};
+  for(const k in EMO){ emoScores[k]=0; const list=EMO[k]; for(const w of words) if(list.includes(w)) emoScores[k]++; }
+  // themes (simple keywords by freq)
+  const freq = new Map();
+  for(const w of words){ if(!STOPWORDS.has(w) && w.length>2){ freq.set(w,(freq.get(w)||0)+1);} }
+  const top = [...freq.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(x=>x[0]);
+  return {score: Number(score.toFixed(3)), label, emotions:emoScores, keywords:top};
+}
+
+/* ==========================
+   Voice to text (Web Speech API)
+========================== */
+let recog, recogActive=false, recogBuffer='';
+function initSpeech(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return null;
+  const r = new SR();
+  r.continuous = true; r.interimResults = true; r.lang = navigator.language || 'en-US';
+  r.onresult = (e)=>{
+    let final=''; let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i];
+      if(res.isFinal) final += res[0].transcript + ' ';
+      else interim += res[0].transcript;
+    }
+    if(final){ recogBuffer += final; $('#micArea').textContent = 'Heard: '+ final; }
+    else $('#micArea').textContent = 'Listening… '+interim;
+  };
+  r.onerror = (e)=>{ $('#micArea').textContent = 'Speech error: '+ e.error };
+  r.onend = ()=>{ recogActive=false; $('#micArea').textContent = 'Microphone stopped.' };
+  return r;
+}
+
+/* ==========================
+   Media recording (audio/video)
+========================== */
+let audioChunks=[], audioBlob=null, mediaRec=null, mediaStream=null;
+let videoChunks=[], videoBlob=null, videoRec=null, videoStream=null;
+
+async function startAudio(){
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')? 'audio/webm;codecs=opus' : 'audio/ogg';
+    mediaRec = new MediaRecorder(mediaStream, {mimeType:mime});
+    audioChunks = [];
+    mediaRec.ondataavailable = e=>{ if(e.data.size>0) audioChunks.push(e.data); };
+    mediaRec.onstop = ()=>{
+      audioBlob = new Blob(audioChunks, {type:mime});
+      const url = URL.createObjectURL(audioBlob);
+      const a = $('#audioPreview'); a.src=url; a.style.display='block'; a.load();
+    };
+    mediaRec.start();
+    $('#micArea').textContent = 'Recording…';
+    $('#micBtn').disabled=true; $('#stopMicBtn').disabled=false;
+  }catch(err){ $('#micArea').textContent = 'Mic error: '+ err.message }
+}
+function stopAudio(){
+  try{ mediaRec && mediaRec.stop(); mediaStream && mediaStream.getTracks().forEach(t=>t.stop()); }catch{}
+  $('#micBtn').disabled=false; $('#stopMicBtn').disabled=true;
+}
+
+async function startVideo(){
+  try{
+    videoStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')? 'video/webm;codecs=vp9,opus' :
+                 MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')? 'video/webm;codecs=vp8,opus' : 'video/webm';
+    videoRec = new MediaRecorder(videoStream,{mimeType:mime});
+    videoChunks=[];
+    videoRec.ondataavailable=e=>{ if(e.data.size>0) videoChunks.push(e.data); };
+    videoRec.onstop=()=>{
+      videoBlob = new Blob(videoChunks,{type:mime});
+      const url = URL.createObjectURL(videoBlob);
+      const v = $('#videoPreview'); v.src=url; v.style.display='block'; v.load();
+      $('#camWrap').style.display='block';
+    };
+    videoRec.start();
+    $('#camBtn').disabled=true; $('#stopCamBtn').disabled=false;
+  }catch(err){ alert('Camera error: '+err.message); }
+}
+function stopVideo(){
+  try{ videoRec && videoRec.stop(); videoStream && videoStream.getTracks().forEach(t=>t.stop()); }catch{}
+  $('#camBtn').disabled=false; $('#stopCamBtn').disabled=true;
+}
+
+/* ==========================
+   Minimal ZIP (store-only) + AES-GCM encryption helpers
+   - We pack files without compression (method 0)
+   - Each file is AES-GCM encrypted using password-derived key
+========================== */
+function strToU8(s){return new TextEncoder().encode(s)}
+function u8ToStr(u8){return new TextDecoder().decode(u8)}
+function concatU8(...arrs){
+  let len=0; for(const a of arrs) len+=a.length;
+  const out=new Uint8Array(len); let off=0; for(const a of arrs){ out.set(a,off); off+=a.length; }
+  return out;
+}
+function u32le(n){const b=new Uint8Array(4); const v=new DataView(b.buffer); v.setUint32(0,n,true); return b}
+function u16le(n){const b=new Uint8Array(2); const v=new DataView(b.buffer); v.setUint16(0,n,true); return b}
+function crc32(u8){ // tiny CRC-32
+  let c=~0>>>0; for(let i=0;i<u8.length;i++){ c = (c>>>8) ^ CRC_TAB[(c ^ u8[i]) & 255]; } return (~c)>>>0;
+}
+const CRC_TAB=(()=>{let t=new Uint32Array(256); for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++){c = ((c&1)?(0xEDB88320 ^ (c>>>1)):(c>>>1));} t[n]=c>>>0;} return t;})();
+
+async function deriveKey(password, salt){
+  const enc=strToU8(password);
+  const k=await crypto.subtle.importKey('raw', enc, 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:100000, hash:'SHA-256'}, k, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function encryptBytes(bytes, password){
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(password, salt);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv, tagLength:128}, key, bytes));
+  const magic=strToU8('TCA1');
+  return concatU8(magic, salt, iv, ct); // [magic|salt|iv|cipher]
+}
+async function decryptBytes(encBytes, password){
+  const magic=u8ToStr(encBytes.slice(0,4)); if(magic!=='TCA1') throw new Error('Bad archive: missing TCA1 header');
+  const salt=encBytes.slice(4,20); const iv=encBytes.slice(20,32); const ct=encBytes.slice(32);
+  const key=await deriveKey(password, salt);
+  const pt=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv, tagLength:128}, key, ct));
+  return pt;
+}
+
+function zipStore(files){
+  // files: {name: Uint8Array}
+  const LFH=0x04034b50, CDH=0x02014b50, EOCD=0x06054b50;
+  let fileData=[]; let cd=[]; let offset=0;
+  for(const [name, data] of Object.entries(files)){
+    const n = strToU8(name);
+    const crc = crc32(data);
+    const comp=0; // store
+    const lfh = concatU8(
+      u32le(LFH), u16le(20), u16le(0), u16le(comp), u16le(0), u16le(0), // times ignored
+      u32le(crc), u32le(data.length), u32le(data.length), u16le(n.length), u16le(0), n
+    );
+    const lfhBlock = concatU8(lfh, data);
+    fileData.push(lfhBlock);
+    const cdh = concatU8(
+      u32le(CDH), u16le(0x033F), u16le(20), u16le(0), u16le(comp), u16le(0), u16le(0),
+      u32le(crc), u32le(data.length), u32le(data.length), u16le(n.length), u16le(0), u16le(0), u16le(0), u16le(0), u32le(0), u32le(offset), n
+    );
+    cd.push(cdh);
+    offset += lfhBlock.length;
+  }
+  const cdBytes = concatU8(...cd);
+  const centralOffset = offset;
+  const eocd = concatU8(
+    u32le(EOCD), u16le(0), u16le(0), u16le(cd.length), u16le(cd.length), u32le(cdBytes.length), u32le(centralOffset), u16le(0)
+  );
+  return new Blob([concatU8(...fileData, cdBytes, eocd)], {type:'application/zip'});
+}
+
+function unzipStore(buf){
+  // returns {name: Uint8Array}; supports store only
+  const u8=new Uint8Array(buf);
+  function readU16(i){return (u8[i]|(u8[i+1]<<8))>>>0}
+  function readU32(i){return (u8[i]|(u8[i+1]<<8)|(u8[i+2]<<16)|(u8[i+3]<<24))>>>0}
+  const EOCD=0x06054b50, CDH=0x02014b50, LFH=0x04034b50;
+  // find EOCD from end
+  let eocdIndex=-1; for(let i=u8.length-22;i>=0;i--){ if(readU32(i)===EOCD){ eocdIndex=i; break; } }
+  if(eocdIndex<0) throw new Error('Not a zip file');
+  const cdSize = readU32(eocdIndex+12); const cdOffset = readU32(eocdIndex+16);
+  let i = cdOffset; const out={};
+  while(i < cdOffset+cdSize){
+    if(readU32(i)!==CDH) throw new Error('Bad central dir');
+    const comp = readU16(i+10);
+    const crc = readU32(i+16);
+    const compSize = readU32(i+20);
+    const size = readU32(i+24);
+    const nameLen = readU16(i+28);
+    const extraLen = readU16(i+30);
+    const commentLen = readU16(i+32);
+    const lfhOff = readU32(i+42);
+    const name = u8.slice(i+46, i+46+nameLen);
+    const nameStr = u8ToStr(name);
+    i += 46 + nameLen + extraLen + commentLen;
+    if(comp!==0) throw new Error('This archive uses compression; unsupported here');
+    if(readU32(lfhOff)!==LFH) throw new Error('Bad local header');
+    const nlen = readU16(lfhOff+26); const xlen = readU16(lfhOff+28);
+    const dataStart = lfhOff + 30 + nlen + xlen;
+    const data = u8.slice(dataStart, dataStart+size);
+    // optional CRC check could be added. Skipped for perf.
+    out[nameStr] = data;
+  }
+  return out;
+}
+
+/* ==========================
+   App state & logic
+========================== */
+let state = { entries: [], selectedId: null };
+
+function moodClass(score){ return score>0.25?'good': score<-0.25?'bad':'ok'; }
+
+async function refresh(){
+  state.entries = (await all('entries')).sort((a,b)=>a.ts-b.ts);
+  renderTimeline();
+  renderReplaySelect();
+}
+
+function renderAnalysis(analysis){
+  const pill = $('#moodPill');
+  pill.textContent = analysis.label;
+  pill.className = 'pill mood '+moodClass(analysis.score);
+  $('#scorePill').textContent = `score: ${analysis.score}`;
+  const emo = Object.entries(analysis.emotions).filter(([,v])=>v>0).map(([k,v])=>`${k} ${'•'.repeat(Math.min(6,v))}`);
+  $('#emoBreakdown').textContent = emo.length? 'Emotions: '+ emo.join('  ') : 'Emotions: none detected';
+  const kw = analysis.keywords.map(k=>`<span class="chip">#${k}</span>`).join('');
+  $('#keywords').innerHTML = kw || '<span class="muted">No keywords yet.</span>';
+  // top themes row in composer
+  $('#themesWrap').innerHTML = analysis.keywords.slice(0,3).map(k=>`<span class="chip">${k}</span>`).join('');
+  $('#autoMood').textContent = `Mood: ${analysis.label}`;
+}
+
+function renderTimeline(){
+  // sparkline
+  const canvas=$('#spark'); const dpr=window.devicePixelRatio||1; const W=canvas.clientWidth, H=canvas.clientHeight; canvas.width=W*dpr; canvas.height=H*dpr; const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.lineWidth=2; ctx.strokeStyle = 'rgba(123,93,65,.9)';
+  const scores = state.entries.map(e=>e.analysis?.score??0);
+  if(scores.length){
+    const pad=8; const mid=H/2;
+    ctx.beginPath();
+    scores.forEach((s,idx)=>{
+      const x = pad + (W-2*pad) * (idx/(scores.length-1||1));
+      const y = mid - s * (H/2 - pad);
+      idx? ctx.lineTo(x,y): ctx.moveTo(x,y);
+    });
+    ctx.stroke();
+  }
+  // list
+  const list=$('#entryList'); list.innerHTML='';
+  state.entries.forEach(e=>{
+    const item=document.createElement('button'); item.className='entryItem'; item.onclick=()=>selectEntry(e.id);
+    const mood = document.createElement('span'); mood.className = 'pill mood '+moodClass(e.analysis?.score??0); mood.textContent = e.analysis?.label||'—';
+    const meta=document.createElement('div'); meta.innerHTML = `<time>${fmtDate(e.ts)}</time><div class="muted">${(e.text||e.transcription||'').slice(0,90)}…</div>`;
+    item.appendChild(mood); item.appendChild(meta); list.appendChild(item);
+  });
+}
+
+async function selectEntry(id){
+  state.selectedId=id; const e = state.entries.find(x=>x.id===id); if(!e) return;
+  const box=$('#selectedArea');
+  let mediaHTML='';
+  if(e.media){
+    for(const m of e.media){
+      const blobRec = await get('blobs', m.blobId);
+      if(!blobRec) continue;
+      const url = URL.createObjectURL(blobRec.blob);
+      if(m.type==='audio') mediaHTML += `<audio controls src="${url}"></audio>`;
+      if(m.type==='video') mediaHTML += `<video controls src="${url}"></video>`;
+    }
+  }
+  box.innerHTML = `
+    <div class="row" style="gap:6px;margin-bottom:6px">
+      <span class="pill mood ${moodClass(e.analysis?.score??0)}">${e.analysis?.label||'—'}</span>
+      <span class="pill">${fmtDate(e.ts)}</span>
+      ${(e.analysis?.keywords||[]).slice(0,3).map(k=>`<span class='chip'>#${k}</span>`).join('')}
+    </div>
+    <div>${(e.text||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+    ${e.transcription? `<div class='divider'></div><div class='muted'>Transcript:</div><div>${e.transcription.replace(/</g,'&lt;')}</div>`:''}
+    ${mediaHTML? `<div class='divider'></div>`+mediaHTML:''}
+  `;
+}
+
+function renderReplaySelect(){
+  const sel=$('#replaySelect'); sel.innerHTML='';
+  state.entries.forEach(e=>{
+    const opt=document.createElement('option'); opt.value=e.id; opt.textContent = `${fmtDate(e.ts)} — ${e.analysis?.label||'Neutral'}`; sel.appendChild(opt);
+  });
+}
+
+function toConversation(text){
+  // Heuristic: split into sentences, alternate Past/Present, turn statements into questions/reflective prompts.
+  const sents = (text||'').split(/(?<=[\.!?])\s+/).filter(Boolean).slice(0,12);
+  const out=[];
+  for(let i=0;i<sents.length;i++){
+    const raw=sents[i].trim();
+    if(i%2===0){ // Past You
+      out.push({who:'Past You', text: raw});
+    }else{ // Present You
+      // transform into reflective response
+      let r = raw.replace(/I\s+/gi,'you ').replace(/my\s+/gi,'your ').replace(/I\'/gi,'you\'').replace(/I\./gi,'you.');
+      if(!/[?]$/.test(r)) r = r.replace(/\.$/,'') + '?';
+      out.push({who:'Present You', text: 'When you say: '+ r});
+    }
+  }
+  if(out.length===0) out.push({who:'Present You', text:'No text in this entry yet. Try saving one on the Write tab.'});
+  return out;
+}
+
+function renderChat(items){
+  const box=$('#chatBox'); box.innerHTML='';
+  items.forEach(it=>{
+    const b=document.createElement('div');
+    b.style.border='1px solid rgba(0,0,0,.08)'; b.style.padding='.6rem'; b.style.borderRadius='12px'; b.style.background='#fff';
+    const who=document.createElement('div'); who.textContent=it.who; who.className='muted'; who.style.marginBottom='.25rem';
+    const txt=document.createElement('div'); txt.textContent=it.text;
+    b.appendChild(who); b.appendChild(txt); box.appendChild(b);
+  });
+}
+
+/* ==========================
+   Save entry
+========================== */
+async function saveEntry(){
+  const text = $('#entryText').value.trim();
+  const transcription = recogBuffer.trim() || '';
+  const analysis = analyzeText(text + ' ' + transcription);
+  const media=[];
+  if(audioBlob){ const id=crypto.randomUUID(); await put('blobs',{id, blob:audioBlob}); media.push({type:'audio', blobId:id, mime:audioBlob.type}); }
+  if(videoBlob){ const id=crypto.randomUUID(); await put('blobs',{id, blob:videoBlob}); media.push({type:'video', blobId:id, mime:videoBlob.type}); }
+  const entry={ id: crypto.randomUUID(), ts: Date.now(), text, transcription, analysis, media };
+  await put('entries', entry);
+  audioBlob=null; videoBlob=null; $('#audioPreview').style.display='none'; $('#camWrap').style.display='none';
+  $('#entryText').value=''; recogBuffer=''; $('#micArea').textContent='Microphone idle.';
+  renderAnalysis(analysis); await refresh();
+  alert('Saved!');
+}
+
+/* ==========================
+   Export / Import
+========================== */
+async function exportZip(){
+  const pass = $('#zipPassword').value;
+  if(!pass){ alert('Please set a password'); return; }
+  $('#exportStatus').textContent='Gathering entries…';
+  const entries = await all('entries');
+  const files={};
+  // Build entries JSON without blobs
+  const lightweight = entries.map(e=>({id:e.id, ts:e.ts, text:e.text, transcription:e.transcription, analysis:e.analysis, media:e.media}));
+  const encEntries = await encryptBytes(strToU8(JSON.stringify({version:1, app:'Time Capsule AI', exportedAt:Date.now(), entries:lightweight})), pass);
+  files['entries.json.enc'] = encEntries;
+  // Media files
+  let count=0;
+  for(const e of entries){
+    if(e.media){
+      for(const m of e.media){
+        const rec = await get('blobs', m.blobId); if(!rec) continue;
+        const arr = new Uint8Array(await rec.blob.arrayBuffer());
+        const enc = await encryptBytes(arr, pass);
+        files[`media/${m.blobId}.bin.enc`] = enc;
+        count++;
+      }
+    }
+  }
+  $('#exportStatus').textContent=`Packing ${entries.length} entries, ${count} media…`;
+  const blob = zipStore(files);
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`time-capsule-${new Date().toISOString().slice(0,10)}.zip`; a.click();
+  $('#exportStatus').textContent='Export done.';
+}
+
+async function importZip(file){
+  const pass = $('#zipPassword').value;
+  if(!pass){ alert('Enter the archive password first in the field'); return; }
+  const buf = await file.arrayBuffer();
+  let files; try{ files = unzipStore(buf);}catch(e){ alert('Not a supported zip file: '+e.message); return; }
+  if(!files['entries.json.enc']){ alert('Archive missing entries.json.enc'); return; }
+  try{
+    const entriesJson = JSON.parse(u8ToStr(await decryptBytes(files['entries.json.enc'], pass)));
+    if(entriesJson.app!=='Time Capsule AI'){ if(!confirm('Archive signature differs. Continue?')) return; }
+    const imported=[];
+    for(const e of entriesJson.entries){
+      // media restore
+      const media=[];
+      if(e.media){
+        for(const m of e.media){
+          const fname = `media/${m.blobId}.bin.enc`;
+          const enc = files[fname];
+          if(!enc){ console.warn('Missing media', fname); continue; }
+          const plain = await decryptBytes(enc, pass);
+          const blob = new Blob([plain], {type: m.mime||'application/octet-stream'});
+          await put('blobs', {id:m.blobId, blob});
+          media.push({type:m.type, blobId:m.blobId, mime:m.mime});
+        }
+      }
+      const entry = {id:e.id, ts:e.ts, text:e.text, transcription:e.transcription, analysis:e.analysis, media};
+      await put('entries', entry);
+      imported.push(entry);
+    }
+    await refresh();
+    alert(`Imported ${imported.length} entries.`);
+  }catch(err){
+    alert('Decryption failed: '+err.message);
+  }
+}
+
+/* ==========================
+   PWA (optional when hosted)
+========================== */
+(async function pwa(){
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    const swCode = `self.addEventListener('install',e=>{e.waitUntil(caches.open('tca-v1').then(c=>c.addAll(['./'])))});
+    self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`;
+    const blob=new Blob([swCode],{type:'text/javascript'});
+    const url=URL.createObjectURL(blob);
+    await navigator.serviceWorker.register(url);
+  }catch(err){ /* ignore for file:// */ }
+})();
+
+/* ==========================
+   Events & init
+========================== */
+(async function(){
+  await openDB(); await refresh();
+  $('#todayStamp').textContent = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+
+  // tabs
+  function activate(view){
+    $$('#views > section').forEach(s=>{const on = s.getAttribute('data-view')===view; s.hidden = !on});
+    $$('.tabs .tab, .footerTabs button').forEach(b=>{const on=b.dataset.v===view; b.setAttribute('aria-current', on? 'page':'false')});
+  }
+  $$('.tabs .tab, .footerTabs button').forEach(b=> b.addEventListener('click', ()=>activate(b.dataset.v)));
+
+  // speech
+  recog = initSpeech();
+  $('#micBtn').onclick = async()=>{ await startAudio(); if(recog && !recogActive){ try{ recog.start(); recogActive=true; }catch{} } };
+  $('#stopMicBtn').onclick = ()=>{ stopAudio(); if(recog && recogActive){ try{ recog.stop(); }catch{} } };
+  $('#transcribeBtn').onclick = ()=>{ const t = $('#entryText'); t.value = (t.value+ (t.value? '\n':'') + recogBuffer).trim(); };
+
+  // camera
+  $('#camBtn').onclick=startVideo; $('#stopCamBtn').onclick=stopVideo;
+
+  // analyze
+  const runAnalyze = ()=>{ const res = analyzeText($('#entryText').value + ' ' + recogBuffer); renderAnalysis(res); };
+  $('#analyzeBtn').onclick = runAnalyze; runAnalyze();
+
+  // save/clear
+  $('#saveBtn').onclick=saveEntry;
+  $('#clearBtn').onclick=()=>{ $('#entryText').value=''; recogBuffer=''; $('#audioPreview').style.display='none'; $('#camWrap').style.display='none'; runAnalyze(); };
+
+  // replay
+  $('#replayGen').onclick = ()=>{
+    const id = $('#replaySelect').value; const e = state.entries.find(x=>x.id===id); if(!e){ alert('Pick an entry'); return; }
+    const conv = toConversation((e.text||'') + ' ' + (e.transcription||''));
+    renderChat(conv);
+  };
+
+  // export/import
+  $('#exportBtn').onclick=exportZip;
+  $('#importBtn').onclick=()=>$('#importFile').click();
+  $('#importFile').addEventListener('change', (ev)=>{ const f=ev.target.files[0]; if(f) importZip(f); ev.target.value=''; });
+
+  // wipe
+  $('#wipeBtn').onclick=async()=>{ if(confirm('Erase ALL local entries? This cannot be undone.')){ await delAll('entries'); await delAll('blobs'); await refresh(); alert('All cleared.'); } };
+})();
+</script>
+</body>
+</html>

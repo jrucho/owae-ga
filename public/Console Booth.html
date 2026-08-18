@@ -1,0 +1,5225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
+<title>Console Booth (6×2) — TX-6 · Minimal/Advanced · Swiss Skin</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' ry='8' fill='%230b0e14'/%3E%3Ccircle cx='32' cy='32' r='18' fill='%23E8C48C'/%3E%3Crect x='31' y='10' width='2' height='12' fill='%230b0e14'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#ffffff" />
+<style>
+  /*
+    Console Booth (6×2) — TX-6 Ready
+    v4 — Swiss default skin, smaller UI, global UI scale fader, themes,
+    soft master limiter, SP-303 & other comp emus, dB graduations,
+    1080p-friendly layout (no scroll when UI scale ≤ 100%).
+    ~LUFS(S) is an APPROX real-time short-term loudness for quick guidance.
+  */
+
+  /* ===== THEME TOKENS ===== */
+  :root{
+    --uiScale: 0.90; /* default 90% to fit 1080p comfortably */
+    /* Swiss (default) */
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f5; --ink:#0b0e14; --muted:#5c6476; --line:#d9dee9;
+    --accent:#e00019; --accent2:#0b0e14; --warn:#ffb073; --danger:#ff5a71; --ok:#10a37f;
+    --vu1:#17b890; --vu2:#f0c36a; --vu3:#e35d5d; --amber:#e00019;
+  }
+  /* Swiss (default) theme - values already set in :root */
+  body.theme-noir{ --bg:#0b0c0f; --panel:#10131a; --panel2:#0e1117; --ink:#eceef5; --muted:#a7afbc; --line:#1a202c; --accent:#E8C48C; --accent2:#9cd9c4; --vu1:#48e0a8; --vu2:#f0d37a; --vu3:#ff796a; --amber:#E8C48C; }
+  body.theme-bright{ --bg:#ffffff; --panel:#ffffff; --panel2:#f4f6fa; --ink:#0b0e14; --muted:#586179; --line:#e6e9f0; --accent:#0b0e14; --accent2:#2c7a7b; --vu1:#3abda0; --vu2:#e0b86a; --vu3:#e15b4f; --amber:#0b0e14; }
+  body.theme-teal{ --bg:#0a1012; --panel:#0d1518; --panel2:#0c1215; --ink:#e7f2f2; --muted:#9ec4c4; --line:#142227; --accent:#84d0c5; --accent2:#5cc2ad; --vu1:#5ad3c0; --vu2:#bfe29b; --vu3:#f08a6a; --amber:#84d0c5; }
+  body.theme-amber{ --bg:#0d0c09; --panel:#12100b; --panel2:#0f0d09; --ink:#f5efe2; --muted:#c8bea9; --line:#2a261b; --accent:#ffd38f; --accent2:#f0c06e; --vu1:#ffd38f; --vu2:#ffba58; --vu3:#ff7a45; --amber:#ffd38f; }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  body{overflow:hidden}
+
+  /* SCALE CONTAINER so 1920×1080 fits without scroll; width/height compensate scale */
+  #app{
+    transform-origin: 0 0; 
+    transform: scale(var(--uiScale)); 
+    width: calc(100vw / var(--uiScale)); 
+    height: calc(100vh / var(--uiScale)); 
+    display:grid; 
+    grid-template-rows:auto 1fr auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+  
+  /* Responsive header and footer */
+  header,footer{
+    display:flex;
+    gap:.6rem;
+    align-items:center;
+    justify-content:space-between;
+    padding:.55rem .85rem;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 767px) {
+    header, footer {
+      padding: .4rem .5rem;
+      gap: .4rem;
+    }
+    
+    .row {
+      gap: .3rem;
+    }
+    
+    h1 {
+      font-size: .85rem;
+    }
+  }
+  footer{border-top:1px solid var(--line);border-bottom:none}
+  h1{font-size:.95rem;margin:0;letter-spacing:.02em;font-weight:700}
+  .sub{font-size:.78rem;color:var(--muted)}
+  .row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+  .chip{background:var(--panel2);border:1px solid var(--line);padding:.28rem .45rem;border-radius:.6rem;font-size:.82rem}
+  .chip.ok{background:var(--vu1);color:#000;border-color:transparent;font-weight:600}
+  .chip.warn{background:var(--danger);color:#fff;border-color:transparent;font-weight:600}
+  select,input,button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:.5rem;padding:.36rem .5rem;font:inherit}
+  select, input[type="range"]{accent-color:var(--accent)}
+  button{cursor:pointer;transition:background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease}
+  button.primary{background:var(--accent);color:#fff;border-color:transparent;font-weight:650}
+  button.ghost{background:transparent;transition:background-color 0.15s ease}
+  button.ghost:hover{background:var(--panel2)}
+  button.warn{background:var(--danger);border-color:transparent;color:#fff}
+  button:disabled{opacity:0.5;cursor:not-allowed}
+  button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  
+  /* Enhanced button states for mute/solo/arm */
+  button.mute-btn.muted{background:var(--danger);color:#fff;border-color:var(--danger);font-weight:600}
+  button.solo-btn.soloed{background:var(--amber);color:#000;border-color:var(--amber);font-weight:600}
+  button.arm-btn.armed{background:var(--vu3);color:#fff;border-color:var(--vu3);font-weight:600}
+  
+  button.playing{background:var(--vu1);color:#000;border-color:var(--vu1)}
+  button.looping{background:var(--vu2);color:#000;border-color:var(--vu2);animation:pulse 2s infinite}
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  /* File input styling */
+  input[type="file"] {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.3rem;
+  }
+  
+  /* Touch-friendly controls */
+  @media (max-width: 767px) {
+    button, select, input[type="range"], input[type="checkbox"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    .knob {
+      min-width: 50px;
+      min-height: 50px;
+    }
+    
+    .fader {
+      min-width: 30px;
+    }
+    
+    input[type="file"] {
+      padding: 0.4rem 0.3rem;
+    }
+  }
+  
+  /* MIDI learn indicator */
+  .midi-learning {
+    background: var(--vu3) !important;
+    animation: flash 0.5s infinite alternate;
+  }
+  
+  @keyframes flash {
+    0% { opacity: 1; }
+    100% { opacity: 0.5; }
+  }
+
+  /* Keyboard Shortcuts Help */
+  .keyboard-shortcuts {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  color: var(--ink);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 0.85rem;
+    max-width: 300px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1001;
+  }
+
+  .keyboard-shortcuts.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .keyboard-shortcuts h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--accent);
+    font-size: 0.9rem;
+  }
+
+  .keyboard-shortcuts .shortcut {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.3rem 0;
+    padding: 0.2rem 0;
+  }
+
+  .keyboard-shortcuts .key {
+    background: var(--panel2);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    border: 1px solid var(--line);
+  }
+
+  /* MIDI Learn Popup */
+  .midi-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 2rem;
+    min-width: 400px;
+    max-width: 80vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  
+  .midi-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+  
+  .midi-popup h3 {
+    margin-top: 0;
+    color: var(--accent);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.5rem;
+  }
+  
+  .midi-mappings {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 1rem 0;
+  }
+  
+  .midi-mapping-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+  
+  .midi-mapping-item:last-child {
+    border-bottom: none;
+  }
+  
+  .midi-control-name {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  
+  .midi-mapping-info {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  
+  .midi-learn-status {
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--panel2);
+    margin: 1rem 0;
+    text-align: center;
+    font-weight: 600;
+  }
+  
+  .midi-learn-status.learning {
+    background: var(--vu1);
+    color: #000;
+    animation: pulse 1s infinite;
+  }
+  
+  .midi-popup-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+  
+  /* Mobile view toggle */
+  @media (max-width: 767px) {
+    #viewToggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+  }
+  
+  /* Mute/Solo switch styling */
+  .switch{position:relative;display:inline-flex;align-items:center}
+  .switch input[type="checkbox"]{margin:0;margin-right:6px}
+  .switch label{font-size:.78rem;cursor:pointer;user-select:none}
+  .switch input[type="checkbox"]:checked + label{color:var(--accent);font-weight:600}
+  #viewToggle{background:var(--panel2)}
+  .rightnote{font-size:.78rem;color:var(--muted)}
+
+  /* Grid: 6 strips + Master; responsive grid layout with full width */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:10px;
+    padding:10px;
+    width: 100%;
+    max-width: none;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+  }
+  
+  /* Horizontal scroll indicator */
+  .grid::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .grid::-webkit-scrollbar-track {
+    background: var(--panel2);
+    border-radius: 3px;
+  }
+  
+  .grid::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+  }
+  
+  .grid::-webkit-scrollbar-thumb:hover {
+    background: var(--accent2);
+  }
+  
+  @media (min-width: 768px) {
+    .grid{grid-template-columns:repeat(7, 1fr); min-width: 100%;}
+  }
+  
+  @media (min-width: 1400px) {
+    .grid{grid-template-columns:repeat(7, 1fr); min-width: 100%;}
+  }
+  
+  /* Mobile layout - show one strip at a time or allow horizontal scroll */
+  @media (max-width: 767px) {
+    .grid{
+      grid-template-columns: repeat(7, minmax(280px, 300px));
+      gap: 8px;
+      padding: 8px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+    }
+    
+    .strip {
+      scroll-snap-align: center;
+      min-width: 280px;
+    }
+    
+    /* Add scroll hint */
+    .grid::after {
+      content: "← Scroll for more channels →";
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      z-index: 100;
+      animation: fadeInOut 4s ease-in-out infinite;
+    }
+  }
+  
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    25%, 75% { opacity: 1; }
+  }
+  
+  /* Tablet layout */
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .grid{
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+  }
+
+  /* Strip card (compact) */
+  .strip{
+    background:linear-gradient(180deg, var(--panel), var(--panel2));
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    position:relative;
+    overflow:hidden;
+    min-height:fit-content;
+    height:auto;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .strip h3{margin:0;font-size:.9rem;display:flex;align-items:center;justify-content:space-between}
+  
+  /* Master strip special handling */
+  .strip.master-strip {
+    overflow-y: auto;
+    max-height: 85vh;
+  }
+  
+  .strip.master-strip .adv {
+    max-height: none;
+  }
+  
+  /* Responsive row layouts */
+  @media (max-width: 767px) {
+    .srow {
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .srow4 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+    
+    .fader-wrap {
+      align-self: center;
+    }
+  }
+  .badge{padding:.08rem .35rem;border-radius:.4rem;background:var(--panel2);border:1px solid var(--line);font-size:.68rem;color:var(--muted)}
+  .tiny{font-size:.72rem;color:var(--muted)}
+  .section{border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}
+
+  /* Meter compact - horizontal */
+  .meter{height:44px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(90deg,var(--panel2),var(--panel));position:relative;overflow:hidden}
+  .vu{position:absolute;top:0;left:0;bottom:0;width:0;background:linear-gradient(90deg,var(--vu1),var(--vu2));transition:width .08s ease-out}
+  .vu.over{background:linear-gradient(90deg,var(--vu2),var(--vu3))}
+  .labels{display:flex;gap:6px;justify-content:space-between}
+  .read{display:flex;gap:6px}
+  .read span{font-size:.74rem;color:var(--muted)}
+
+  /* Knobs small + tick ring (dB graduations vibe) */
+  .knob-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .knob{--val:0.5;--size:48px;width:var(--size);height:var(--size);border-radius:50%;background:
+    radial-gradient(35% 35% at 50% 55%, rgba(255,255,255,.04), rgba(0,0,0,.06) 60%),
+    conic-gradient(from 225deg, var(--accent) calc(var(--val)*270deg), #d4d9e4 0);
+    border:1px solid var(--line);position:relative;box-shadow:inset 0 1px 4px rgba(0,0,0,.15), 0 1px 0 rgba(255,255,255,.03);cursor:ns-resize;user-select:none}
+  .knob::before{content:"";position:absolute;inset:4px;border-radius:50%;background:
+    repeating-conic-gradient(from 225deg, #c9cfdb 0 2deg, transparent 2deg 9deg);opacity:.55;pointer-events:none}
+  .knob::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(calc(-135deg + var(--val)*270deg));width:2px;height:19px;background:linear-gradient(#1b1f27,#1b1f27);transform-origin:50% 85%;pointer-events:none}
+  .knob input{position:absolute;inset:0;opacity:0;cursor:ns-resize;margin:0}
+  .knob-label{font-size:.7rem;color:var(--muted);text-align:center}
+  .knob-value{
+    font-size:.7rem;
+    color:var(--accent);
+    font-weight:600;
+    margin-top:2px;
+    text-align:center;
+    min-height:16px;
+    width:60px;
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top:100%;
+    background:rgba(0,0,0,0.9);
+    padding:2px 4px;
+    border-radius:4px;
+    white-space:nowrap;
+    z-index:10;
+    border:1px solid var(--line);
+    display:block; /* Ensure visibility */
+    visibility:visible; /* Force visible */
+  }
+
+  /* Knob wrap needs relative positioning for absolute children */
+  .knob-wrap{
+    position:relative;
+    margin-bottom:20px;
+  }
+
+  /* Faders compact + marks (dB labels) */
+  .fader-wrap{display:flex;gap:8px;align-items:center;position:relative;margin-bottom:25px}
+  .fader-wrap .knob-value{
+    position:absolute;
+    bottom:-25px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:0.7rem;
+    color:var(--accent);
+    font-weight:600;
+    background:rgba(0,0,0,0.9);
+    padding:2px 6px;
+    border-radius:4px;
+    border:1px solid var(--line);
+    min-width:40px;
+    display:block; /* Ensure visibility */
+    visibility:visible; /* Force visible */
+    white-space:nowrap;
+  }
+  .fader{
+    appearance:none;
+    -webkit-appearance:none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    height:120px;
+    width:24px;
+    background:linear-gradient(180deg,#f3f5f9,#e7ebf2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    position:relative;
+    cursor:pointer;
+    outline:none;
+  }
+  
+  /* Responsive fader adjustments */
+  @media (max-width: 600px) {
+    .fader {
+      height: 80px;
+      width: 20px;
+    }
+    
+    .fader-wrap {
+      justify-self: center;
+    }
+    
+    .marks {
+      height: 80px;
+    }
+    
+    .scale {
+      height: 80px;
+    }
+  }
+  .fader::-webkit-slider-thumb{
+    appearance:none;
+    -webkit-appearance:none;
+    width:20px;
+    height:20px;
+    border-radius:6px;
+    background:linear-gradient(180deg,var(--amber),#b37d7d);
+    border:1px solid #7a3a3a;
+    box-shadow:0 1px 4px rgba(0,0,0,.25);
+    cursor:pointer;
+  }
+  .fader::-moz-range-thumb{
+    width:20px;
+    height:20px;
+    border-radius:6px;
+    background:linear-gradient(180deg,var(--amber),#b37d7d);
+    border:1px solid #7a3a3a;
+    cursor:pointer;
+    border:none;
+  }
+  .fader::-moz-range-track{
+    background:transparent;
+    border:none;
+  }
+  .scale{height:120px;width:2px;background:linear-gradient(#c9cfdb,#c9cfdb) no-repeat;position:relative}
+  .scale::before{content:"";position:absolute;left:-6px;right:-6px;top:9%;height:1px;background:#c9cfdb;box-shadow:
+    0 24px 0 #c9cfdb, 0 48px 0 #c9cfdb, 0 72px 0 #c9cfdb, 0 96px 0 #c9cfdb}
+  .marks{display:flex;flex-direction:column;justify-content:space-between;height:120px;font-size:.7rem;color:var(--muted)}
+  .marks span{transform:translateX(-2px)}
+
+  .srow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .srow3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .srow4{display:grid;grid-template-columns:repeat(auto-fit, minmax(60px, 1fr));gap:6px}
+  .switch{display:inline-flex;align-items:center;gap:6px}
+  .switch input{width:auto}
+  .btnline{display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between}
+  
+  /* Responsive grid adjustments */
+  @media (max-width: 1200px) {
+    .srow4 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .srow4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .srow {
+      justify-content: center;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .srow4 {
+      grid-template-columns: 1fr;
+    }
+    
+    .btnline {
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .btnline button {
+      width: 100%;
+      text-align: center;
+    }
+    
+    .srow {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+  }
+
+  /* Minimal vs Advanced */
+  body.minimal .adv{display:none}
+  body.advanced .adv{display:block}
+  body.minimal .only-adv{display:none}
+  body.advanced .only-min{display:none}
+</style>
+</head>
+<body class="minimal theme-noir">
+  <div id="app">
+  <header>
+    <div>
+      <h1>Console Booth (6×2)</h1>
+      <div class="sub">TX-6 & external interface ready · Swiss minimal UI · Peak dBFS + ~LUFS(S) · stems & master recorder</div>
+    </div>
+    <div class="row">
+      <span class="chip" id="rateChip">SR: —</span>
+      <span class="chip" id="stateChip">Audio: Off</span>
+      <span class="chip" id="sessionChip">Session: Untitled</span>
+      <label class="tiny">UI %</label>
+      <input id="uiScale" type="range" min="70" max="125" step="1" value="90" />
+      <span class="chip" id="uiScaleVal">90%</span>
+      <label class="tiny">Skin</label>
+      <select id="themeSel">
+        <option value="swiss">Swiss (default)</option>
+        <option value="noir" selected>Noir Mat + Amber</option>
+        <option value="bright">Bright</option>
+        <option value="teal">Dark Teal</option>
+        <option value="amber">Amber High-Contrast</option>
+      </select>
+      <label class="tiny">Preset</label>
+      <select id="presetSel">
+        <option value="clean" selected>Clean Swiss</option>
+        <option value="neve">Neve-ish</option>
+        <option value="api">API-ish</option>
+        <option value="sp303">Lo-Fi SP-303</option>
+      </select>
+      <button id="applyPreset" class="ghost">Apply</button>
+      <button id="viewToggle" class="ghost">Show Advanced</button>
+      <button id="startBtn" class="primary">Start Audio</button>
+      <button id="eraseBtn" class="warn">Erase Booth</button>
+    </div>
+  </header>
+
+  <div class="grid" id="grid"><!-- strips injected here --></div>
+
+  <footer>
+    <div class="row">
+      <div class="row">
+        <label class="tiny">Input (audio interface)</label>
+        <select id="inputSelect"></select>
+        <button id="refreshBtn" class="ghost">Refresh</button>
+        <span class="chip" id="inputInfoChip">Inputs: —</span>
+      </div>
+      <div class="row">
+        <label class="tiny">Output device</label>
+        <select id="outputSelect"></select>
+        <span class="rightnote" id="sinkNote">setSinkId: checking…</span>
+      </div>
+      <div class="row">
+        <label class="tiny">Clock</label>
+        <select id="sampleRateSel">
+          <option value="auto" selected>Auto</option>
+          <option value="48000">48 kHz</option>
+          <option value="44100">44.1 kHz</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <button id="recAll" class="primary">● Record Master + Stems</button>
+      <button id="stopAll" disabled>■ Stop</button>
+      <button id="zipBtn" class="ghost">Download All as .zip</button>
+      <div class="row tiny">Master ~LUFS(S): <span id="masterLUFS">—</span> · Peak: <span id="masterPeak">— dBFS</span></div>
+    </div>
+    <div class="row" style="gap: 8px; margin: 8px 0;">
+      <button id="autoBalanceTracks" class="ghost" style="font-size: 0.8rem;">🎚️ Auto Balance Tracks</button>
+      <button id="autoBalanceMaster" class="ghost" style="font-size: 0.8rem;">🎛️ Auto Master Level</button>
+      <button id="autoBalanceAll" class="primary" style="font-size: 0.8rem;">✨ Auto Balance All</button>
+    </div>
+    <div class="row" style="gap: 8px; margin: 8px 0;">
+      <button id="saveSession" class="ghost" style="font-size: 0.8rem;">💾 Save Session</button>
+      <button id="exportSession" class="ghost" style="font-size: 0.8rem;">📤 Export Session</button>
+      <input type="file" id="importSessionFile" accept=".json,.booth" style="display: none;">
+      <button id="importSession" class="ghost" style="font-size: 0.8rem;">📥 Import Session</button>
+      <button id="newSession" class="ghost" style="font-size: 0.8rem;">🆕 New Session</button>
+    </div>
+    <div class="row">
+      <div class="tiny" style="margin-right: 10px;">Individual Downloads:</div>
+      <div id="files" class="row" style="flex-wrap: wrap;"></div>
+    </div>
+  </footer>
+  </div>
+
+  <!-- Keyboard Shortcuts Help -->
+  <div id="keyboardShortcuts" class="keyboard-shortcuts">
+    <h4>🎹 Keyboard Controls</h4>
+    <div class="shortcut">
+      <span>Play/Stop All Tracks</span>
+      <span class="key">Space</span>
+    </div>
+    <div class="shortcut">
+      <span>Pause/Resume All</span>
+      <span class="key">⌘ + Space</span>
+    </div>
+    <div class="shortcut">
+      <span>Seek Back 10s</span>
+      <span class="key">←</span>
+    </div>
+    <div class="shortcut">
+      <span>Seek Forward 10s</span>
+      <span class="key">→</span>
+    </div>
+    <div class="shortcut">
+      <span>Toggle This Help</span>
+      <span class="key">?</span>
+    </div>
+  </div>
+
+  <audio id="monitor" autoplay></audio>
+
+<script>
+/* ===== Utility ===== */
+const NUM_STRIPS = 6;
+let ctx, inStream, inSource, splitter;
+let strips = []; // per-strip nodes + UI
+let master = {};
+let rec = { master: null, stems: [], chunks:{master:[], stems:Array(NUM_STRIPS).fill(0).map(()=>[])} };
+let files = [];
+let convolverIRBuffer = null;
+let deviceChannelHints = {};
+const deviceProbeLocks = new Map();
+
+// MIDI Control System
+let midiAccess = null;
+let midiInputs = [];
+let midiLearnMode = false;
+let midiMappings = {}; // {controlId: {input: midiInput, channel: number, cc: number}}
+
+// Track loading and playback
+let loadedTracks = Array(NUM_STRIPS).fill(null);
+
+const els = {
+  app: document.getElementById('app'),
+  grid: document.getElementById('grid'),
+  inputSelect: document.getElementById('inputSelect'),
+  outputSelect: document.getElementById('outputSelect'),
+  refreshBtn: document.getElementById('refreshBtn'),
+  startBtn: document.getElementById('startBtn'),
+  eraseBtn: document.getElementById('eraseBtn'),
+  recAll: document.getElementById('recAll'),
+  stopAll: document.getElementById('stopAll'),
+  files: document.getElementById('files'),
+  zipBtn: document.getElementById('zipBtn'),
+  monitor: document.getElementById('monitor'),
+  sampleRateSel: document.getElementById('sampleRateSel'),
+  rateChip: document.getElementById('rateChip'),
+  stateChip: document.getElementById('stateChip'),
+  sessionChip: document.getElementById('sessionChip'),
+  sinkNote: document.getElementById('sinkNote'),
+  inputInfoChip: document.getElementById('inputInfoChip'),
+  viewToggle: document.getElementById('viewToggle'),
+  masterLUFS: document.getElementById('masterLUFS'),
+  masterPeak: document.getElementById('masterPeak'),
+  autoBalanceTracks: document.getElementById('autoBalanceTracks'),
+  autoBalanceMaster: document.getElementById('autoBalanceMaster'),
+  autoBalanceAll: document.getElementById('autoBalanceAll'),
+  saveSession: document.getElementById('saveSession'),
+  exportSession: document.getElementById('exportSession'),
+  importSession: document.getElementById('importSession'),
+  importSessionFile: document.getElementById('importSessionFile'),
+  newSession: document.getElementById('newSession'),
+  uiScale: document.getElementById('uiScale'),
+  uiScaleVal: document.getElementById('uiScaleVal'),
+  themeSel: document.getElementById('themeSel'),
+  presetSel: document.getElementById('presetSel'),
+  applyPreset: document.getElementById('applyPreset'),
+  // Master section controls
+  masterFader: document.getElementById('masterFader'),
+  masterPan: document.getElementById('masterPan'),
+  masterMute: document.getElementById('masterMute'),
+  clearSolo: document.getElementById('clearSolo'),
+  trackChannelSelect: document.getElementById('trackChannelSelect')
+};
+
+function dBToGain(db){return Math.pow(10, db/20)}
+function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+function fmtDb(db){if(!isFinite(db)) return '−∞'; return (db> -0.05? db.toFixed(2): db.toFixed(1))}
+function escapeHtml(s){return s.replace(/[&<>\"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+
+function loadDeviceChannelHints(){
+  try {
+    const raw = localStorage.getItem('consoleBooth_deviceHints');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === 'object') deviceChannelHints = parsed;
+    }
+  } catch(err){
+    console.warn('Could not load device hints:', err.message);
+  }
+}
+
+function saveDeviceChannelHints(){
+  try {
+    localStorage.setItem('consoleBooth_deviceHints', JSON.stringify(deviceChannelHints));
+  } catch(err){
+    console.warn('Could not save device hints:', err.message);
+  }
+}
+
+function simplifyChannelSettings(settings){
+  if(!settings || typeof settings !== 'object') return null;
+  const out = {};
+  ['channelCount','sampleRate','sampleSize','latency'].forEach(key=>{
+    if(settings[key] !== undefined) out[key] = settings[key];
+  });
+  return Object.keys(out).length? out : null;
+}
+
+function simplifyChannelCapabilities(caps){
+  if(!caps || typeof caps !== 'object') return null;
+  const out = {};
+  if(caps.channelCount !== undefined){
+    const cc = caps.channelCount;
+    if(typeof cc === 'number') out.channelCount = cc;
+    else if(Array.isArray(cc)) out.channelCount = {min: Math.min(...cc), max: Math.max(...cc)};
+    else if(typeof cc === 'object'){
+      out.channelCount = {};
+      ['max','min','exact','ideal'].forEach(k=>{ if(cc[k] !== undefined) out.channelCount[k] = cc[k]; });
+    }
+  }
+  return Object.keys(out).length? out : null;
+}
+
+function updateInputInfoChip(info){
+  if(!els.inputInfoChip) return;
+  if(!info){
+    els.inputInfoChip.textContent = 'Inputs: —';
+    els.inputInfoChip.classList.remove('ok','warn');
+    return;
+  }
+  const ch = info.channels || info.maxChannels || info.detected || 0;
+  const attempts = info.attempts && info.attempts.length ? info.attempts : null;
+  let summary = ch? `${ch} ch` : '—';
+  if(attempts){
+    const bestAttempt = attempts.find(a => a && !a.error && a.achieved === ch);
+    if(bestAttempt && bestAttempt.request && bestAttempt.request !== ch){
+      summary += ` (req ${bestAttempt.request})`;
+    }
+  }
+  els.inputInfoChip.textContent = `Inputs: ${summary}`;
+  els.inputInfoChip.title = attempts ? attempts.map(a=>{
+    if(!a) return '';
+    if(a.error) return `× ${a.request || '?'} ch → ${a.error}`;
+    return `✓ ${a.request || '?'} ch → ${a.achieved || a.actual || '?'} ch`;
+  }).filter(Boolean).join('\n') : '';
+  els.inputInfoChip.classList.toggle('ok', ch > 2);
+  els.inputInfoChip.classList.toggle('warn', ch <= 2);
+}
+
+async function ensureDeviceProbe(deviceId){
+  if(!deviceId) return null;
+  if(deviceChannelHints[deviceId]?.confirmed) {
+    return deviceChannelHints[deviceId];
+  }
+  if(deviceProbeLocks.has(deviceId)) {
+    return deviceProbeLocks.get(deviceId);
+  }
+  const probePromise = (async ()=>{
+    const supported = navigator.mediaDevices?.getSupportedConstraints?.() || {};
+    const attempts = [];
+    let best = deviceChannelHints[deviceId]?.channels || 0;
+    const baseRate = ctx?.sampleRate || (Number(els.sampleRateSel?.value) || 48000);
+    const candidates = Array.from(new Set([
+      NUM_STRIPS*2,
+      best,
+      32, 24, 16, 12, 10, 8, 6, 4, 2
+    ].filter(n => n && n >= 2 && n <= 32))).sort((a,b)=>b-a);
+    for(const target of candidates){
+      const audioConstraints = {
+        deviceId: {exact: deviceId},
+        channelCount: { min: Math.min(2,target), ideal: target, max: target },
+        sampleRate: baseRate,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        latency: 0
+      };
+      try {
+        const testStream = await navigator.mediaDevices.getUserMedia({audio: audioConstraints, video: false});
+        const track = testStream.getAudioTracks()[0];
+        let settings = null;
+        let caps = null;
+        try { settings = track?.getSettings ? track.getSettings() : null; } catch{}
+        try { caps = track?.getCapabilities ? track.getCapabilities() : null; } catch{}
+        let actual = 0;
+        if(settings?.channelCount) actual = Math.max(actual, settings.channelCount);
+        if(caps?.channelCount){
+          let capVal = 0;
+          if(typeof caps.channelCount === 'number') capVal = caps.channelCount;
+          else if(typeof caps.channelCount === 'object'){
+            capVal = caps.channelCount.exact ?? caps.channelCount.max ?? caps.channelCount.min ?? 0;
+          }
+          if(actual < 2 && capVal) actual = Math.max(actual, capVal);
+        }
+        let probeCtx = null;
+        try {
+          probeCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate: baseRate});
+          const source = probeCtx.createMediaStreamSource(testStream);
+          actual = Math.max(actual, source.channelCount || 0);
+          source.disconnect();
+        } catch(err){
+          attempts.push({request: target, error: `context: ${err.message}`});
+        } finally {
+          if(probeCtx){
+            try { await probeCtx.close(); } catch{}
+          }
+        }
+        if(track){
+          try { track.stop(); } catch{}
+        }
+        testStream.getTracks().forEach(t=>{ try { t.stop(); } catch{} });
+        attempts.push({
+          request: target,
+          achieved: actual,
+          settings: simplifyChannelSettings(settings),
+          capabilities: simplifyChannelCapabilities(caps)
+        });
+        best = Math.max(best, actual || 0);
+        if(actual >= target && target <= (NUM_STRIPS*2)) {
+          break;
+        }
+      } catch(err) {
+        attempts.push({request: target, error: err && err.message ? err.message : String(err)});
+      }
+    }
+    const result = {
+      deviceId,
+      channels: Math.max(best || 0, 2),
+      attempts,
+      supportedChannelCount: !!supported.channelCount,
+      timestamp: Date.now(),
+      confirmed: best > 0
+    };
+    deviceChannelHints[deviceId] = result;
+    saveDeviceChannelHints();
+    return result;
+  })().finally(()=>{
+    deviceProbeLocks.delete(deviceId);
+  });
+  deviceProbeLocks.set(deviceId, probePromise);
+  return probePromise;
+}
+
+/* ===== UI build ===== */
+function buildUI(){
+  els.grid.innerHTML = '';
+  for(let i=0;i<NUM_STRIPS;i++){
+    const col = document.createElement('div');
+    col.className='strip';
+    col.innerHTML = `
+      <h3>CH ${i+1} <span class="badge">--</span></h3>
+      <div class="meter"><div class="vu" id="vu${i}"></div></div>
+      <div class="labels read"><span>Peak: <b id="pk${i}">— dBFS</b></span><span>~LUFS(S): <b id="lufs${i}">—</b></span></div>
+
+      <div class="srow">
+        <div class="fader-wrap only-min">
+          <div class="marks"><span>-60</span><span>-30</span><span>-12</span><span>-6</span><span>0</span></div>
+          <input type="range" class="fader" min="-60" max="10" step="0.1" value="-6" id="fader${i}">
+          <div class="scale"></div>
+          <div class="knob-value" id="faderVal${i}">-6.0 dB</div>
+        </div>
+        <div class="knob-wrap only-min">
+          <div class="knob" id="panKn${i}"><input type="range" min="-1" max="1" step="0.01" value="0" id="pan${i}"></div>
+          <div class="knob-label">Pan</div>
+          <div class="knob-value" id="panVal${i}">0.00</div>
+        </div>
+      </div>
+
+      <!-- Quick I/O for minimal view -->
+      <div class="section srow only-min">
+        <label class="tiny">Input
+          <select id="inputSelectMin${i}">
+            <option value="auto">Auto</option>
+            <option value="disabled">Disabled</option>
+          </select>
+        </label>
+        <label class="tiny">Output
+          <select id="outModeMin${i}">
+            <option value="master" selected>To Master</option>
+            <option value="mute">Muted</option>
+            <option value="auxA">Aux A Only</option>
+            <option value="auxB">Aux B Only</option>
+            <option value="auxAB">Aux A+B Only</option>
+            <option value="masterAuxA">Master + Aux A</option>
+            <option value="masterAuxB">Master + Aux B</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="adv">
+        <div class="srow4">
+          <div class="knob-wrap"><div class="knob" id="trimKn${i}"><input type="range" min="-24" max="24" step="0.1" value="0" id="trim${i}"></div><div class="knob-label">Trim (dB)</div><div class="knob-value" id="trimVal${i}">0.0 dB</div></div>
+          <div class="knob-wrap"><div class="knob" id="satKn${i}"><input type="range" min="0" max="1.5" step="0.01" value="0.04" id="sat${i}"></div><div class="knob-label">Sat</div><div class="knob-value" id="satVal${i}">0.04</div></div>
+          <div class="knob-wrap"><div class="knob" id="cmpKn${i}"><input type="range" min="0" max="1" step="0.01" value="0.06" id="cmp${i}"></div><div class="knob-label">Comp Amt</div><div class="knob-value" id="cmpVal${i}">0.06</div></div>
+          <div class="knob-wrap"><div class="knob" id="panKnA${i}"><input type="range" min="-1" max="1" step="0.01" value="0" id="panDup${i}"></div><div class="knob-label">Pan Fine</div><div class="knob-value" id="panDupVal${i}">0.00</div></div>
+        </div>
+        <div class="srow4 section">
+          <div class="knob-wrap"><div class="knob" id="hpfKn${i}"><input type="range" min="20" max="500" step="1" value="25" id="hpf${i}"></div><div class="knob-label">HPF</div><div class="knob-value" id="hpfVal${i}">25</div></div>
+          <div class="knob-wrap"><div class="knob" id="lpfKn${i}"><input type="range" min="2000" max="22000" step="10" value="20000" id="lpf${i}"></div><div class="knob-label">LPF</div><div class="knob-value" id="lpfVal${i}">20k</div></div>
+          <div class="knob-wrap"><div class="knob" id="lowKn${i}"><input type="range" min="-12" max="12" step="0.1" value="0" id="lows${i}"></div><div class="knob-label">Low (dB)</div><div class="knob-value" id="lowsVal${i}">0.0</div></div>
+          <div class="knob-wrap"><div class="knob" id="midKn${i}"><input type="range" min="-12" max="12" step="0.1" value="0" id="mids${i}"></div><div class="knob-label">Mid (dB)</div><div class="knob-value" id="midsVal${i}">0.0</div></div>
+        </div>
+        <div class="srow4">
+          <div class="knob-wrap"><div class="knob" id="highKn${i}"><input type="range" min="-12" max="12" step="0.1" value="0" id="highs${i}"></div><div class="knob-label">High (dB)</div><div class="knob-value" id="highsVal${i}">0.0</div></div>
+          <div class="knob-wrap"><div class="knob" id="auxAKn${i}"><input type="range" min="0" max="1" step="0.01" value="0" id="auxA${i}"></div><div class="knob-label">Aux A</div><div class="knob-value" id="auxAVal${i}">0.00</div></div>
+          <div class="knob-wrap"><div class="knob" id="auxBKn${i}"><input type="range" min="0" max="1" step="0.01" value="0" id="auxB${i}"></div><div class="knob-label">Aux B</div><div class="knob-value" id="auxBVal${i}">0.00</div></div>
+          <div class="fader-wrap"><div class="marks"><span>-60</span><span>-30</span><span>-12</span><span>-6</span><span>0</span></div><input type="range" class="fader" min="-60" max="10" step="0.1" value="-6" id="faderAdv${i}"><div class="scale"></div><div class="knob-value" id="faderAdvVal${i}">-6.0 dB</div></div>
+        </div>
+        <div class="section srow">
+          <label class="tiny">Comp Model
+            <select id="cmpModel${i}">
+              <option value="vca" selected>Clean VCA</option>
+              <option value="fet">FET Fast</option>
+              <option value="opto">Opto Glue</option>
+              <option value="sp303">SP-303 Punch</option>
+            </select>
+          </label>
+          <label class="tiny">Output
+            <select id="outMode${i}">
+              <option value="master" selected>To Master</option>
+              <option value="mute">Muted</option>
+              <option value="auxA">Aux A Only</option>
+              <option value="auxB">Aux B Only</option>
+              <option value="auxAB">Aux A+B Only</option>
+              <option value="masterAuxA">Master + Aux A</option>
+              <option value="masterAuxB">Master + Aux B</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="btnline section">
+        <button id="mute${i}" class="ghost mute-btn" data-strip="${i}">Mute</button>
+        <button id="solo${i}" class="ghost solo-btn" data-strip="${i}">Solo</button>
+        <button id="arm${i}" class="ghost arm-btn only-adv" data-strip="${i}">Arm</button>
+      </div>
+      
+      <div class="adv section">
+        <label class="tiny">Input Source CH${i+1}
+          <select id="inputSelect${i}">
+            <option value="auto">Auto</option>
+            <option value="disabled">Disabled</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="adv section">
+        <div class="srow4">
+          <label class="tiny switch">
+            <input type="checkbox" id="soloSafe${i}">
+            <span>Solo Safe</span>
+          </label>
+          <label class="tiny">Aux A Send
+            <select id="auxAMode${i}">
+              <option value="post" selected>Post-Fader</option>
+              <option value="pre">Pre-Fader</option>
+            </select>
+          </label>
+          <label class="tiny">Aux B Send
+            <select id="auxBMode${i}">
+              <option value="post" selected>Post-Fader</option>
+              <option value="pre">Pre-Fader</option>
+            </select>
+          </label>
+          <label class="tiny">Record Tap
+            <select id="recTap${i}">
+              <option value="post" selected>Post-Fader</option>
+              <option value="pre">Pre-Fader (Post-FX)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      
+  <div class="adv section">
+        <label class="tiny">Load Track ${i+1}
+          <input type="file" id="loadTrack${i}" accept="audio/*" />
+        </label>
+        <div class="srow">
+          <button id="playTrack${i}" class="ghost" disabled>▶ Play</button>
+          <button id="stopTrack${i}" class="ghost" disabled>⏹ Stop</button>
+          <button id="loopTrack${i}" class="ghost" disabled>🔄 Loop</button>
+        </div>
+        <div class="tiny" id="trackInfo${i}">No track loaded</div>
+      </div>
+    `;
+    els.grid.appendChild(col);
+  }
+  // Master column
+  const masterCol = document.createElement('div');
+  masterCol.className='strip master-strip';
+  masterCol.innerHTML = `
+    <h3>MASTER</h3>
+    <div class="meter"><div class="vu" id="vuMaster"></div></div>
+    <div class="labels read"><span>~LUFS(S): <b id="lufsMaster">—</b></span><span>Peak: <b id="pkMaster">— dBFS</b></span></div>
+
+    <div class="section srow">
+      <div class="fader-wrap">
+        <div class="marks"><span>-60</span><span>-30</span><span>-12</span><span>-6</span><span>0</span></div>
+        <input type="range" class="fader" min="-60" max="10" step="0.1" value="0" id="masterFader">
+        <div class="scale"></div>
+        <div class="knob-value" id="masterFaderVal">0.0</div>
+      </div>
+      <div class="knob-wrap">
+        <div class="knob" id="masterPanKn"><input type="range" min="-1" max="1" step="0.01" value="0" id="masterPan"></div>
+        <div class="knob-label">Pan</div>
+        <div class="knob-value" id="masterPanVal">0.00</div>
+      </div>
+    </div>
+
+    <div class="adv section">
+      <div class="srow">
+        <div class="knob-wrap"><div class="knob" id="busSatKn"><input type="range" min="0" max="1" step="0.01" value="0.04" id="busSat"></div><div class="knob-label">Bus Sat</div><div class="knob-value" id="busSatVal">0.04</div></div>
+        <div class="knob-wrap"><div class="knob" id="busCmpKn"><input type="range" min="0" max="1" step="0.01" value="0.08" id="busComp"></div><div class="knob-label">Glue</div><div class="knob-value" id="busCompVal">0.08</div></div>
+      </div>
+      <div class="srow">
+        <div class="knob-wrap"><div class="knob" id="mHPFKn"><input type="range" min="20" max="80" step="1" value="20" id="mHPF"></div><div class="knob-label">HPF</div><div class="knob-value" id="mHPFVal">20</div></div>
+        <div class="knob-wrap"><div class="knob" id="mLPFKn"><input type="range" min="12000" max="22000" step="10" value="20000" id="mLPF"></div><div class="knob-label">LPF</div><div class="knob-value" id="mLPFVal">20k</div></div>
+      </div>
+      <div class="srow">
+        <div class="knob-wrap"><div class="knob" id="mOutKn"><input type="range" min="-24" max="12" step="0.1" value="0" id="mOut"></div><div class="knob-label">Out Gain</div><div class="knob-value" id="mOutVal">0.0</div></div>
+        <div class="knob-wrap"><div class="knob" id="mMixKn"><input type="range" min="0" max="1" step="0.01" value="1" id="mMix"></div><div class="knob-label">Mix</div><div class="knob-value" id="mMixVal">1.00</div></div>
+      </div>
+      <div class="srow">
+        <div class="knob-wrap"><div class="knob" id="aRetKn"><input type="range" min="-60" max="6" step="0.1" value="-12" id="aRet"></div><div class="knob-label">A Return</div><div class="knob-value" id="aRetVal">-12.0</div></div>
+        <div class="knob-wrap"><div class="knob" id="bRetKn"><input type="range" min="-60" max="6" step="0.1" value="-12" id="bRet"></div><div class="knob-label">B Return</div><div class="knob-value" id="bRetVal">-12.0</div></div>
+      </div>
+      <div class="srow">
+        <div class="knob-wrap"><div class="knob" id="revTimeKn"><input type="range" min="0.2" max="8" step="0.1" value="2.0" id="revTime"></div><div class="knob-label">Rev Time</div><div class="knob-value" id="revTimeVal">2.0</div></div>
+        <div class="knob-wrap"><div class="knob" id="dlyTimeKn"><input type="range" min="0" max="1" step="0.001" value="0.33" id="dlyTime"></div><div class="knob-label">Delay</div><div class="knob-value" id="dlyTimeVal">0.33</div></div>
+      </div>
+      <div class="srow">
+        <div class="knob-wrap"><div class="knob" id="revMixKn"><input type="range" min="0" max="1" step="0.01" value="1" id="revMix"></div><div class="knob-label">Rev Mix</div><div class="knob-value" id="revMixVal">1.00</div></div>
+        <div class="knob-wrap"><div class="knob" id="dlyFBKn"><input type="range" min="0" max="0.95" step="0.01" value="0.35" id="dlyFB"></div><div class="knob-label">Delay FB</div><div class="knob-value" id="dlyFBVal">0.35</div></div>
+      </div>
+      <div class="srow section">
+        <div class="knob-wrap"><div class="knob" id="mLimKn"><input type="range" min="-12" max="-0.1" step="0.1" value="-1.0" id="mLimit"></div><div class="knob-label">Limiter (dBFS)</div><div class="knob-value" id="mLimitVal">-1.0</div></div>
+        <label class="tiny">Console Preset
+          <select id="busPreset">
+            <option value="clean" selected>Clean (Transparent)</option>
+            <option value="modern">Modern (Extended)</option>
+            <option value="neve">Neve-ish (Warm)</option>
+            <option value="api">API-ish (Punchy)</option>
+            <option value="vintage">Vintage (Saturated)</option>
+            <option value="sp303">SP-303 (Lo-Fi)</option>
+          </select>
+        </label>
+      </div>
+      <div class="section">
+        <input type="file" id="irFile" accept="audio/*" />
+        <span class="tiny">Load IR (optional) for Convolver</span>
+      </div>
+    </div>
+    
+    <div class="section btnline">
+      <button id="masterMute" class="ghost">Master Mute</button>
+      <button id="clearSolo" class="ghost">Clear Solo</button>
+    </div>
+    
+    <div class="adv section">
+      <label class="tiny">MIDI Control
+        <select id="midiDevice">
+          <option value="">No MIDI Device</option>
+        </select>
+      </label>
+      <div class="srow">
+        <button id="midiLearn" class="ghost">MIDI Learn</button>
+        <button id="midiClear" class="ghost">Clear MIDI</button>
+      </div>
+      <div class="tiny" id="midiStatus">MIDI: Disconnected</div>
+    </div>
+    
+    <div class="tiny section">
+      <div>Auto-mapping pairs adjacent input channels with each strip. Choose Custom to force a specific routing.</div>
+      <div>Track Selection: 
+        <select id="trackChannelSelect">
+          <option value="auto">Auto Pairing</option>
+          <option value="custom">Custom Mapping</option>
+        </select>
+      </div>
+    </div>
+  `;
+  els.grid.appendChild(masterCol);
+}
+
+/* ===== Audio graph ===== */
+async function listDevices(){
+  console.log('🔍 Enumerating audio devices...');
+  try {
+    // Enhanced permission request for better device detection
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }, 
+        video: false
+      });
+      stream.getTracks().forEach(track => track.stop());
+      console.log('✅ Audio permissions granted - full device labels available');
+    } catch(permErr) {
+      console.warn('⚠️ Audio permission limited - some device labels may not show:', permErr.message);
+    }
+    
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const ins = devs.filter(d=>d.kind==='audioinput');
+    const outs = devs.filter(d=>d.kind==='audiooutput');
+    
+    console.log(`Found ${ins.length} input devices, ${outs.length} output devices`);
+    ins.forEach((dev, i) => console.log(`Input ${i+1}: ${dev.label || dev.deviceId.substr(0,20)+'...'} (ID: ${dev.deviceId.substr(0,8)}...)`));
+    
+    // Clear existing options
+    els.inputSelect.innerHTML = '';
+    els.outputSelect.innerHTML = '';
+
+    const savedInput = localStorage.getItem('consoleBooth_lastInput') || '';
+    const savedOutput = localStorage.getItem('consoleBooth_lastOutput') || '';
+
+    // Add "No Input Selected" as default first option
+    const noInputOption = document.createElement('option');
+    noInputOption.value = '';
+    noInputOption.textContent = '-- No Input Selected (Disabled) --';
+    els.inputSelect.appendChild(noInputOption);
+    
+    // Add input devices with better labeling and TX-6 detection
+    let tx6Detected = false;
+  ins.forEach((d, i) => {
+      const option = document.createElement('option');
+      option.value = d.deviceId;
+      const label = d.label || `Input Device ${i + 1}`;
+      
+      // Enhanced TX-6 detection
+      const isTX6 = label.toLowerCase().includes('tx-6') || 
+                   label.toLowerCase().includes('tx6') ||
+                   label.toLowerCase().includes('teenage engineering') ||
+                   (label.toLowerCase().includes('usb') && label.toLowerCase().includes('audio') && 
+                    label.match(/\b(6|12)\s*(ch|channel|in|input)/i));
+      
+      const isMultiChannel = label.toLowerCase().includes('aggregate') || 
+                            label.toLowerCase().includes('multi') ||
+                            label.match(/\b(8|10|12|16|24|32)\s*(ch|channel|in|input)/i);
+      
+      if(isTX6) {
+        option.textContent = `🎛️ ${label} (TX-6 Detected)`;
+        tx6Detected = true;
+      } else if(isMultiChannel) {
+        option.textContent = `🎵 ${label} (Multi-Channel)`;
+      } else {
+        option.textContent = label;
+      }
+      option.dataset.baseLabel = option.textContent;
+      const hint = deviceChannelHints[d.deviceId]?.channels;
+      if(hint){
+        option.textContent = `${option.dataset.baseLabel} · ${hint}ch`;
+      }
+      els.inputSelect.appendChild(option);
+    });
+    
+    // If TX-6 is detected, automatically configure for TX-6 mode
+    if(tx6Detected) {
+      console.log('TX-6 detected! Auto-configuring for TX-6 multichannel mode');
+      const trackChannelSelect = document.getElementById('trackChannelSelect');
+      if(trackChannelSelect) {
+        trackChannelSelect.value = 'auto';
+      }
+      
+      // Show user notification
+      const statusDisplay = document.createElement('div');
+      statusDisplay.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: var(--vu1); 
+        color: #000; 
+        padding: 1rem; 
+        border-radius: 8px; 
+        font-weight: 600;
+        z-index: 1000;
+        animation: fadeInOut 4s ease-in-out;
+      `;
+      statusDisplay.textContent = '🎛️ TX-6 Detected! Auto-configured for multichannel mode';
+      document.body.appendChild(statusDisplay);
+      
+      setTimeout(() => {
+        if(statusDisplay.parentNode) {
+          statusDisplay.parentNode.removeChild(statusDisplay);
+        }
+      }, 4000);
+      
+      // Add fade animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes fadeInOut {
+          0%, 100% { opacity: 0; transform: translateY(-20px); }
+          10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    // Add default low latency output path option
+    const defaultOutOption = document.createElement('option');
+    defaultOutOption.value = '';
+    defaultOutOption.textContent = 'Default Output (Low Latency)';
+    els.outputSelect.appendChild(defaultOutOption);
+
+    // Add output devices
+    outs.forEach((d, i) => {
+      const option = document.createElement('option');
+      option.value = d.deviceId;
+      option.textContent = d.label || `Output Device ${i + 1}`;
+      els.outputSelect.appendChild(option);
+    });
+
+    // Apply saved selections when available
+    if(savedInput && [...els.inputSelect.options].some(o => o.value === savedInput)) {
+      els.inputSelect.value = savedInput;
+      updateInputInfoChip(deviceChannelHints[savedInput]);
+    } else {
+      els.inputSelect.value = '';
+      updateInputInfoChip(null);
+    }
+    if(savedOutput && [...els.outputSelect.options].some(o => o.value === savedOutput)) {
+      els.outputSelect.value = savedOutput;
+    } else {
+      els.outputSelect.value = '';
+    }
+    
+    // Add default option if no devices found
+    if(ins.length === 0) {
+      // Keep the "No Input Selected" option and add error message
+      const errorOption = document.createElement('option');
+      errorOption.value = '';
+      errorOption.textContent = '❌ No Input Devices Found';
+      els.inputSelect.appendChild(errorOption);
+    }
+    if(outs.length === 0) {
+      els.outputSelect.innerHTML = '<option value="">System Default</option>';
+    }
+    
+  } catch(error) {
+    console.error('Error listing devices:', error);
+    // Keep "No Input Selected" as default and add fallback
+    els.inputSelect.innerHTML = '<option value="" selected>-- No Input Selected (Disabled) --</option><option value="">⚠️ Default Input (Fallback)</option>';
+    els.outputSelect.innerHTML = '<option value="">Default Output</option>';
+  }
+}
+
+function getValueBubbleForInput(input){
+  if(!input) return null;
+  const wrap = input.closest('.knob-wrap, .fader-wrap');
+  if(wrap){
+    const valEl = wrap.querySelector('.knob-value');
+    if(valEl) return valEl;
+  }
+  // Fallback to id patterns
+  let el = document.getElementById(input.id + 'Val');
+  if(!el){
+    const m = input.id.match(/^(.*?)(\d+)$/);
+    if(m){ el = document.getElementById(m[1] + 'Val' + m[2]); }
+  }
+  return el || null;
+}
+
+function knobifyAll(){
+  console.log('knobifyAll called - finding all inputs...');
+  
+  // Handle all range inputs (both knobs and faders)
+  const allInputs = document.querySelectorAll('input[type="range"]');
+  console.log('Found range inputs:', allInputs.length);
+  
+  allInputs.forEach((input, index) => {
+    console.log('Setting up input', index, 'id:', input.id);
+    
+    const isKnob = input.closest('.knob');
+    const isFader = input.classList.contains('fader');
+    
+    // Get value display element (supports both id patterns and wrapper lookup)
+    const valueDisplay = getValueBubbleForInput(input);
+    
+    const updateVisual = () => {
+      const val = parseFloat(input.value);
+      
+      if(isKnob) {
+        // Update knob visual
+        const min = parseFloat(input.min) || 0;
+        const max = parseFloat(input.max) || 1;
+        const p = (val - min) / (max - min);
+        const knobEl = input.closest('.knob');
+        if(knobEl) {
+          knobEl.style.setProperty('--val', Math.max(0, Math.min(1, p)));
+        }
+      }
+      
+      // Update value display with proper formatting
+      if(valueDisplay) {
+        let displayVal;
+        const id = input.id;
+        
+        if(id.includes('fader') || id.includes('masterFader')) {
+          displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+        } else if(id.includes('lpf') || id.includes('hpf') || id.includes('LPF') || id.includes('HPF')) {
+          displayVal = val >= 1000 ? (val/1000).toFixed(1)+'k Hz' : Math.round(val) + ' Hz';
+        } else if(id.includes('pan') || id.includes('aux') || id.includes('Mix')) {
+          displayVal = val.toFixed(2);
+        } else if(id.includes('sat') || id.includes('cmp')) {
+          displayVal = (val * 100).toFixed(0) + '%';
+        } else if(id.includes('trim') || id.includes('lows') || id.includes('mids') || id.includes('highs') || id.includes('Out') || id.includes('Ret')) {
+          displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+        } else if(val % 1 === 0) {
+          displayVal = Math.round(val).toString();
+        } else {
+          displayVal = val.toFixed(1);
+        }
+        
+        valueDisplay.textContent = displayVal;
+        valueDisplay.style.visibility = 'visible';
+        valueDisplay.style.display = 'block';
+        console.log(`Updated display for ${id}:`, displayVal);
+      } else {
+        // Some controls in compact views purposefully skip bubbles
+      }
+    };
+    
+    // Store default value
+    if(!input.hasAttribute('data-default')) {
+      input.setAttribute('data-default', input.value);
+    }
+    
+    // Remove existing listeners
+    input.onchange = null;
+    input.oninput = null;
+    
+    // Add input listener
+    input.addEventListener('input', (e) => {
+      console.log('Input changed:', input.id, '=', input.value);
+      updateVisual();
+    });
+    
+    // Add change listener  
+    input.addEventListener('change', (e) => {
+      console.log('Change event:', input.id, '=', input.value);
+      updateVisual();
+    });
+    
+    // Add mouse events for faders too
+    if(isFader) {
+      console.log('Setting up fader-specific events for:', input.id);
+      
+      // Double-click reset for faders
+      input.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        const defaultVal = input.getAttribute('data-default') || input.defaultValue;
+        input.value = defaultVal;
+        updateVisual();
+        input.dispatchEvent(new Event('change', {bubbles: true}));
+        console.log('Fader reset to default:', input.id, defaultVal);
+      });
+      
+      // Ensure fader is clickable and draggable
+      input.style.pointerEvents = 'auto';
+      input.style.cursor = 'pointer';
+    }
+    
+    if(isKnob) {
+      const knobEl = input.closest('.knob');
+      
+      // Mouse wheel support
+      knobEl.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const min = parseFloat(input.min) || 0;
+        const max = parseFloat(input.max) || 1;
+        const step = parseFloat(input.step) || 0.01;
+        const delta = e.deltaY > 0 ? -step : step;
+        const newVal = Math.max(min, Math.min(max, parseFloat(input.value) + delta));
+        input.value = newVal;
+        updateVisual();
+        input.dispatchEvent(new Event('change', {bubbles: true}));
+      }, {passive: false});
+      
+      // Drag support
+      let isDragging = false;
+      let startY = 0;
+      let startValue = 0;
+      
+      knobEl.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        isDragging = true;
+        startY = e.clientY;
+        startValue = parseFloat(input.value);
+        
+        const handleMouseMove = (e) => {
+          if (!isDragging) return;
+          e.preventDefault();
+          
+          const min = parseFloat(input.min) || 0;
+          const max = parseFloat(input.max) || 1;
+          const range = max - min;
+          const deltaY = startY - e.clientY;
+          const sensitivity = range / 150;
+          const newVal = Math.max(min, Math.min(max, startValue + (deltaY * sensitivity)));
+          
+          input.value = newVal;
+          updateVisual();
+          input.dispatchEvent(new Event('change', {bubbles: true}));
+        };
+        
+        const handleMouseUp = () => {
+          isDragging = false;
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+        };
+        
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+      });
+      
+      // Double-click reset
+      knobEl.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        const defaultVal = input.getAttribute('data-default') || input.defaultValue;
+        input.value = defaultVal;
+        updateVisual();
+        input.dispatchEvent(new Event('change', {bubbles: true}));
+      });
+    }
+    
+    // Initialize visual
+    updateVisual();
+  });
+  
+  console.log('All inputs initialized - triggering value display update');
+  
+  // Initialize all value displays after a brief delay to ensure DOM is ready
+  setTimeout(() => {
+    if(typeof initializeValueDisplays === 'function') {
+      initializeValueDisplays();
+    }
+  }, 100);
+}
+
+async function addWorklet(){
+  if(!ctx?.audioWorklet) {
+    console.warn('AudioWorklet not supported, using fallback metering');
+    return;
+  }
+  
+  const code = `
+    class LoudnessMeterProcessor extends AudioWorkletProcessor{
+      constructor(){
+        super();
+        this.id = -1; 
+        this.hpZ1L=0; 
+        this.hpZ1R=0; 
+        this.peak=0; 
+        this.sumSq=0; 
+        this.count=0; 
+        this.lastPost=0;
+        this.port.onmessage = e=>{ 
+          if(e.data && e.data.id!==undefined) this.id=e.data.id; 
+        };
+      }
+      process(inputs, outputs, params){
+        const chs = inputs[0]; 
+        if(!chs || chs.length===0) return true;
+        const L = chs[0]; 
+        const R = chs[1] || chs[0];
+        const fs = sampleRate; 
+        const fc = 60; 
+        const a = Math.exp(-2*Math.PI*fc/fs); // simple HP
+        for(let i=0;i<L.length;i++){
+          const xl=L[i]||0, xr=R[i]||0;
+          const yl = xl - this.hpZ1L + a * (this.hpZ1L = (this.hpZ1L||0) + xl - (this.hpZ1L||0));
+          const yr = xr - this.hpZ1R + a * (this.hpZ1R = (this.hpZ1R||0) + xr - (this.hpZ1R||0));
+          const m = 0.5*(yl+yr);
+          this.sumSq += m*m; 
+          this.count++;
+          const p = Math.max(Math.abs(xl),Math.abs(xr),1e-12);
+          if(p>this.peak) this.peak=p;
+        }
+        const now = currentTime*1000;
+        if(now - this.lastPost > 180){
+          const rms = Math.sqrt(this.sumSq/Math.max(1,this.count));
+          const db = 20*Math.log10(rms+1e-12);
+          const peakDb = 20*Math.log10(this.peak+1e-12);
+          const lufsShort = db; // approx K-weighted short-term
+          this.port.postMessage({id:this.id, peakDb, lufs:lufsShort});
+          this.sumSq=0; this.count=0; this.peak=0; this.lastPost = now;
+        }
+        return true;
+      }
+    }
+    registerProcessor('loudness-meter', LoudnessMeterProcessor);
+  `;
+  
+  try {
+    const url = URL.createObjectURL(new Blob([code], {type:'application/javascript'}));
+    await ctx.audioWorklet.addModule(url);
+    URL.revokeObjectURL(url);
+    console.log('AudioWorklet loaded successfully');
+  } catch(error) {
+    console.warn('AudioWorklet failed to load, using fallback:', error);
+  }
+}
+
+async function startAudio(){
+  try {
+    // Disable the start button to prevent multiple clicks
+    if(els.startBtn) els.startBtn.disabled = true;
+    
+    // If an audio context already exists, tear down before restarting to avoid double graphs
+    if(ctx){
+      try {
+        if(rec?.master || (rec?.stems && rec.stems.length)) {
+          stopRecording();
+        }
+      } catch(e) { console.warn('Stop recording on restart failed:', e); }
+      try { if(inStream){ inStream.getTracks().forEach(t=>t.stop()); } } catch(e) {}
+      try { if(inSource && splitter){ inSource.disconnect(); } } catch(e) {}
+      try { await ctx.close(); } catch(e) { console.warn('Closing previous audio context failed:', e); }
+      ctx = null; inStream = null; inSource = null; splitter = null; master = {}; strips = [];
+      currentInputChannels = 0;
+    }
+
+    if(!ctx){
+      const srSel = els.sampleRateSel.value;
+      const sr = srSel==='auto'? undefined : Number(srSel);
+      // Create audio context with minimal latency settings
+      ctx = new (window.AudioContext||window.webkitAudioContext)({
+        latencyHint: 'interactive', // Prioritize low latency over power consumption
+        sampleRate: sr
+      });
+      
+      // Set minimal processing buffer size for lowest latency
+      if (ctx.audioWorklet) {
+        // Modern low-latency processing
+        console.log('Using AudioWorklet for minimal latency processing');
+      }
+      
+      console.log(`Audio context created with sample rate: ${ctx.sampleRate}Hz, base latency: ${(ctx.baseLatency * 1000).toFixed(2)}ms, output latency: ${(ctx.outputLatency * 1000).toFixed(2)}ms`);
+      els.rateChip.textContent = `SR: ${ctx.sampleRate} Hz`;
+      await addWorklet();
+      try { await ctx.resume(); } catch {}
+    }
+    const devId = els.inputSelect.value || undefined;
+    if(devId){
+      try {
+        const probe = await ensureDeviceProbe(devId);
+        if(probe){
+          console.log(`Device probe: ${probe.channels} channels detected for ${devId}`);
+          updateInputInfoChip(probe);
+        }
+      } catch(err) {
+        console.warn('Device probe failed:', err);
+      }
+    } else {
+      updateInputInfoChip(null);
+    }
+    let track0 = null;
+    let trackSettings = null;
+    let trackCapabilities = null;
+    let detectedChannels = 0;
+    let splitterOutputs = NUM_STRIPS * 2;
+    
+    // Check if no input is selected (disabled mode)
+  if(!devId || devId === '') {
+      console.log('No input device selected - starting in DISABLED mode (output only)');
+      
+      // Create a silent input source
+      inStream = null;
+      inSource = ctx.createGain(); // Create a silent gain node as input
+      inSource.channelCount = NUM_STRIPS * 2; // Preserve routing width when no input is selected
+      inSource.gain.value = 0; // Silent
+      
+      const ch = 0; // No actual channels
+      const need = NUM_STRIPS*2; 
+      const outs = NUM_STRIPS * 2; // Provide silence for each strip
+      
+      console.log(`DISABLED MODE: No input channels, creating ${outs} silent outputs for ${NUM_STRIPS} strips`);
+      
+  splitter = ctx.createChannelSplitter(outs);
+  // No connection from inSource in disabled mode; splitter outputs silence
+      
+      console.log(`Channel splitter created with ${outs} silent outputs (DISABLED mode)`);
+      splitterOutputs = splitter.numberOfOutputs || outs;
+    } else {
+      // Normal input mode
+      console.log('Input device selected - starting in NORMAL mode');
+      
+      inStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: devId? {exact: devId}: undefined,
+          // Request multichannel if available; browsers may clamp to what device provides
+          channelCount: { min: 2, ideal: NUM_STRIPS * 2, max: 32 },
+          // Match AudioContext sample rate to avoid resampling latency
+          sampleRate: ctx.sampleRate,
+          // Disable browser DSP for pro quality
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          // Hint for low latency; many browsers ignore but harmless
+          latency: 0
+        }
+      });
+      
+      inSource = ctx.createMediaStreamSource(inStream);
+      track0 = inStream.getAudioTracks()[0] || null;
+      try {
+        if(track0?.applyConstraints) {
+          const desiredChannels = Math.min(NUM_STRIPS * 2, 32);
+          await track0.applyConstraints({ channelCount: desiredChannels });
+        }
+      } catch(err) {
+        console.warn('Channel constraint application failed:', err.message);
+      }
+      // Allow hardware to report updated settings after constraints
+      await new Promise(resolve => setTimeout(resolve, 50));
+      try {
+        trackSettings = track0?.getSettings ? track0.getSettings() : null;
+      } catch(err) {
+        console.warn('Track settings unavailable:', err.message);
+      }
+      try {
+        trackCapabilities = track0?.getCapabilities ? track0.getCapabilities() : null;
+      } catch(err) {
+        console.warn('Channel capability probe failed:', err.message);
+      }
+      const chFromSettings = trackSettings?.channelCount || 0;
+      let chFromCapabilities = 0;
+      if(trackCapabilities?.channelCount !== undefined){
+        const cap = trackCapabilities.channelCount;
+        if(typeof cap === 'number'){ chFromCapabilities = cap; }
+        else if(Array.isArray(cap)){ chFromCapabilities = Math.max(...cap); }
+        else if(typeof cap === 'object'){ chFromCapabilities = cap.max ?? cap.min ?? 0; }
+      }
+      const sourceChannels = inSource?.channelCount || 0;
+      let ch = Math.max(sourceChannels, chFromSettings);
+      if(ch === 0 && chFromCapabilities) ch = Math.min(chFromCapabilities, NUM_STRIPS * 2);
+      if(ch === 0) ch = 2;
+      if(inSource) {
+        try {
+          const nodeChannels = Math.max(ch, 2);
+          inSource.channelCount = nodeChannels;
+          inSource.channelCountMode = 'explicit';
+          inSource.channelInterpretation = 'discrete';
+        } catch {}
+      }
+      const need = NUM_STRIPS*2; 
+      const outs = Math.max(ch, 2); // Match device width while keeping stereo minimum
+      
+      console.log(`Input source: ${ch} channels available from device, creating ${outs} channel splitter for ${NUM_STRIPS} strips`);
+      console.log('Input stream details:', inStream.getAudioTracks().map(track => ({
+        label: track.label,
+        enabled: track.enabled,
+        settings: track.getSettings(),
+        capabilities: track.getCapabilities()
+      })));
+      
+  splitter = ctx.createChannelSplitter(outs);
+  try {
+    splitter.channelCountMode = 'explicit';
+    splitter.channelInterpretation = 'discrete';
+  } catch {}
+  inSource.connect(splitter);
+      
+      console.log(`Channel splitter created with ${outs} outputs for multichannel support`);
+      splitterOutputs = outs;
+      detectedChannels = Math.max(ch || 0, inSource.channelCount || 0, chFromSettings || 0);
+    }
+
+    const settingsChannelCount = trackSettings?.channelCount || 0;
+    if(inStream) {
+      detectedChannels = Math.max(
+        detectedChannels,
+        inSource.channelCount || 0,
+        settingsChannelCount,
+        splitterOutputs
+      );
+    }
+
+    if(devId){
+      const runtimeAttempt = {
+        request: 'runtime',
+        achieved: detectedChannels,
+        settings: simplifyChannelSettings(trackSettings),
+        capabilities: simplifyChannelCapabilities(trackCapabilities)
+      };
+      const existingAttempts = Array.isArray(deviceChannelHints[devId]?.attempts) ? deviceChannelHints[devId].attempts.slice(0,5) : [];
+      const mergedAttempts = [runtimeAttempt, ...existingAttempts];
+      const measuredChannels = Math.max(detectedChannels || 0, inSource.channelCount || 0, settingsChannelCount || 0, 2);
+      deviceChannelHints[devId] = {
+        ...(deviceChannelHints[devId]||{}),
+        deviceId: devId,
+        channels: measuredChannels,
+        attempts: mergedAttempts,
+        supportedChannelCount: deviceChannelHints[devId]?.supportedChannelCount,
+        timestamp: Date.now(),
+        confirmed: true
+      };
+      saveDeviceChannelHints();
+      updateInputInfoChip(deviceChannelHints[devId]);
+    }
+
+    // Aux
+    const auxA = { in: ctx.createGain(), out: ctx.createGain(), convolver: ctx.createConvolver() };
+    const auxB = { in: ctx.createGain(), out: ctx.createGain(), delay: ctx.createDelay(5.0), fb: ctx.createGain() };
+    auxA.in.gain.value = dBToGain(-12); auxA.out.gain.value = dBToGain(-12);
+    auxA.in.connect(auxA.convolver); auxA.convolver.connect(auxA.out); auxA.convolver.buffer = makeNoiseIR(ctx, 2.0);
+    auxB.in.gain.value = dBToGain(-12); auxB.out.gain.value = dBToGain(-12);
+    auxB.delay.delayTime.value = 0.33; auxB.fb.gain.value = 0.35; auxB.in.connect(auxB.delay); auxB.delay.connect(auxB.fb); auxB.fb.connect(auxB.delay); auxB.delay.connect(auxB.out);
+
+    // Master
+    master = {
+      mix: ctx.createGain(),
+      busHPF: ctx.createBiquadFilter(), busLPF: ctx.createBiquadFilter(),
+      busSat: ctx.createWaveShaper(), comp: ctx.createDynamicsCompressor(), 
+      limiter: ctx.createDynamicsCompressor(), 
+      outGain: ctx.createGain(),
+      masterFader: ctx.createGain(),
+      masterPan: ctx.createStereoPanner(),
+      masterMute: ctx.createGain(),
+      tap: ctx.createMediaStreamDestination(),
+      auxA, auxB,
+      meterAn: mkAnalyser(),
+      meterNode: createMeterNode(-1),
+      isMuted: false
+    };
+    master.busHPF.type='highpass'; master.busHPF.frequency.value=20; master.busHPF.Q.value=0.7;
+    master.busLPF.type='lowpass'; master.busLPF.frequency.value=20000; master.busLPF.Q.value=0.5;
+  // Default to a cleaner bus saturation
+  master.busSat.curve = mkShaper(0.04);
+  // Transparent bus compressor (gentler, less distortion)
+  master.comp.threshold.value = -18; master.comp.knee.value=6; master.comp.ratio.value=2.0; 
+  master.comp.attack.value=0.02; master.comp.release.value=0.25;
+  // Transparent limiter (avoid harsh distortion)
+  master.limiter.threshold.value = -1.0; master.limiter.knee.value=12; master.limiter.ratio.value=10; 
+  master.limiter.attack.value=0.003; master.limiter.release.value=0.08;
+    master.outGain.gain.value = 1;
+    master.masterFader.gain.value = 1;
+    master.masterMute.gain.value = 1;
+
+    // Create separate monitoring system to avoid doubling
+    master.monitorGain = ctx.createGain();
+    master.monitorGain.gain.value = 0; // Start muted - only active when monitoring is enabled
+    master.secondMonitorGain = ctx.createGain();
+    master.secondMonitorGain.gain.value = 0; // Second monitor for default speakers (off by default)
+
+    // Enhanced routing: mix -> sat -> HPF -> LPF -> comp -> limiter -> masterPan -> masterMute -> masterFader -> outGain -> monitoring
+    master.mix.connect(master.busSat);
+    master.busSat.connect(master.busHPF);
+    master.busHPF.connect(master.busLPF);
+    master.busLPF.connect(master.comp);
+    master.comp.connect(master.limiter);
+    master.limiter.connect(master.masterPan);
+    master.masterPan.connect(master.masterMute);
+    master.masterMute.connect(master.masterFader);
+    master.masterFader.connect(master.outGain);
+    
+    // Connect to monitoring system instead of directly to destination
+  // Route audio: outGain -> monitorGain -> tap (for <audio> element)
+  master.outGain.connect(master.monitorGain);
+  master.monitorGain.connect(master.tap);
+  // Also route to default device path separately
+  master.outGain.connect(master.secondMonitorGain);
+  master.outGain.connect(master.meterAn.in);
+    if(master.meterNode){ master.outGain.connect(master.meterNode); }
+
+    // Connect monitoring system to audio destinations
+    master.secondMonitorGain.connect(ctx.destination); // Second monitor goes to default speakers
+    // Note: monitorGain connects to setSinkId audio element via setupMonitorSink()
+
+    // Aux returns
+    master.auxA.out.connect(master.mix);
+    master.auxB.out.connect(master.mix);
+
+    // Build strips
+    strips = [];
+    // Define input/output channel counts based on stream and device settings
+    const inChCount = inStream ? Math.max(detectedChannels || 0, 2) : 0;
+    const outs = inStream ? Math.max(splitterOutputs || 0, 2) : splitterOutputs;
+    
+  for(let i=0;i<NUM_STRIPS;i++){
+      // Default auto mapping pairs adjacent channels (1-2, 3-4, ...)
+      const chL = i*2, chR = i*2+1; 
+      const ch = inStream ? (inChCount || 2) : 0; // Get actual channel count, 0 in disabled mode
+      const hasL = chL < ch; const hasR = chR < ch; // Check against actual channel count
+      const hasLOut = chL < outs; const hasROut = chR < outs; // Check against splitter outputs
+      
+  const inL = ctx.createGain(), inR = ctx.createGain();
+  try {
+    inL.channelCount = 1;
+    inL.channelCountMode = 'explicit';
+    inL.channelInterpretation = 'discrete';
+  } catch {}
+  try {
+    inR.channelCount = 1;
+    inR.channelCountMode = 'explicit';
+    inR.channelInterpretation = 'discrete';
+  } catch {}
+  // Create stereo merger so processing chain runs in stereo
+  const stereoMerge = ctx.createChannelMerger(2);
+  try {
+    stereoMerge.channelInterpretation = 'discrete';
+  } catch {}
+      
+      // Connect available channels (only in normal mode, not disabled mode)
+      if(inStream && hasL && hasLOut) {
+        splitter.connect(inL, chL);
+        console.log(`Strip ${i+1}: Connected L channel ${chL+1}`);
+      } else {
+        console.log(`Strip ${i+1}: L channel ${chL+1} ${inStream ? 'not available' : 'disabled (no input selected)'} (device has ${ch} channels)`);
+      }
+      
+      if(inStream && hasR && hasROut) {
+        splitter.connect(inR, chR);
+        console.log(`Strip ${i+1}: Connected R channel ${chR+1}`);
+      } else if(inStream && hasL && hasLOut) {
+        // Mono to stereo fallback
+        splitter.connect(inR, chL);
+        console.log(`Strip ${i+1}: Using mono-to-stereo for channel ${chL+1}`);
+      } else {
+        console.log(`Strip ${i+1}: R channel ${chR+1} ${inStream ? 'not available' : 'disabled (no input selected)'}`);
+      }
+      
+      const inputStatus = inStream ? `channels ${chL+1}/${chR+1} (hasL: ${hasL}, hasR: ${hasR}, device channels: ${ch})` : 'DISABLED (no input selected)';
+      console.log(`Strip ${i+1}: input status ${inputStatus}`);
+
+  const trim = ctx.createGain(); trim.gain.value = 1; // Ensure trim is at unity gain
+      const hpf = ctx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=25; hpf.Q.value=0.7;
+      const lpf = ctx.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=20000; lpf.Q.value=0.5;
+      const low = ctx.createBiquadFilter(); low.type='lowshelf'; low.frequency.value=110;
+      const mid = ctx.createBiquadFilter(); mid.type='peaking'; mid.frequency.value=1000; mid.Q.value=0.9;
+      const high = ctx.createBiquadFilter(); high.type='highshelf'; high.frequency.value=12000;
+  const sat = ctx.createWaveShaper(); sat.curve = mkShaper(0.04); // light saturation for headroom
+  // Gentle per-strip compressor (less artifacts)
+  const comp = ctx.createDynamicsCompressor(); 
+  comp.threshold.value=-26; comp.knee.value=6; comp.ratio.value=1.4; 
+  comp.attack.value=0.012; comp.release.value=0.18;
+      const pan = ctx.createStereoPanner(); 
+  const fader = ctx.createGain(); fader.gain.value = dBToGain(-6); // default headroom
+      const mute = ctx.createGain(); mute.gain.value = 1; // Mute control
+
+      const meterAn = mkAnalyser();
+      const meterNode = createMeterNode(i);
+
+  // Audio routing: (L,R) -> stereoMerge -> trim -> hpf -> lpf -> EQ -> sat -> comp -> pan -> mute -> fader -> master
+  inL.connect(stereoMerge, 0, 0);
+  inR.connect(stereoMerge, 0, 1);
+  stereoMerge.connect(trim);
+      trim.connect(hpf); hpf.connect(lpf); lpf.connect(low); low.connect(mid); mid.connect(high); high.connect(sat);
+      sat.connect(comp); comp.connect(pan); pan.connect(mute); mute.connect(fader);
+      // Route to master through a controllable gain for output-mode switching
+      const routeGain = ctx.createGain(); routeGain.gain.value = 1;
+      fader.connect(routeGain);
+      routeGain.connect(master.mix);
+      fader.connect(meterAn.in);
+      if(meterNode){ fader.connect(meterNode); }
+
+      console.log(`Strip ${i+1} audio routing completed - Input: ${chL+1}/${chR+1}, trim: ${trim.gain.value}, fader: ${fader.gain.value}`);
+
+  const sendA = ctx.createGain(); sendA.gain.value=0;
+  const sendB = ctx.createGain(); sendB.gain.value=0;
+  // Default send routing: A post-FX pre-fader (from high); B post-fader (from fader)
+  high.connect(sendA); sendA.connect(master.auxA.in);
+  fader.connect(sendB); sendB.connect(master.auxB.in);
+
+  // Record taps for pre/post selection
+  const recordPre = ctx.createMediaStreamDestination(); // post-FX, pre-fader
+  const recordPost = ctx.createMediaStreamDestination(); // post-fader
+  high.connect(recordPre);
+  fader.connect(recordPost);
+
+      // Track playback nodes
+      const trackGain = ctx.createGain(); trackGain.gain.value = 0; // Start muted until track is loaded
+      const trackPan = ctx.createStereoPanner(); trackPan.pan.value = 0;
+      
+      // Connect track playback to the same processing chain after trim
+      trackGain.connect(trackPan);
+      trackPan.connect(hpf); // Inject after trim, before EQ
+      
+      strips.push({
+  inL, inR, trim, hpf, lpf, low, mid, high, sat, comp, pan, fader, mute, sendA, sendB, stereoMerge,
+        routeGain,
+        trackGain, trackPan, // Track playback nodes
+  recordPre, recordPost, stemTap: recordPost, meterAn, meterNode, 
+        ui: { model: 'vca' }, 
+        solo: false, 
+        muted: false,
+        isArmed: false, // Recording arm state
+        channelPair: hasL ? (hasR ? `CH${chL+1}/${chR+1}` : `CH${chL+1}`) : '--',
+        inputChannels: { left: hasL ? chL : null, right: hasR ? chR : (hasL ? chL : null) }, // Store input channel mapping
+        lastConnected: { left: hasL? chL : null, right: hasR? chR : (hasL? chL : null) },
+        inputSelection: 'auto', // Current input selection mode
+        soloSafe: false,
+        auxModes: { A: 'post', B: 'post' },
+        recordTap: 'post',
+        // Track playback state
+        trackBuffer: null,
+        trackSource: null,
+        isPlaying: false,
+        isLooping: false,
+        trackFileName: null,
+        disabledTrim: null
+      });
+      
+      console.log(`Strip ${i+1} created with input hints ${chL+1}/${chR+1} and track playback capability`);
+    }
+
+    const selectorChannels = inStream ? Math.max(inChCount, splitterOutputs || 0, detectedChannels || 0) : splitterOutputs || 0;
+    console.log(`Populating input selectors with ${selectorChannels} channels (detected=${detectedChannels}, splitter=${splitterOutputs})`);
+    populateTrackInputSelectors(selectorChannels);
+
+    hookUI();
+    startMeters();
+    setupMonitorSink();
+    
+    // Initialize all digital value displays
+    initializeValueDisplays();
+    
+    // Report channel mapping status for diagnostics
+    try {
+      const reportedChannels = inStream ? (inStream.getAudioTracks()[0]?.getSettings()?.channelCount || 0) : 0;
+      console.log(`Input channel report: device=${reportedChannels}, routed=${currentInputChannels}`);
+      if(strips && Array.isArray(strips)) {
+        strips.forEach((strip, idx) => {
+          console.log(`Strip ${idx+1}: ${strip.channelPair || 'no input'} (${strip.inputSelection})`);
+        });
+      }
+    } catch(err) {
+      console.warn('Channel mapping status error:', err.message);
+    }
+    
+    els.stateChip.textContent = 'Audio: On';
+    
+    // Change button text and re-enable
+    if(els.startBtn) {
+      els.startBtn.textContent = 'Restart Audio';
+      els.startBtn.disabled = false;
+    }
+  } catch(err) { 
+    // Re-enable button on error
+    if(els.startBtn) els.startBtn.disabled = false;
+    alert('Could not start audio: '+err.message); 
+    console.error('Audio initialization error:', err);
+    throw err; 
+  }
+}
+
+/* ===== Meters ===== */
+function createMeterNode(id) {
+  try {
+    if(ctx?.audioWorklet) {
+      const node = new AudioWorkletNode(ctx, 'loudness-meter', {numberOfInputs:1, numberOfOutputs:0});
+      if(node && node.port) {
+        node.port.postMessage({id: id});
+        return node;
+      }
+    }
+  } catch(error) {
+    console.warn('AudioWorkletNode creation failed for id', id, ':', error);
+  }
+  return null;
+}
+
+/* ===== Meters ===== */
+function mkAnalyser(){ 
+  const an = ctx.createAnalyser(); 
+  an.fftSize=128; // Smaller FFT size for lower latency
+  an.smoothingTimeConstant=0.2; // Less smoothing for faster response
+  const data = new Uint8Array(an.frequencyBinCount); 
+  const inNode=ctx.createGain(); 
+  inNode.connect(an); 
+  return {in:inNode, an, data}; 
+}
+
+function startMeters(){
+  function loop(){
+    try {
+      for(let i=0;i<NUM_STRIPS;i++){
+        const m = strips[i]?.meterAn; 
+        if(!m) continue; 
+        m.an.getByteFrequencyData(m.data);
+        const avg = m.data.reduce((a,b)=>a+b,0)/m.data.length; 
+        const w = Math.min(100, (avg/255)*100);
+        const vu = document.getElementById('vu'+i); 
+        if(vu){ 
+          vu.style.width = w+'%'; 
+          vu.classList.toggle('over', w>85); 
+        }
+      }
+      
+      if(master?.meterAn){ 
+        master.meterAn.an.getByteFrequencyData(master.meterAn.data); 
+        const avg = master.meterAn.data.reduce((a,b)=>a+b,0)/master.meterAn.data.length; 
+        const w = Math.min(100,(avg/255)*100); 
+        const vu = document.getElementById('vuMaster'); 
+        if(vu){ 
+          vu.style.width=w+'%'; 
+          vu.classList.toggle('over', w>85);
+        } 
+      }
+    } catch(error) {
+      console.warn('Error in meter loop:', error);
+    }
+    
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  strips.forEach((S,i)=>{
+    if(S?.meterNode){
+      S.meterNode.port.onmessage = (e)=>{
+        try {
+          const {peakDb, lufs} = e.data; 
+          const pkEl = document.getElementById('pk'+i); 
+          const lEl = document.getElementById('lufs'+i);
+          if(pkEl) pkEl.textContent = `${fmtDb(peakDb)} dBFS`;
+          if(lEl) lEl.textContent = `${fmtDb(lufs)}`;
+        } catch(error) {
+          console.warn('Error updating strip meter:', error);
+        }
+      };
+    }
+  });
+  
+  if(master?.meterNode){
+    master.meterNode.port.onmessage = (e)=>{
+      try {
+        const {peakDb, lufs} = e.data; 
+        if(els.masterPeak) els.masterPeak.textContent = `${fmtDb(peakDb)} dBFS`; 
+        if(els.masterLUFS) els.masterLUFS.textContent = `${fmtDb(lufs)}`; 
+        const lEl=document.getElementById('lufsMaster'); 
+        const pEl=document.getElementById('pkMaster'); 
+        if(lEl) lEl.textContent=`${fmtDb(lufs)}`; 
+        if(pEl) pEl.textContent=`${fmtDb(peakDb)} dBFS`;
+      } catch(error) {
+        console.warn('Error updating master meter:', error);
+      }
+    };
+  }
+}
+
+/* ===== Bind UI ===== */
+function bindRange(id, fn){ 
+  console.log('BINDING RANGE:', id);
+  
+  const el = document.getElementById(id); 
+  if(!el) {
+    console.warn('Element not found:', id);
+    return;
+  }
+  
+  console.log('Element found, current value:', el.value);
+  
+  const valueEl = getValueBubbleForInput(el);
+  if(!valueEl) {
+    console.warn('Value display element not found:', id + 'Val');
+  }
+  
+  const updateValue = () => {
+    try {
+      console.log('UPDATE VALUE called for', id, 'with value:', el.value);
+      fn(parseFloat(el.value)); 
+      updateKnobVisual(el);
+      
+      // Update value display
+      if(valueEl) {
+        let displayVal;
+        const val = parseFloat(el.value);
+        
+        if(id.includes('fader') || id.includes('masterFader')) {
+          // Format fader values as dB
+          displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+        } else if(id.includes('lpf') || id.includes('hpf') || id.includes('LPF') || id.includes('HPF')) {
+          displayVal = val >= 1000 ? (val/1000).toFixed(1)+'k Hz' : Math.round(val) + ' Hz';
+        } else if(id.includes('pan') || id.includes('aux') || id.includes('Mix')) {
+          displayVal = val.toFixed(2);
+        } else if(id.includes('sat') || id.includes('cmp')) {
+          displayVal = (val * 100).toFixed(0) + '%';
+        } else if(id.includes('trim') || id.includes('lows') || id.includes('mids') || id.includes('highs') || id.includes('Out') || id.includes('Ret')) {
+          // Format dB values
+          displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+        } else if(val % 1 === 0) {
+          displayVal = Math.round(val).toString();
+        } else {
+          displayVal = val.toFixed(1);
+        }
+        valueEl.textContent = displayVal;
+        valueEl.style.visibility = 'visible';
+        valueEl.style.display = 'block';
+        console.log('Updated display value for', id, 'to:', displayVal);
+      }
+    } catch(error) {
+      console.warn(`Error updating ${id}:`, error);
+    }
+  };
+  
+  // Add event listeners directly without cloning
+  el.addEventListener('input', updateValue);
+  el.addEventListener('change', updateValue);
+  
+  console.log('Event listeners added to', id);
+  
+  // Initialize display value immediately
+  if(valueEl) {
+    setTimeout(() => {
+      updateValue();
+    }, 100); // Small delay to ensure DOM is ready
+  }
+  
+  // Initialize
+  updateKnobVisual(el);
+  try {
+    fn(parseFloat(el.value));
+    console.log('Initialized', id, 'with value:', el.value);
+  } catch(error) {
+    console.warn(`Error initializing ${id}:`, error);
+  }
+}
+
+function updateKnobVisual(el){ 
+  const wrap = el.parentElement; 
+  if(wrap && wrap.classList.contains('knob')){ 
+    const min=+el.min||0, max=+el.max||1, val=+el.value; 
+    const p=(val-min)/(max-min); 
+    wrap.style.setProperty('--val', clamp(p,0,1)); 
+  } 
+}
+
+function initializeValueDisplays() {
+  console.log('Initializing all value displays...');
+  
+  // Initialize all control value displays
+  const allInputs = document.querySelectorAll('input[type="range"]');
+  allInputs.forEach(input => {
+    const valueEl = getValueBubbleForInput(input);
+    if(valueEl) {
+      const val = parseFloat(input.value);
+      let displayVal;
+      const id = input.id;
+      
+      if(id.includes('fader') || id.includes('masterFader')) {
+        displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+      } else if(id.includes('lpf') || id.includes('hpf') || id.includes('LPF') || id.includes('HPF')) {
+        displayVal = val >= 1000 ? (val/1000).toFixed(1)+'k Hz' : Math.round(val) + ' Hz';
+      } else if(id.includes('pan') || id.includes('aux') || id.includes('Mix')) {
+        displayVal = val.toFixed(2);
+      } else if(id.includes('sat') || id.includes('cmp')) {
+        displayVal = (val * 100).toFixed(0) + '%';
+      } else if(id.includes('trim') || id.includes('lows') || id.includes('mids') || id.includes('highs') || id.includes('Out') || id.includes('Ret')) {
+        displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+      } else if(val % 1 === 0) {
+        displayVal = Math.round(val).toString();
+      } else {
+        displayVal = val.toFixed(1);
+      }
+      
+      valueEl.textContent = displayVal;
+      valueEl.style.visibility = 'visible';
+      valueEl.style.display = 'block';
+      console.log(`Initialized display for ${id}:`, displayVal);
+    }
+  });
+  
+  console.log('Value displays initialization complete');
+}
+
+// Ensure value bubbles update for every control, even if specific bindings are missing
+function updateValueDisplayForInput(input) {
+  if (!input || !input.id) return;
+  const valueEl = getValueBubbleForInput(input);
+  if (!valueEl) return;
+  const val = parseFloat(input.value);
+  const id = input.id;
+  let displayVal;
+  if(id.includes('fader') || id.includes('masterFader')) {
+    displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+  } else if(id.includes('lpf') || id.includes('hpf') || id.includes('LPF') || id.includes('HPF')) {
+    displayVal = val >= 1000 ? (val/1000).toFixed(1)+'k Hz' : Math.round(val) + ' Hz';
+  } else if(id.includes('pan') || id.includes('aux') || id.includes('Mix')) {
+    displayVal = val.toFixed(2);
+  } else if(id.includes('sat') || id.includes('cmp')) {
+    displayVal = (val * 100).toFixed(0) + '%';
+  } else if(id.includes('trim') || id.includes('lows') || id.includes('mids') || id.includes('highs') || id.includes('Out') || id.includes('Ret')) {
+    displayVal = (val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)) + ' dB';
+  } else if(val % 1 === 0) {
+    displayVal = Math.round(val).toString();
+  } else {
+    displayVal = val.toFixed(1);
+  }
+  valueEl.textContent = displayVal;
+}
+
+function applyCompModel(S, model, amt){
+  if(!S || !S.comp || !S.ui) return;
+  
+  S.ui.model = model;
+  const A = +amt; // 0..1
+  
+  try {
+    if(model==='vca'){ 
+      S.comp.threshold.value = -24 + (-1*A*8); 
+      S.comp.ratio.value = 1 + A*6; 
+      S.comp.attack.value = 0.01 + A*0.01; 
+      S.comp.release.value = 0.12 + A*0.2; 
+      S.comp.knee.value=4; 
+    }
+    if(model==='fet'){ 
+      S.comp.threshold.value = -22 + (-1*A*10); 
+      S.comp.ratio.value = 4 + A*8; 
+      S.comp.attack.value = 0.003 + A*0.007; 
+      S.comp.release.value = 0.08 + A*0.18; 
+      S.comp.knee.value=2; 
+    }
+    if(model==='opto'){ 
+      S.comp.threshold.value = -20 + (-1*A*8); 
+      S.comp.ratio.value = 2 + A*2; 
+      S.comp.attack.value = 0.02 + A*0.02; 
+      S.comp.release.value = 0.28 + A*0.35; 
+      S.comp.knee.value=6; 
+    }
+    if(model==='sp303'){ 
+      S.comp.threshold.value = -24 + (-1*A*10); 
+      S.comp.ratio.value = 6 + A*4; 
+      S.comp.attack.value = 0.0015 + A*0.004; 
+      S.comp.release.value = 0.12 + A*0.2; 
+      S.comp.knee.value=4; 
+      if(S.sat) S.sat.curve = mkShaper(0.18 + A*0.15); 
+    }
+  } catch(error) {
+    console.warn('Error applying comp model:', error);
+  }
+}
+
+function hookUI(){
+  for(let i=0;i<NUM_STRIPS;i++){
+    const S = strips[i];
+    if(!S) continue;
+    
+    bindRange(`trim${i}`, v=> S.trim && (S.trim.gain.value = dBToGain(+v)));
+    bindRange(`pan${i}`, v=> S.pan && (S.pan.pan.value = +v));
+    bindRange(`panDup${i}`, v=> S.pan && (S.pan.pan.value = +v));
+    bindRange(`hpf${i}`, v=> S.hpf && (S.hpf.frequency.value = +v));
+    bindRange(`lpf${i}`, v=> S.lpf && (S.lpf.frequency.value = +v));
+    bindRange(`lows${i}`, v=> S.low && (S.low.gain.value = +v));
+    bindRange(`mids${i}`, v=> S.mid && (S.mid.gain.value = +v));
+    bindRange(`highs${i}`, v=> S.high && (S.high.gain.value = +v));
+    bindRange(`sat${i}`, v=> S.sat && (S.sat.curve = mkShaper(+v)));
+    bindRange(`cmp${i}`, v=> applyCompModel(S, S.ui?.model||'vca', v));
+    bindRange(`auxA${i}`, v=> S.sendA && (S.sendA.gain.value = +v));
+    bindRange(`auxB${i}`, v=> S.sendB && (S.sendB.gain.value = +v));
+    bindRange(`fader${i}`, v=> S.fader && (S.fader.gain.value = dBToGain(+v)));
+    bindRange(`faderAdv${i}`, v=> S.fader && (S.fader.gain.value = dBToGain(+v)));
+
+    const modelSel = document.getElementById(`cmpModel${i}`);
+    if(modelSel){ 
+      modelSel.addEventListener('change', ()=>{ 
+        if(S.ui) S.ui.model = modelSel.value; 
+        const cmpEl = document.getElementById(`cmp${i}`);
+        const amt = cmpEl ? cmpEl.value : 0; 
+        applyCompModel(S, S.ui?.model||'vca', amt); 
+      }); 
+    }
+
+    // Enhanced mute functionality with proper button styling
+    const muteBtn = document.getElementById(`mute${i}`);
+    if(muteBtn){ 
+      muteBtn.addEventListener('click', ()=>{ 
+        const isMuted = S.muted;
+        S.muted = !isMuted;
+        S.mute.gain.value = S.muted ? 0 : 1;
+        
+        // Update button visual state
+        if(S.muted) {
+          muteBtn.classList.add('muted');
+          muteBtn.textContent = 'MUTED';
+        } else {
+          muteBtn.classList.remove('muted');
+          muteBtn.textContent = 'Mute';
+        }
+        
+        console.log(`Strip ${i+1} ${S.muted ? 'muted' : 'unmuted'}`);
+        updateSoloMuteStates();
+      }); 
+    }
+    
+    // Enhanced solo functionality with proper button styling
+    const soloBtn = document.getElementById(`solo${i}`);
+    if(soloBtn){ 
+      soloBtn.addEventListener('click', ()=> {
+        toggleSolo(i);
+        updateSoloMuteStates();
+        
+        // Update button visual state
+        if(S.solo) {
+          soloBtn.classList.add('soloed');
+          soloBtn.textContent = 'SOLOED';
+        } else {
+          soloBtn.classList.remove('soloed');
+          soloBtn.textContent = 'Solo';
+        }
+      });
+    }
+    
+    // Enhanced arm functionality with proper button styling
+    const armBtn = document.getElementById(`arm${i}`); 
+    if(armBtn){ 
+      armBtn.addEventListener('click', ()=> {
+        const isArmed = armBtn.classList.contains('armed');
+        if(isArmed) {
+          armBtn.classList.remove('armed');
+          armBtn.textContent = 'Arm';
+          S.isArmed = false;
+        } else {
+          armBtn.classList.add('armed');
+          armBtn.textContent = '🔴 ARMED';
+          S.isArmed = true;
+        }
+        console.log(`Strip ${i+1} ${isArmed ? 'disarmed' : 'armed'} for recording`);
+        
+        // Visual feedback with pulse animation when armed
+        if(S.isArmed) {
+          armBtn.style.animation = 'pulse 1.5s infinite';
+        } else {
+          armBtn.style.animation = '';
+        }
+      }); 
+    }
+    
+    // Track loading and playback controls
+    setupTrackControls(i, S);
+    
+    // Input selection per track
+    const inputSelect = document.getElementById(`inputSelect${i}`);
+    if(inputSelect) {
+      inputSelect.addEventListener('change', () => {
+        const selection = inputSelect.value;
+        updateTrackInputMapping(i, selection);
+        console.log(`Track ${i+1} input changed to: ${selection}`);
+        // keep minimal selector (if present) in sync
+        const minSel = document.getElementById(`inputSelectMin${i}`);
+        if(minSel && minSel.value !== selection) minSel.value = selection;
+      });
+    }
+    // Minimal view input selector
+    const inputSelectMin = document.getElementById(`inputSelectMin${i}`);
+    if(inputSelectMin) {
+      inputSelectMin.addEventListener('change', () => {
+        const selection = inputSelectMin.value;
+        updateTrackInputMapping(i, selection);
+        // sync advanced selector
+        const advSel = document.getElementById(`inputSelect${i}`);
+        if(advSel && advSel.value !== selection) advSel.value = selection;
+      });
+    }
+
+    // Output routing per track
+    const outMode = document.getElementById(`outMode${i}`);
+    if(outMode){
+      outMode.addEventListener('change', ()=>{
+        applyOutMode(i, outMode.value);
+        const outMin = document.getElementById(`outModeMin${i}`);
+        if(outMin && outMin.value !== outMode.value) outMin.value = outMode.value;
+      });
+    }
+    const outModeMin = document.getElementById(`outModeMin${i}`);
+    if(outModeMin){
+      outModeMin.addEventListener('change', ()=>{
+        applyOutMode(i, outModeMin.value);
+        const outAdv = document.getElementById(`outMode${i}`);
+        if(outAdv && outAdv.value !== outModeMin.value) outAdv.value = outModeMin.value;
+      });
+    }
+
+    // Solo Safe
+    const soloSafeEl = document.getElementById(`soloSafe${i}`);
+    if(soloSafeEl){
+      soloSafeEl.addEventListener('change', ()=>{
+        S.soloSafe = !!soloSafeEl.checked;
+        updateSoloMuteStates();
+      });
+    }
+    // Aux send modes
+    const auxAMode = document.getElementById(`auxAMode${i}`);
+    const auxBMode = document.getElementById(`auxBMode${i}`);
+    if(auxAMode){
+      auxAMode.addEventListener('change', ()=>{
+        S.auxModes.A = auxAMode.value;
+        try {
+          // Rewire A between pre-fader (from high) and post-fader
+          S.high.disconnect(S.sendA); S.fader.disconnect(S.sendA);
+        } catch(e) {}
+        if(S.auxModes.A === 'pre') { S.high.connect(S.sendA); }
+        else { S.fader.connect(S.sendA); }
+      });
+    }
+    if(auxBMode){
+      auxBMode.addEventListener('change', ()=>{
+        S.auxModes.B = auxBMode.value;
+        try {
+          S.high.disconnect(S.sendB); S.fader.disconnect(S.sendB);
+        } catch(e) {}
+        if(S.auxModes.B === 'pre') { S.high.connect(S.sendB); }
+        else { S.fader.connect(S.sendB); }
+      });
+    }
+    // Record tap selection
+    const recTap = document.getElementById(`recTap${i}`);
+    if(recTap){
+      recTap.addEventListener('change', ()=>{
+        S.recordTap = recTap.value;
+        // Update stemTap destination (pre: post-FX pre-fader; post: post-fader)
+        S.stemTap = (S.recordTap === 'pre') ? S.recordPre : S.recordPost;
+      });
+    }
+  }
+  
+  // Master controls with enhanced functionality
+  bindRange('masterFader', v=> master.masterFader && (master.masterFader.gain.value = dBToGain(+v)));
+  bindRange('masterPan', v=> master.masterPan && (master.masterPan.pan.value = +v));
+  bindRange('busSat', v=> master.busSat && (master.busSat.curve = mkShaper(+v)));
+  bindRange('busComp', v=> { 
+    if(!master.comp) return;
+    const amt=+v; 
+    master.comp.threshold.value = -18 + (-1*amt*10); 
+    master.comp.ratio.value = 1.2 + amt*5; 
+    master.comp.attack.value = 0.003 + amt*0.03; 
+    master.comp.release.value = 0.12 + amt*0.25;
+  });
+  bindRange('mHPF', v=> master.busHPF && (master.busHPF.frequency.value = +v));
+  bindRange('mLPF', v=> master.busLPF && (master.busLPF.frequency.value = +v));
+  bindRange('mOut', v=> master.outGain && (master.outGain.gain.value = dBToGain(+v)));
+  bindRange('mMix', v=> master.mix && (master.mix.gain.value = +v));
+  bindRange('aRet', v=> master.auxA?.out && (master.auxA.out.gain.value = dBToGain(+v)));
+  bindRange('bRet', v=> master.auxB?.out && (master.auxB.out.gain.value = dBToGain(+v)));
+  bindRange('revTime', v=> { 
+    if(!convolverIRBuffer && master.auxA?.convolver) {
+      master.auxA.convolver.buffer = makeNoiseIR(ctx, +v); 
+    }
+  });
+  bindRange('dlyTime', v=> master.auxB?.delay && (master.auxB.delay.delayTime.value = +v));
+  // Reverb wet/dry mix: create a dry tap if missing and map revMix 0..1 to gains
+  bindRange('revMix', v=> {
+    if (!master.auxA) return;
+    if (!master.auxA.dry) {
+      master.auxA.dry = ctx.createGain();
+      master.auxA.mixNode = ctx.createGain();
+      // Route: auxA.in splits to dry and convolver, both into auxA.out via mixNode
+      try { master.auxA.in.disconnect(); } catch{}
+      master.auxA.in.connect(master.auxA.dry);
+      master.auxA.in.connect(master.auxA.convolver);
+      master.auxA.dry.connect(master.auxA.mixNode);
+      master.auxA.convolver.connect(master.auxA.mixNode);
+      try { master.auxA.convolver.disconnect(master.auxA.out); } catch{}
+      try { master.auxA.mixNode.disconnect(); } catch{}
+      master.auxA.mixNode.connect(master.auxA.out);
+    }
+    const wet = clamp(+v, 0, 1);
+    const dry = 1 - wet;
+    master.auxA.dry.gain.value = dry;
+    // keep convolver output full; overall auxA.out level is set by aRet
+  });
+  bindRange('dlyFB', v=> master.auxB?.fb && (master.auxB.fb.gain.value = +v));
+  bindRange('mLimit', v=> master.limiter && (master.limiter.threshold.value = +v));
+
+  // Master mute button
+  const masterMuteBtn = document.getElementById('masterMute');
+  if(masterMuteBtn) {
+    masterMuteBtn.addEventListener('click', () => {
+      master.isMuted = !master.isMuted;
+      master.masterMute.gain.value = master.isMuted ? 0 : 1;
+      masterMuteBtn.textContent = master.isMuted ? 'Unmute Master' : 'Master Mute';
+      masterMuteBtn.classList.toggle('muted', master.isMuted);
+      console.log(`Master ${master.isMuted ? 'muted' : 'unmuted'}`);
+    });
+  }
+
+  // Clear solo button
+  const clearSoloBtn = document.getElementById('clearSolo');
+  if(clearSoloBtn) {
+    clearSoloBtn.addEventListener('click', () => {
+      clearAllSolo();
+    });
+  }
+
+  // TX-6 channel mapping selector
+  const trackChannelSelect = document.getElementById('trackChannelSelect');
+  if(trackChannelSelect) {
+    trackChannelSelect.addEventListener('change', () => {
+      console.log('Track channel mapping changed:', trackChannelSelect.value);
+      // This would require audio restart to take effect - could be implemented
+    });
+  }
+
+  const irEl = document.getElementById('irFile'); 
+  if(irEl){ 
+    irEl.addEventListener('change', async (e)=>{ 
+      const file=e.target.files?.[0]; 
+      if(!file) return; 
+      try {
+        const ab=await file.arrayBuffer(); 
+        convolverIRBuffer = await ctx.decodeAudioData(ab); 
+        if(master.auxA?.convolver) {
+          master.auxA.convolver.buffer = convolverIRBuffer; 
+        }
+  // Persist IR meta (not the binary) so we can hint on next load
+  localStorage.setItem('consoleBooth_irMeta', JSON.stringify({ name: file.name, size: file.size }));
+      } catch(error) {
+        alert('Error loading IR file: ' + error.message);
+        console.error('IR loading error:', error);
+      }
+    }); 
+  }
+
+  // Automatically enable monitoring for all tracks that have audio input
+  setTimeout(() => {
+    console.log('Auto-enabling monitoring for active tracks...');
+    enableAutoMonitoring();
+  }, 1000);
+
+  // Initialize MIDI
+  setTimeout(() => {
+    initializeMIDI();
+  }, 500);
+
+  // Ensure all knobs are properly initialized visually
+  setTimeout(() => {
+    console.log('Initializing knob interactions...');
+    knobifyAll();
+    console.log('Knob interactions initialized');
+  }, 200);
+}
+
+// Apply output routing mode for a strip without reconnect churn
+function applyOutMode(idx, mode){
+  const S = strips[idx];
+  if(!S || !S.routeGain) return;
+  // Route to master via routeGain; aux sends are independent and controlled by Aux A/B knobs.
+  switch(mode){
+    case 'mute':
+      S.routeGain.gain.value = 0;
+      break;
+    case 'auxA':
+    case 'auxB':
+    case 'auxAB':
+      // Aux‑only: silence master path
+      S.routeGain.gain.value = 0;
+      break;
+    case 'masterAuxA':
+    case 'masterAuxB':
+      S.routeGain.gain.value = 1;
+      break;
+    case 'master':
+    default:
+      S.routeGain.gain.value = 1;
+      break;
+  }
+}
+
+let currentInputChannels = 0;
+
+function computeAutoChannels(trackIndex){
+  if(currentInputChannels <= 0) return {left: null, right: null};
+  const left = Math.min(trackIndex * 2, currentInputChannels - 1);
+  const right = (left + 1 < currentInputChannels) ? left + 1 : left;
+  return {left, right};
+}
+
+function normalizeInputSelection(selection, trackIndex){
+  if(!selection) return 'auto';
+  if(selection === 'auto' || selection === 'disabled') return selection;
+  if(selection.startsWith('pair:') || selection.startsWith('mono:')) return selection;
+
+  const pairMatch = selection.match(/^(\d+)-(\d+)$/);
+  if(pairMatch) {
+    const left = Math.max(1, parseInt(pairMatch[1], 10)) - 1;
+    const right = Math.max(1, parseInt(pairMatch[2], 10)) - 1;
+    return `pair:${left}:${right}`;
+  }
+
+  const monoMatch = selection.match(/^ch?(\d+)$/i);
+  if(monoMatch) {
+    const channel = Math.max(1, parseInt(monoMatch[1], 10)) - 1;
+    return `mono:${channel}`;
+  }
+
+  if(selection === 'custom') return 'custom';
+  console.warn(`Unknown input selection "${selection}" on strip ${trackIndex + 1}, defaulting to auto`);
+  return 'auto';
+}
+
+function formatChannelLabel(left, right){
+  if(left === null || left === undefined || left < 0) return '--';
+  if(right === null || right === undefined || right === left) return `CH${left + 1}`;
+  return `CH${left + 1}/${right + 1}`;
+}
+
+function populateTrackInputSelectors(totalChannels){
+  currentInputChannels = Math.max(0, totalChannels|0);
+  if(currentInputChannels === 0 && els.inputSelect?.value){
+    const hint = deviceChannelHints[els.inputSelect.value]?.channels;
+    if(hint) currentInputChannels = hint;
+  }
+  if(currentInputChannels === 0) currentInputChannels = 2;
+  for(let i=0;i<NUM_STRIPS;i++){
+    const strip = strips[i];
+    const selectors = [
+      document.getElementById(`inputSelect${i}`),
+      document.getElementById(`inputSelectMin${i}`)
+    ];
+    const normalized = normalizeInputSelection(strip?.inputSelection || 'auto', i);
+
+    selectors.forEach(sel => {
+      if(!sel) return;
+      const prev = normalizeInputSelection(sel.value || normalized, i);
+      sel.innerHTML = '';
+
+      const auto = computeAutoChannels(i);
+      const autoLabel = auto.left === null ? 'No Input' : formatChannelLabel(auto.left, auto.right);
+      sel.appendChild(new Option(`Auto (${autoLabel})`, 'auto'));
+
+      for(let ch=0; ch+1 < currentInputChannels; ch+=2){
+        const label = `Channels ${ch+1}-${ch+2}`;
+        sel.appendChild(new Option(label, `pair:${ch}:${ch+1}`));
+      }
+
+      for(let ch=0; ch < currentInputChannels; ch++){
+        sel.appendChild(new Option(`Channel ${ch+1} (Mono)`, `mono:${ch}`));
+      }
+
+      sel.appendChild(new Option('Disabled', 'disabled'));
+
+      const target = normalizeInputSelection(strip?.inputSelection || prev, i);
+      if([...sel.options].some(o => o.value === target)) {
+        sel.value = target;
+      } else {
+        sel.value = 'auto';
+      }
+    });
+
+    if(strip) {
+      strip.inputSelection = normalizeInputSelection(strip.inputSelection || 'auto', i);
+    }
+  }
+
+  for(let i=0;i<NUM_STRIPS;i++){
+    updateTrackInputMapping(i, strips[i]?.inputSelection || 'auto');
+  }
+}
+
+function updateTrackInputMapping(trackIndex, selection) {
+  const strip = strips[trackIndex];
+  if(!strip) return;
+
+  const normalized = normalizeInputSelection(selection, trackIndex);
+  strip.inputSelection = normalized;
+
+  if(normalized === 'disabled') {
+    if(strip.trim) {
+      strip.disabledTrim = strip.trim.gain.value;
+      strip.trim.gain.value = 0;
+    }
+    try {
+      if(splitter){
+        try { splitter.disconnect(strip.inL); } catch {}
+        try { splitter.disconnect(strip.inR); } catch {}
+      }
+    } catch(e) {
+      console.warn('Error disconnecting disabled strip', trackIndex+1, e);
+    }
+    strip.inputChannels.left = null;
+    strip.inputChannels.right = null;
+    strip.channelPair = 'OFF';
+    const badge = els.grid?.children?.[trackIndex]?.querySelector('.badge');
+    if(badge){
+      badge.textContent = 'OFF';
+      badge.style.color = 'var(--danger)';
+    }
+    return;
+  }
+
+  if(strip.trim.gain.value === 0) {
+    const restored = strip.disabledTrim;
+    strip.trim.gain.value = (restored !== null && restored !== undefined) ? restored : 1;
+  }
+  strip.disabledTrim = null;
+
+  let leftChannel = null; 
+  let rightChannel = null;
+
+  if(normalized === 'auto') {
+    const auto = computeAutoChannels(trackIndex);
+    leftChannel = auto.left;
+    rightChannel = auto.right;
+  } else if(normalized.startsWith('pair:')) {
+    const [, l, r] = normalized.split(':');
+    leftChannel = Number(l);
+    rightChannel = Number(r);
+  } else if(normalized.startsWith('mono:')) {
+    const [, ch] = normalized.split(':');
+    leftChannel = Number(ch);
+    rightChannel = leftChannel;
+  } else {
+    const auto = computeAutoChannels(trackIndex);
+    leftChannel = auto.left;
+    rightChannel = auto.right;
+  }
+
+  const channelCount = currentInputChannels;
+  const validL = typeof leftChannel === 'number' && leftChannel >= 0 && leftChannel < channelCount;
+  const validR = typeof rightChannel === 'number' && rightChannel >= 0 && rightChannel < channelCount;
+
+  try {
+    if(splitter && inStream) {
+      try { splitter.disconnect(strip.inL); } catch {}
+      try { splitter.disconnect(strip.inR); } catch {}
+
+      if(validL) splitter.connect(strip.inL, leftChannel);
+      if(validR) {
+        splitter.connect(strip.inR, rightChannel);
+      } else if(validL) {
+        splitter.connect(strip.inR, leftChannel);
+      }
+    }
+  } catch(e) {
+    console.warn('Failed to rewire input mapping for strip', trackIndex + 1, e);
+  }
+
+  strip.inputChannels.left = validL ? leftChannel : null;
+  strip.inputChannels.right = validR ? rightChannel : (validL ? leftChannel : null);
+  strip.channelPair = formatChannelLabel(strip.inputChannels.left, strip.inputChannels.right);
+
+  const badge = els.grid?.children?.[trackIndex]?.querySelector('.badge');
+  if(badge){
+    badge.textContent = strip.channelPair;
+    badge.style.color = '';
+    if(!validL && !validR) {
+      badge.textContent = '—';
+      badge.style.color = 'var(--muted)';
+    }
+  }
+
+  const advSel = document.getElementById(`inputSelect${trackIndex}`);
+  const minSel = document.getElementById(`inputSelectMin${trackIndex}`);
+  if(advSel && advSel.value !== normalized && [...advSel.options].some(o => o.value === normalized)) advSel.value = normalized;
+  if(minSel && minSel.value !== normalized && [...minSel.options].some(o => o.value === normalized)) minSel.value = normalized;
+
+  console.log(`Strip ${trackIndex + 1} mapped to ${strip.channelPair || 'no input'} (${normalized})`);
+}
+
+// Track loading and playback functionality
+function setupTrackControls(stripIndex, strip) {
+  const loadInput = document.getElementById(`loadTrack${stripIndex}`);
+  const playBtn = document.getElementById(`playTrack${stripIndex}`);
+  const stopBtn = document.getElementById(`stopTrack${stripIndex}`);
+  const loopBtn = document.getElementById(`loopTrack${stripIndex}`);
+  const trackInfo = document.getElementById(`trackInfo${stripIndex}`);
+
+  if(loadInput) {
+    loadInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      
+      try {
+        console.log(`Loading track for Strip ${stripIndex + 1}:`, file.name);
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        
+        strip.trackBuffer = audioBuffer;
+        strip.trackFileName = file.name;
+        
+        // Enable playback controls (with null checks)
+        if(playBtn) playBtn.disabled = false;
+        if(stopBtn) stopBtn.disabled = false;
+        if(loopBtn) loopBtn.disabled = false;
+        
+        if(trackInfo) trackInfo.textContent = `${file.name} (${audioBuffer.duration.toFixed(1)}s)`;
+        console.log(`Track loaded: ${file.name}, duration: ${audioBuffer.duration.toFixed(1)}s`);
+        
+      } catch(error) {
+        console.error('Error loading track:', error);
+        if(trackInfo) trackInfo.textContent = 'Error loading track';
+        alert('Error loading audio file: ' + error.message);
+      }
+    });
+  }
+
+  if(playBtn) {
+    playBtn.addEventListener('click', () => {
+      playTrack(stripIndex);
+    });
+  }
+
+  if(stopBtn) {
+    stopBtn.addEventListener('click', () => {
+      stopTrack(stripIndex);
+    });
+  }
+
+  if(loopBtn) {
+    loopBtn.addEventListener('click', () => {
+      toggleLoop(stripIndex);
+    });
+  }
+}
+
+function playTrack(stripIndex) {
+  const strip = strips[stripIndex];
+  if(!strip || !strip.trackBuffer) {
+    console.warn(`Cannot play track - strip: ${!!strip}, buffer: ${!!strip?.trackBuffer}`);
+    return;
+  }
+  
+  // Stop current playback if any
+  if(strip.isPlaying) {
+    stopTrack(stripIndex);
+    return; // If already playing, just stop (toggle behavior)
+  }
+  
+  // Ensure audio context is running
+  if(ctx.state === 'suspended') {
+    console.log('Resuming audio context for track playback');
+    ctx.resume().then(() => {
+      setTimeout(() => playTrack(stripIndex), 100); // Retry after resume
+    }).catch(error => {
+      console.error('Failed to resume audio context:', error);
+      alert('Cannot resume audio - please try clicking play again');
+    });
+    return;
+  }
+  
+  try {
+    console.log(`Starting track playback on Strip ${stripIndex + 1}: ${strip.trackFileName}, Loop: ${strip.isLooping}`);
+    
+    // Create new source
+    const source = ctx.createBufferSource();
+    source.buffer = strip.trackBuffer;
+    source.loop = strip.isLooping;
+    
+  // Connect to the processing chain via trackGain (routing to hpf is already wired in startAudio)
+  source.connect(strip.trackGain);
+  // Ensure trackPan is already connected to hpf in graph creation
+    
+  // Start from stored position if available
+  const startOffset = playbackPositions[stripIndex] || 0;
+  strip.trackSource = source;
+  strip.startTime = ctx.currentTime - startOffset;
+  strip.isPlaying = true;
+    
+  // Set track playback headroom to avoid clipping
+  strip.trackGain.gain.setValueAtTime(0.5, ctx.currentTime); 
+    
+    // Ensure strip fader is at reasonable level for hearing tracks
+    const currentFaderLevel = strip.fader.gain.value;
+  if(currentFaderLevel < 0.1) { // If fader is very low, raise near -6 dB default
+      const targetGain = 0.5; // -6dB
+      strip.fader.gain.setValueAtTime(targetGain, ctx.currentTime);
+      
+      // Update the fader UI to reflect this change
+      const faderEl = document.getElementById(`fader${stripIndex}`) || document.getElementById(`faderAdv${stripIndex}`);
+      if(faderEl) {
+        faderEl.value = -6;
+        const valueEl = getValueBubbleForInput(faderEl);
+        if(valueEl){ valueEl.textContent = '-6.0 dB'; valueEl.style.visibility='visible'; valueEl.style.display='block'; }
+      }
+      console.log(`Raised fader to -6dB for Strip ${stripIndex + 1}`);
+    }
+    
+    // Ensure strip is not muted
+    strip.mute.gain.setValueAtTime(1, ctx.currentTime);
+    strip.muted = false;
+    
+    // Update mute button UI
+    const muteBtn = document.getElementById(`mute${stripIndex}`);
+    if(muteBtn) {
+      muteBtn.classList.remove('muted');
+      muteBtn.textContent = 'Mute';
+    }
+    
+  // Start playback
+  source.start(0, startOffset);
+    strip.trackSource = source;
+    strip.isPlaying = true;
+    
+    console.log(`Track playing - Strip: ${stripIndex + 1}, Duration: ${strip.trackBuffer.duration.toFixed(1)}s, Loop: ${strip.isLooping}`);
+    
+    // Update UI
+    const playBtn = document.getElementById(`playTrack${stripIndex}`);
+    const stopBtn = document.getElementById(`stopTrack${stripIndex}`);
+    if(playBtn) {
+      playBtn.classList.add('playing');
+      playBtn.textContent = '⏸ Pause';
+    }
+    if(stopBtn) stopBtn.classList.add('active');
+    
+    // Handle track end (if not looping)
+    source.onended = () => {
+      console.log(`Track ended - Strip: ${stripIndex + 1}, was looping: ${strip.isLooping}`);
+      if(!strip.isLooping && strip.isPlaying) {
+        // Reset position when track ends naturally
+        playbackPositions[stripIndex] = 0;
+        stopTrack(stripIndex);
+      }
+    };
+    
+  } catch(error) {
+    console.error('Error starting track playback:', error);
+    strip.isPlaying = false;
+    alert('Error playing track: ' + error.message);
+  }
+}
+
+function stopTrack(stripIndex) {
+  const strip = strips[stripIndex];
+  if(!strip) return;
+  
+  // Store current position before stopping (if playing)
+  if(strip.trackSource && strip.startTime && strip.trackSource.buffer) {
+    playbackPositions[stripIndex] = ctx.currentTime - strip.startTime;
+  }
+  
+  if(strip.trackSource) {
+    try {
+      strip.trackSource.stop();
+      strip.trackSource.disconnect();
+    } catch(e) {
+      console.warn('Source already stopped or disconnected:', e);
+    }
+    strip.trackSource = null;
+  }
+  
+  strip.trackSource = null;
+  strip.startTime = null;
+  strip.isPlaying = false;
+  
+  // Update UI
+  const playBtn = document.getElementById(`playTrack${stripIndex}`);
+  const stopBtn = document.getElementById(`stopTrack${stripIndex}`);
+  if(playBtn) {
+    playBtn.classList.remove('playing');
+    playBtn.textContent = '▶ Play';
+  }
+  if(stopBtn) stopBtn.classList.remove('active');
+  
+  // Check if all tracks are stopped to update global state
+  const anyTrackPlaying = strips.some(strip => strip && strip.isPlaying);
+  if (!anyTrackPlaying) {
+    isPlaying = false;
+  }
+  
+  console.log(`Stopped track on Strip ${stripIndex + 1}`);
+}
+
+function toggleLoop(stripIndex) {
+  const strip = strips[stripIndex];
+  if(!strip) return;
+  
+  strip.isLooping = !strip.isLooping;
+  
+  // Update current source if playing
+  if(strip.trackSource) {
+    strip.trackSource.loop = strip.isLooping;
+  }
+  
+  // Update UI
+  const loopBtn = document.getElementById(`loopTrack${stripIndex}`);
+  if(loopBtn) {
+    loopBtn.classList.toggle('looping', strip.isLooping);
+    loopBtn.textContent = strip.isLooping ? '🔄 Loop ON' : '🔄 Loop';
+  }
+  
+  console.log(`Strip ${stripIndex + 1} loop: ${strip.isLooping ? 'ON' : 'OFF'}`);
+}
+
+/* ===== Automatic Volume Balancing System ===== */
+async function measureLUFS(analyzerNode, duration = 6000) {
+  if(!analyzerNode?.an) {
+    console.warn('Invalid analyzer node provided');
+    return -60; // Return a reasonable default
+  }
+  
+  return new Promise((resolve, reject) => {
+    const dataArray = new Uint8Array(analyzerNode.an.frequencyBinCount);
+    const samples = [];
+    const sampleInterval = 50; // Sample every 50ms
+    const totalSamples = duration / sampleInterval;
+    let currentSample = 0;
+    
+    console.log(`Measuring LUFS over ${duration/1000}s...`);
+    
+    const measureInterval = setInterval(() => {
+      try {
+        if(!analyzerNode?.an) {
+          clearInterval(measureInterval);
+          reject(new Error('Analyzer node became invalid during measurement'));
+          return;
+        }
+        
+        analyzerNode.an.getByteFrequencyData(dataArray);
+        
+        // Calculate RMS energy
+        let sum = 0;
+        for(let i = 0; i < dataArray.length; i++) {
+          const normalized = dataArray[i] / 255.0;
+          sum += normalized * normalized;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        
+        // Convert to approximate LUFS (simplified calculation)
+        const dbFS = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+        samples.push(dbFS);
+        
+        currentSample++;
+        if(currentSample >= totalSamples) {
+          clearInterval(measureInterval);
+          
+          // Calculate average LUFS
+          const validSamples = samples.filter(s => isFinite(s));
+          const avgLUFS = validSamples.length > 0 ? 
+            validSamples.reduce((a, b) => a + b) / validSamples.length : -60;
+          
+          console.log(`LUFS measurement complete: ${avgLUFS.toFixed(1)} LUFS (${validSamples.length}/${samples.length} valid samples)`);
+          resolve(avgLUFS);
+        }
+      } catch(error) {
+        clearInterval(measureInterval);
+        console.error('Error during LUFS measurement:', error);
+        reject(error);
+      }
+    }, sampleInterval);
+  });
+}
+
+function calculateOptimalGain(currentLUFS, targetLUFS = -23) {
+  if(!isFinite(currentLUFS)) return 0;
+  
+  const gainAdjustment = targetLUFS - currentLUFS;
+  // Limit gain adjustment to prevent extreme changes
+  return Math.max(-20, Math.min(15, gainAdjustment));
+}
+
+async function autoBalanceTracks() {
+  if(!strips || strips.length === 0) {
+    alert('No tracks available for balancing');
+    return;
+  }
+  
+  if(!ctx || ctx.state === 'closed') {
+    alert('Audio context not available. Please start audio first.');
+    return;
+  }
+  
+  const btn = els.autoBalanceTracks;
+  if(btn) {
+    btn.disabled = true;
+    btn.textContent = '⏱️ Measuring...';
+  }
+  
+  console.log('🎚️ Starting automatic track balancing...');
+  
+  try {
+    for(let i = 0; i < strips.length; i++) {
+      const strip = strips[i];
+      if(!strip?.meterAn) {
+        console.warn(`Strip ${i+1}: No meter available, skipping`);
+        continue;
+      }
+      
+      console.log(`Measuring Strip ${i+1}...`);
+      
+      // Target -18 LUFS for individual tracks (good mixing level)
+      const currentLUFS = await measureLUFS(strip.meterAn, 6000);
+      const optimalGain = calculateOptimalGain(currentLUFS, -18);
+      
+      // Apply gain adjustment to both fader types (minimal and advanced views)
+      const faderEl = document.getElementById(`fader${i}`);
+      const faderAdvEl = document.getElementById(`faderAdv${i}`);
+      
+      let applied = false;
+      
+      if(faderEl && !faderEl.disabled) {
+        const currentValue = parseFloat(faderEl.value) || 0;
+        const newValue = Math.max(-60, Math.min(10, currentValue + optimalGain));
+        faderEl.value = newValue;
+        faderEl.dispatchEvent(new Event('input', {bubbles: true}));
+        applied = true;
+        console.log(`Strip ${i+1}: ${currentLUFS.toFixed(1)} LUFS → Applied ${optimalGain.toFixed(1)} dB gain (minimal view)`);
+      }
+      
+      if(faderAdvEl && !faderAdvEl.disabled) {
+        const currentValue = parseFloat(faderAdvEl.value) || 0;
+        const newValue = Math.max(-60, Math.min(10, currentValue + optimalGain));
+        faderAdvEl.value = newValue;
+        faderAdvEl.dispatchEvent(new Event('input', {bubbles: true}));
+        applied = true;
+        console.log(`Strip ${i+1}: ${currentLUFS.toFixed(1)} LUFS → Applied ${optimalGain.toFixed(1)} dB gain (advanced view)`);
+      }
+      
+      if(!applied) {
+        console.warn(`Strip ${i+1}: No fader elements found or they are disabled`);
+      }
+    }
+    
+    console.log('✅ Track balancing complete!');
+  } catch(error) {
+    console.error('Auto balance error:', error);
+    alert('Error during automatic balancing: ' + error.message);
+  }
+  
+  if(btn) {
+    btn.disabled = false;
+    btn.textContent = '🎚️ Auto Balance Tracks';
+  }
+}
+
+async function autoBalanceMaster() {
+  if(!master?.meterAn) {
+    alert('Master meter not available. Please start audio first.');
+    return;
+  }
+  
+  if(!ctx || ctx.state === 'closed') {
+    alert('Audio context not available. Please start audio first.');
+    return;
+  }
+  
+  const btn = els.autoBalanceMaster;
+  if(btn) {
+    btn.disabled = true;
+    btn.textContent = '⏱️ Measuring Master...';
+  }
+  
+  console.log('🎛️ Starting automatic master balancing...');
+  
+  try {
+    // Longer measurement for master (10 seconds for accuracy)
+    const currentLUFS = await measureLUFS(master.meterAn, 10000);
+    const optimalGain = calculateOptimalGain(currentLUFS, -23); // -23 LUFS target for master
+    
+    // Apply to master fader
+    const masterFaderEl = document.getElementById('masterFader');
+    if(masterFaderEl && !masterFaderEl.disabled) {
+      const currentValue = parseFloat(masterFaderEl.value) || 0;
+      const newValue = Math.max(-60, Math.min(10, currentValue + optimalGain));
+      masterFaderEl.value = newValue;
+      masterFaderEl.dispatchEvent(new Event('input', {bubbles: true}));
+      console.log(`Master: ${currentLUFS.toFixed(1)} LUFS → Applied ${optimalGain.toFixed(1)} dB gain`);
+    } else {
+      throw new Error('Master fader element not found or disabled');
+    }
+    
+    console.log('✅ Master balancing complete!');
+  } catch(error) {
+    console.error('Master balance error:', error);
+    alert('Error during master balancing: ' + error.message);
+  }
+  
+  if(btn) {
+    btn.disabled = false;
+    btn.textContent = '🎛️ Auto Master Level';
+  }
+}
+
+async function autoBalanceAll() {
+  const btn = els.autoBalanceAll;
+  if(btn) {
+    btn.disabled = true;
+    btn.textContent = '⏱️ Full Auto Balance...';
+  }
+  
+  console.log('✨ Starting full automatic balancing...');
+  
+  try {
+    // First balance individual tracks
+    await autoBalanceTracks();
+    
+    // Wait a moment for levels to settle
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Then balance master
+    await autoBalanceMaster();
+    
+    console.log('✅ Full automatic balancing complete!');
+    alert('🎉 Automatic volume balancing complete!\n\nAll tracks and master have been optimized for professional mixing levels.');
+  } catch(error) {
+    console.error('Full balance error:', error);
+    alert('Error during full balancing: ' + error.message);
+  }
+  
+  if(btn) {
+    btn.disabled = false;
+    btn.textContent = '✨ Auto Balance All';
+  }
+}
+
+// MIDI Control System
+async function initializeMIDI() {
+  try {
+    if(navigator.requestMIDIAccess) {
+      midiAccess = await navigator.requestMIDIAccess();
+      console.log('MIDI access granted');
+      
+      setupMIDIDevices();
+      setupMIDIControls();
+      
+      // Listen for MIDI device changes
+      midiAccess.onstatechange = () => {
+        console.log('MIDI devices changed');
+        setupMIDIDevices();
+      };
+      
+      document.getElementById('midiStatus').textContent = 'MIDI: Connected';
+    } else {
+      console.warn('MIDI not supported in this browser');
+      document.getElementById('midiStatus').textContent = 'MIDI: Not Supported';
+    }
+  } catch(error) {
+    console.error('MIDI initialization failed:', error);
+    document.getElementById('midiStatus').textContent = 'MIDI: Error';
+  }
+}
+
+function setupMIDIDevices() {
+  const midiSelect = document.getElementById('midiDevice');
+  if(!midiSelect || !midiAccess) return;
+  
+  // Clear existing options
+  midiSelect.innerHTML = '<option value="">No MIDI Device</option>';
+  midiInputs = [];
+  
+  // Add available MIDI inputs
+  for(let input of midiAccess.inputs.values()) {
+    midiInputs.push(input);
+    const option = document.createElement('option');
+    option.value = input.id;
+    option.textContent = input.name;
+    midiSelect.appendChild(option);
+  }
+  
+  console.log(`Found ${midiInputs.length} MIDI input devices`);
+}
+
+function setupMIDIControls() {
+  const midiSelect = document.getElementById('midiDevice');
+  const midiLearnBtn = document.getElementById('midiLearn');
+  const midiClearBtn = document.getElementById('midiClear');
+  
+  if(midiSelect) {
+    midiSelect.addEventListener('change', () => {
+      const selectedInput = midiInputs.find(input => input.id === midiSelect.value);
+      if(selectedInput) {
+        selectedInput.onmidimessage = handleMIDIMessage;
+        console.log('MIDI input selected:', selectedInput.name);
+      }
+    });
+  }
+  
+  if(midiLearnBtn) {
+    midiLearnBtn.addEventListener('click', () => {
+      toggleMIDILearn();
+    });
+  }
+  
+  if(midiClearBtn) {
+    midiClearBtn.addEventListener('click', () => {
+      clearMIDIMappings();
+    });
+  }
+}
+
+function toggleMIDILearn() {
+  showMIDIPopup();
+}
+
+function showMIDIPopup() {
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'midi-overlay';
+  document.body.appendChild(overlay);
+  
+  // Create popup
+  const popup = document.createElement('div');
+  popup.className = 'midi-popup';
+  popup.innerHTML = `
+    <h3>🎹 MIDI Controller Mapping</h3>
+    
+    <div class="midi-learn-status" id="midiLearnStatus">
+      Click "Start Learning" and move a controller to map it
+    </div>
+    
+    <div class="section">
+      <label class="tiny">MIDI Device
+        <select id="midiDevicePopup">
+          <option value="">No MIDI Device</option>
+        </select>
+      </label>
+    </div>
+    
+    <div class="midi-mappings" id="midiMappingsList">
+      <div style="text-align: center; color: var(--muted); padding: 2rem;">
+        No MIDI mappings yet. Click "Start Learning" to begin.
+      </div>
+    </div>
+    
+    <div class="midi-popup-buttons">
+      <button id="startMIDILearning" class="primary">Start Learning</button>
+      <button id="clearAllMIDI" class="warn">Clear All</button>
+      <button id="saveMIDISettings" class="primary">Save</button>
+      <button id="closeMIDIPopup" class="ghost">Close</button>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Populate MIDI devices
+  const midiDevicePopup = popup.querySelector('#midiDevicePopup');
+  const mainMidiSelect = document.getElementById('midiDevice');
+  if(mainMidiSelect) {
+    midiDevicePopup.innerHTML = mainMidiSelect.innerHTML;
+    midiDevicePopup.value = mainMidiSelect.value;
+  }
+  
+  // Set up event listeners
+  let isLearning = false;
+  let currentLearningControl = null;
+  
+  const startLearningBtn = popup.querySelector('#startMIDILearning');
+  const clearAllBtn = popup.querySelector('#clearAllMIDI');
+  const saveBtn = popup.querySelector('#saveMIDISettings');
+  const closeBtn = popup.querySelector('#closeMIDIPopup');
+  const statusDiv = popup.querySelector('#midiLearnStatus');
+  const mappingsList = popup.querySelector('#midiMappingsList');
+  
+  function updateMappingsList() {
+    if(Object.keys(midiMappings).length === 0) {
+      mappingsList.innerHTML = `
+        <div style="text-align: center; color: var(--muted); padding: 2rem;">
+          No MIDI mappings yet. Click "Start Learning" to begin.
+        </div>
+      `;
+      return;
+    }
+    
+    mappingsList.innerHTML = '';
+    for(const [controlId, mapping] of Object.entries(midiMappings)) {
+      const element = document.getElementById(controlId);
+      const controlName = element ? getControlDisplayName(element) : controlId;
+      
+      const item = document.createElement('div');
+      item.className = 'midi-mapping-item';
+      item.innerHTML = `
+        <div>
+          <div class="midi-control-name">${controlName}</div>
+          <div class="midi-mapping-info">Channel ${mapping.channel + 1}, CC ${mapping.cc}</div>
+        </div>
+        <button class="ghost" onclick="deleteMIDIMapping('${controlId}')">Remove</button>
+      `;
+      mappingsList.appendChild(item);
+    }
+  }
+  
+  function getControlDisplayName(element) {
+    const id = element.id;
+    const stripMatch = id.match(/(\w+)(\d+)/);
+    if(stripMatch) {
+      const controlType = stripMatch[1];
+      const stripNum = parseInt(stripMatch[2]) + 1;
+      const typeMap = {
+        'fader': 'Fader',
+        'pan': 'Pan',
+        'trim': 'Trim',
+        'sat': 'Saturation',
+        'cmp': 'Compressor',
+        'lows': 'Low EQ',
+        'mids': 'Mid EQ',
+        'highs': 'High EQ',
+        'hpf': 'High Pass',
+        'lpf': 'Low Pass',
+        'auxA': 'Aux Send A',
+        'auxB': 'Aux Send B'
+      };
+      return `CH${stripNum} ${typeMap[controlType] || controlType}`;
+    }
+    
+    const masterMap = {
+      'masterFader': 'Master Fader',
+      'masterPan': 'Master Pan',
+      'busSat': 'Bus Saturation',
+      'busComp': 'Bus Compressor',
+      'mHPF': 'Master HPF',
+      'mLPF': 'Master LPF',
+      'mOut': 'Master Out',
+      'aRet': 'Aux A Return',
+      'bRet': 'Aux B Return'
+    };
+    
+    return masterMap[id] || id;
+  }
+  
+  startLearningBtn.addEventListener('click', () => {
+    isLearning = !isLearning;
+    midiLearnMode = isLearning;
+    
+    if(isLearning) {
+      startLearningBtn.textContent = 'Stop Learning';
+      startLearningBtn.classList.add('midi-learning');
+      statusDiv.textContent = 'Learning Mode Active - Focus on a control and move your MIDI controller';
+      statusDiv.classList.add('learning');
+      
+      // Add click listeners to all controls
+      addLearningListeners();
+    } else {
+      startLearningBtn.textContent = 'Start Learning';
+      startLearningBtn.classList.remove('midi-learning');
+      statusDiv.textContent = 'Learning Mode Stopped';
+      statusDiv.classList.remove('learning');
+      
+      removeLearningListeners();
+    }
+    
+    // Update main MIDI status
+    const mainMidiStatus = document.getElementById('midiStatus');
+    if(mainMidiStatus) {
+      mainMidiStatus.textContent = isLearning ? 'MIDI: Learning Mode' : 'MIDI: Connected';
+    }
+  });
+  
+  clearAllBtn.addEventListener('click', () => {
+    if(confirm('Clear all MIDI mappings?')) {
+      midiMappings = {};
+      updateMappingsList();
+    }
+  });
+  
+  saveBtn.addEventListener('click', () => {
+    // Save mappings to localStorage
+    try {
+      localStorage.setItem('consoleMidiMappings', JSON.stringify(midiMappings));
+      statusDiv.textContent = 'MIDI mappings saved successfully!';
+      statusDiv.classList.remove('learning');
+      setTimeout(() => {
+        statusDiv.textContent = 'Click "Start Learning" and move a controller to map it';
+      }, 2000);
+    } catch(e) {
+      console.error('Failed to save MIDI mappings:', e);
+      statusDiv.textContent = 'Failed to save MIDI mappings';
+    }
+  });
+  
+  closeBtn.addEventListener('click', closeMIDIPopup);
+  overlay.addEventListener('click', closeMIDIPopup);
+  
+  function closeMIDIPopup() {
+    midiLearnMode = false;
+    isLearning = false;
+    removeLearningListeners();
+    document.body.removeChild(popup);
+    document.body.removeChild(overlay);
+    
+    // Update main MIDI status
+    const mainMidiStatus = document.getElementById('midiStatus');
+    if(mainMidiStatus) {
+      mainMidiStatus.textContent = 'MIDI: Connected';
+    }
+    // Restore global MIDI handler
+    try { if (typeof originalHandler === 'function') window.handleMIDIMessage = originalHandler; } catch {}
+  }
+  
+  function addLearningListeners() {
+    const controls = document.querySelectorAll('input[type="range"]');
+    controls.forEach(control => {
+      control.addEventListener('focus', () => {
+        currentLearningControl = control;
+        statusDiv.textContent = `Ready to learn: ${getControlDisplayName(control)} - Move your MIDI controller now`;
+      });
+    });
+  }
+  
+  function removeLearningListeners() {
+    currentLearningControl = null;
+  }
+  
+  // Override MIDI message handler for popup
+  const originalHandler = handleMIDIMessage;
+  window.handleMIDIMessage = function(message) {
+    if(isLearning && currentLearningControl) {
+      const [status, cc, value] = message.data;
+      const channel = status & 0x0F;
+      const command = status & 0xF0;
+      
+      if(command === 0xB0) { // Control Change
+        const controlId = currentLearningControl.id;
+        midiMappings[controlId] = { channel, cc, value };
+        console.log(`MIDI learned: ${controlId} -> Channel ${channel + 1}, CC ${cc}`);
+        
+        statusDiv.textContent = `Learned: ${getControlDisplayName(currentLearningControl)} → Ch${channel + 1} CC${cc}`;
+        statusDiv.classList.remove('learning');
+        
+        // Visual feedback
+        currentLearningControl.style.borderColor = 'var(--vu1)';
+        setTimeout(() => {
+          currentLearningControl.style.borderColor = '';
+          statusDiv.textContent = 'Learning Mode Active - Focus on a control and move your MIDI controller';
+          statusDiv.classList.add('learning');
+        }, 2000);
+        
+        updateMappingsList();
+        currentLearningControl = null;
+        return; // Don't process as normal MIDI
+      }
+    }
+    
+    // Use original handler for normal MIDI processing
+    originalHandler.call(this, message);
+  };
+  
+  // Initial mapping list update
+  updateMappingsList();
+  
+  // MIDI device change handler
+  midiDevicePopup.addEventListener('change', () => {
+    const selectedInput = midiInputs.find(input => input.id === midiDevicePopup.value);
+    if(selectedInput) {
+      selectedInput.onmidimessage = handleMIDIMessage;
+      console.log('MIDI input selected:', selectedInput.name);
+      
+      // Update main select
+      if(mainMidiSelect) {
+        mainMidiSelect.value = midiDevicePopup.value;
+      }
+    }
+  });
+}
+
+// Global function to delete MIDI mappings from popup
+function deleteMIDIMapping(controlId) {
+  try {
+    delete midiMappings[controlId];
+    const popup = document.querySelector('.midi-popup');
+    const mappingsList = popup && popup.querySelector('#midiMappingsList');
+    if(!mappingsList) return;
+    // Rebuild list in place (mirror logic from showMIDIPopup)
+    if(Object.keys(midiMappings).length === 0) {
+      mappingsList.innerHTML = `
+        <div style="text-align: center; color: var(--muted); padding: 2rem;">
+          No MIDI mappings yet. Click "Start Learning" to begin.
+        </div>
+      `;
+      return;
+    }
+    mappingsList.innerHTML = '';
+    for(const [cid, mapping] of Object.entries(midiMappings)) {
+      const element = document.getElementById(cid);
+      const controlName = (function(){
+        if(!element) return cid;
+        const id = element.id;
+        const stripMatch = id.match(/(\w+)(\d+)/);
+        if(stripMatch) {
+          const controlType = stripMatch[1];
+          const stripNum = parseInt(stripMatch[2]) + 1;
+          const typeMap = { fader:'Fader', pan:'Pan', trim:'Trim', sat:'Saturation', cmp:'Compressor', lows:'Low EQ', mids:'Mid EQ', highs:'High EQ', hpf:'High Pass', lpf:'Low Pass', auxA:'Aux Send A', auxB:'Aux Send B' };
+          return `CH${stripNum} ${typeMap[controlType] || controlType}`;
+        }
+        const masterMap = { masterFader:'Master Fader', masterPan:'Master Pan', busSat:'Bus Saturation', busComp:'Bus Compressor', mHPF:'Master HPF', mLPF:'Master LPF', mOut:'Master Out', aRet:'Aux A Return', bRet:'Aux B Return' };
+        return masterMap[id] || id;
+      })();
+      const item = document.createElement('div');
+      item.className = 'midi-mapping-item';
+      item.innerHTML = `
+        <div>
+          <div class="midi-control-name">${controlName}</div>
+          <div class="midi-mapping-info">Channel ${mapping.channel + 1}, CC ${mapping.cc}</div>
+        </div>
+        <button class="ghost" onclick="deleteMIDIMapping('${cid}')">Remove</button>
+      `;
+      mappingsList.appendChild(item);
+    }
+  } catch(e) {
+    console.error('Failed to delete MIDI mapping:', e);
+  }
+}
+
+function handleMIDIMessage(message) {
+  const [status, cc, value] = message.data;
+  const channel = status & 0x0F;
+  const command = status & 0xF0;
+  
+  if(command === 0xB0) { // Control Change
+    if(midiLearnMode) {
+      // Find the currently focused control or last interacted control
+      const activeElement = document.activeElement;
+      if(activeElement && (activeElement.type === 'range' || activeElement.classList.contains('fader'))) {
+        const controlId = activeElement.id;
+        midiMappings[controlId] = { channel, cc, value };
+        console.log(`MIDI learned: ${controlId} -> Channel ${channel}, CC ${cc}`);
+        
+        // Visual feedback
+        activeElement.style.borderColor = 'var(--vu1)';
+        setTimeout(() => {
+          activeElement.style.borderColor = '';
+        }, 1000);
+      }
+    } else {
+      // Apply MIDI control
+      Object.entries(midiMappings).forEach(([controlId, mapping]) => {
+        if(mapping.channel === channel && mapping.cc === cc) {
+          const element = document.getElementById(controlId);
+          if(element && element.type === 'range') {
+            const min = parseFloat(element.min);
+            const max = parseFloat(element.max);
+            const newValue = min + ((value / 127) * (max - min));
+            element.value = newValue;
+            
+            // Trigger change event
+            element.dispatchEvent(new Event('input', {bubbles: true}));
+            element.dispatchEvent(new Event('change', {bubbles: true}));
+          }
+        }
+      });
+    }
+  }
+}
+
+function clearMIDIMappings() {
+  midiMappings = {};
+  console.log('MIDI mappings cleared');
+  
+  // Visual feedback
+  document.querySelectorAll('input[type="range"]').forEach(el => {
+    el.style.borderColor = '';
+  });
+}
+
+function toggleSolo(idx){
+  if(!strips[idx]) return;
+  
+  strips[idx].solo = !strips[idx].solo;
+  console.log(`Strip ${idx+1} solo: ${strips[idx].solo}`);
+  
+  // Update visual state immediately
+  updateSoloMuteStates();
+}
+
+function clearAllSolo() {
+  strips.forEach((strip, idx) => {
+    if(strip) {
+      strip.solo = false;
+      const soloBtn = document.getElementById(`solo${idx}`);
+      if(soloBtn) {
+  soloBtn.classList.remove('soloed');
+  soloBtn.textContent = 'Solo';
+      }
+    }
+  });
+  updateSoloMuteStates();
+  console.log('All solo states cleared');
+}
+
+function updateSoloMuteStates() {
+  const anySolo = strips.some(s => s && s.solo);
+  
+  for(let i = 0; i < NUM_STRIPS; i++) {
+    const strip = strips[i];
+    if(!strip) continue;
+    
+    const soloBtn = document.getElementById(`solo${i}`);
+    const muteBtn = document.getElementById(`mute${i}`);
+    
+    // Update solo button visual state
+    if(soloBtn) {
+      if(strip.solo) {
+        soloBtn.classList.add('soloed');
+        soloBtn.textContent = 'SOLOED';
+      } else {
+        soloBtn.classList.remove('soloed');
+        soloBtn.textContent = 'Solo';
+      }
+    }
+    
+    // Update mute button visual state
+    if(muteBtn) {
+      if(strip.muted) {
+        muteBtn.classList.add('muted');
+        muteBtn.textContent = 'MUTED';
+      } else {
+        muteBtn.classList.remove('muted');
+        muteBtn.textContent = 'Mute';
+      }
+    }
+    
+    // Apply audio routing logic:
+    // - If track is muted, always mute
+    // - If any track is solo'd and this track isn't solo'd, mute
+    // - Otherwise, use fader value
+    let gainValue = 1; // Default unmuted
+    
+    if(strip.muted) {
+      gainValue = 0; // Track is muted
+  } else if(anySolo && !strip.solo && !strip.soloSafe) {
+      gainValue = 0; // Track is not solo'd but others are
+    } else {
+      gainValue = 1; // Track is audible
+    }
+    
+    if(strip.mute) {
+      strip.mute.gain.value = gainValue;
+    }
+  }
+  
+  // Update clear solo button state
+  const clearSoloBtn = document.getElementById('clearSolo');
+  if(clearSoloBtn) {
+    clearSoloBtn.disabled = !anySolo;
+    clearSoloBtn.classList.toggle('primary', anySolo);
+  }
+}
+
+function enableAutoMonitoring() {
+  console.log('Setting up automatic monitoring for active inputs...');
+  
+  // Auto-enable monitoring based on detected input levels
+  strips.forEach((strip, idx) => {
+    if(!strip || !strip.meterAn) return;
+    
+    // Check if this strip has active audio input
+    setTimeout(() => {
+      const an = strip.meterAn.an;
+      const dataArray = new Uint8Array(an.frequencyBinCount);
+      an.getByteFrequencyData(dataArray);
+      
+      // Calculate RMS to detect active input
+      let sum = 0;
+      for(let i = 0; i < dataArray.length; i++) {
+        const n = dataArray[i] / 255;
+        sum += n * n;
+      }
+      const rms = Math.sqrt(sum / dataArray.length);
+      
+      if(rms > 0.02) { // Threshold for detecting active input
+        console.log(`Auto-enabled monitoring for Strip ${idx+1} (${strip.channelPair || 'no input'})`);
+        // Strip is already connected to master, just ensure it's not muted
+        strip.muted = false;
+        if(strip.mute) strip.mute.gain.value = 1;
+        updateSoloMuteStates();
+      }
+    }, 500 * (idx + 1)); // Stagger the checks
+  });
+}
+
+function displayChannelMappingStatus() {
+  const totalChannels = currentInputChannels;
+  const deviceChannels = inStream ? (inStream.getAudioTracks()[0]?.getSettings()?.channelCount || totalChannels) : totalChannels;
+
+  console.log(`Input status: device reports ${deviceChannels} channels, router sees ${totalChannels}`);
+
+  if(strips && Array.isArray(strips)) {
+    strips.forEach((strip, idx) => {
+      console.log(`Strip ${idx+1}: ${strip.channelPair || 'no input'} (${strip.inputSelection})`);
+    });
+  }
+
+  const trackChannelSelect = document.getElementById('trackChannelSelect');
+  if(trackChannelSelect) {
+    const status = totalChannels >= NUM_STRIPS * 2 ? '✅ full coverage' : totalChannels > 0 ? '⚠️ partial coverage' : '❌ no inputs';
+    console.log(`Routing coverage: ${status}`);
+  }
+}
+
+function makeNoiseIR(ctx, seconds){
+  const rate = ctx.sampleRate; const len = Math.max(1, Math.floor(seconds*rate));
+  const ir = ctx.createBuffer(2,len,rate);
+  for(let ch=0; ch<2; ch++){
+    const d = ir.getChannelData(ch); let amp = 1; for(let i=0;i<len;i++){ d[i] = (Math.random()*2-1)*amp; amp *= 0.9995; }
+  }
+  return ir;
+}
+
+function mkShaper(amount=0.15){ 
+  const n=2048; 
+  const curve=new Float32Array(n); 
+  const k = amount*2 + 0.0001; 
+  for(let i=0;i<n;i++){ 
+    const x = (i/(n-1))*2-1; 
+    const y = Math.tanh(x*(3+k)) * 0.8 + 0.2 * (x/(1+Math.abs(x*k))); 
+    curve[i]=y; 
+  } 
+  return curve; 
+}
+
+/* ===== Presets ===== */
+function applyPreset(name){
+  if(name==='clean'){
+    strips.forEach((S,i)=>{ 
+      setVal(`sat${i}`,0.02); // Minimal saturation
+      setVal(`cmp${i}`,0.05); // Light compression 
+      setVal(`lows${i}`,0); 
+      setVal(`mids${i}`,0); 
+      setVal(`highs${i}`,0); 
+      setVal(`hpf${i}`,25); 
+      setVal(`lpf${i}`,20000); 
+      setModel(i,'vca'); 
+    });
+    setVal('busSat',0.03); // Clean bus
+    setVal('busComp',0.08); 
+    setVal('mHPF',20); 
+    setVal('mLPF',20000); 
+    setVal('mLimit',-0.5); // Gentle limiting
+    console.log('Applied Clean preset - transparent, minimal processing');
+  }
+  if(name==='neve'){
+    strips.forEach((S,i)=>{ 
+      setVal(`lows${i}`,1.8); // Warm low-end boost
+      setVal(`highs${i}`,1.2); // Silky highs
+      setVal(`mids${i}`,0.4); 
+      setVal(`sat${i}`,0.22); // Transformer character
+      setVal(`cmp${i}`,0.18); // Musical compression
+      setModel(i,'opto'); 
+    });
+    setVal('busSat',0.18); // Bus warmth
+    setVal('busComp',0.24); // Glue compression
+    console.log('Applied Neve-style preset - warm, musical character');
+  }
+  if(name==='api'){
+    strips.forEach((S,i)=>{ 
+      setVal(`lows${i}`,0.8); // Tight low-end
+      setVal(`highs${i}`,0.6); // Present highs
+      setVal(`mids${i}`,1.4); // Forward mids
+      setVal(`sat${i}`,0.15); // Discrete character
+      setVal(`cmp${i}`,0.32); // Punchy compression
+      setModel(i,'fet'); 
+    });
+    setVal('busSat',0.16); // Bus punch
+    setVal('busComp',0.28); // Tight glue
+    console.log('Applied API-style preset - punchy, present sound');
+  }
+  if(name==='sp303'){
+    strips.forEach((S,i)=>{ 
+      setVal(`hpf${i}`,40); // Lo-fi filtering
+      setVal(`lpf${i}`,14000); 
+      setVal(`sat${i}`,0.38); // Heavy saturation
+      setVal(`cmp${i}`,0.65); // Aggressive compression
+      setModel(i,'sp303'); 
+    });
+    setVal('busSat',0.28); // Crunchy bus
+    setVal('busComp',0.22); 
+    setVal('mLimit',-2.0); // Loud limiting
+    console.log('Applied SP-303 preset - lo-fi, crunchy character');
+  }
+  if(name==='vintage'){
+    strips.forEach((S,i)=>{ 
+      setVal(`lows${i}`,2.2); // Warm bass
+      setVal(`highs${i}`,0.8); // Rolled-off highs
+      setVal(`mids${i}`,0.6); 
+      setVal(`sat${i}`,0.28); // Tube-style saturation
+      setVal(`cmp${i}`,0.25); // Vintage compression
+      setVal(`hpf${i}`,30); // Slight high-pass
+      setVal(`lpf${i}`,16000); // Vintage roll-off
+      setModel(i,'opto'); 
+    });
+    setVal('busSat',0.22); // Vintage bus warmth
+    setVal('busComp',0.32); // Heavy glue
+    console.log('Applied Vintage preset - warm, saturated vintage console sound');
+  }
+  if(name==='modern'){
+    strips.forEach((S,i)=>{ 
+      setVal(`lows${i}`,0.4); // Controlled low-end
+      setVal(`highs${i}`,1.6); // Extended highs
+      setVal(`mids${i}`,0.2); // Clear mids
+      setVal(`sat${i}`,0.08); // Minimal saturation
+      setVal(`cmp${i}`,0.15); // Transparent compression
+      setVal(`hpf${i}`,20); // Extended low-end
+      setVal(`lpf${i}`,22000); // Extended highs
+      setModel(i,'vca'); 
+    });
+    setVal('busSat',0.06); // Clean bus
+    setVal('busComp',0.12); // Light glue
+    setVal('mLimit',-0.3); // Transparent limiting
+    console.log('Applied Modern preset - clean, extended frequency response');
+  }
+}
+function setVal(id,v){ 
+  const el=document.getElementById(id); 
+  if(!el) return; 
+  el.value=v; 
+  el.dispatchEvent(new Event('input', {bubbles:true})); 
+}
+
+function setModel(i, model){ 
+  const sel=document.getElementById(`cmpModel${i}`); 
+  if(sel){ 
+    sel.value=model; 
+    sel.dispatchEvent(new Event('change',{bubbles:true})); 
+  } 
+}
+
+/* ===== Recording & Export ===== */
+// Prefer modern, low-latency codecs, with broader fallbacks for Safari/Firefox/Chrome.
+function pickMime(){
+  const prefs = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+    'audio/mp4;codecs=mp4a.40.2', // Safari/iOS friendly
+    'audio/mp4',
+    'audio/mpeg' // ultimate fallback where supported
+  ];
+  for(const m of prefs){
+    try { if(window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; } catch {}
+  }
+  return '';
+}
+
+function saveBlob(blob, name){ 
+  files.push({name, blob}); 
+  const url = URL.createObjectURL(blob); 
+  const a=document.createElement('a'); 
+  a.href=url; 
+  a.download=name; 
+  a.textContent=name; 
+  a.className='chip'; 
+  a.style.cursor='pointer';
+  a.style.marginRight='6px';
+  
+  // Add immediate download on click
+  a.onclick = (e) => {
+    e.preventDefault();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  els.files.appendChild(a); 
+}
+
+function startRecording(){
+  if(!master?.tap) return alert('Start audio first.');
+  
+  try {
+    const ts = new Date().toISOString().replace(/[:.]/g,'-');
+    rec.chunks.master = []; 
+    const masterMime = pickMime();
+    rec.master = new MediaRecorder(master.tap.stream, {mimeType: masterMime});
+    rec.master.ondataavailable = e=> e.data.size && rec.chunks.master.push(e.data);
+    rec.master.onstop = ()=> {
+      const mime = rec.master.mimeType || masterMime || '';
+      const blob = new Blob(rec.chunks.master, {type: mime});
+      const ext = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') || mime.includes('aac') ? 'm4a' : 'webm';
+      saveBlob(blob, `Master_${ts}.${ext}`);
+    };
+    rec.master.start();
+    
+    rec.chunks.stems = rec.chunks.stems.map(()=>[]);
+    rec.stems = strips.map((s,ix)=>{ 
+      if(!s) return null;
+      // Select tap based on current recordTap
+      const tap = (s.recordTap === 'pre') ? s.recordPre : s.recordPost;
+      if(!tap) return null;
+      const stemMime = pickMime();
+      const mr = new MediaRecorder(tap.stream, {mimeType: stemMime}); 
+      mr.ondataavailable = e=> e.data.size && rec.chunks.stems[ix].push(e.data); 
+      mr.onstop = ()=> {
+        const mime = mr.mimeType || stemMime || '';
+        const blob = new Blob(rec.chunks.stems[ix], {type: mime});
+        const ext = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') || mime.includes('aac') ? 'm4a' : 'webm';
+        saveBlob(blob, `Stem_CH${ix+1}_${ts}.${ext}`);
+      };
+      mr.start(); 
+      return mr; 
+    }).filter(Boolean);
+    
+    // Update UI
+    els.recAll.textContent = '⏺ Recording...';
+    els.recAll.disabled = true;
+    els.stopAll.disabled = false;
+    
+  } catch(error) {
+    alert('Could not start recording: ' + error.message);
+    console.error('Recording error:', error);
+  }
+}
+
+function stopRecording(){ 
+  try {
+    if(rec.master && rec.master.state!=='inactive') rec.master.stop(); 
+    if(rec.stems && rec.stems.length){ 
+      rec.stems.forEach(mr=>{ 
+        if(mr && mr.state!=='inactive') mr.stop(); 
+      }); 
+    }
+    
+    // Update UI
+    els.recAll.textContent = '● Record Master + Stems';
+    els.recAll.disabled = false;
+    
+  } catch(error) {
+    console.warn('Error stopping recording:', error);
+  }
+}
+
+/* Minimal zip packer (store-only) */
+const fflate = (()=>{
+  function crc32(buf){ 
+    let c=~0>>>0; 
+    for(let i=0;i<buf.length;i++){ 
+      c^=buf[i]; 
+      for(let k=0;k<8;k++) c = (c>>>1) ^ (0xEDB88320 & -(c&1)); 
+    } 
+    return ~c>>>0; 
+  }
+  function writestr(s){ return new TextEncoder().encode(s); } 
+  function w32(n){ const b=new Uint8Array(4); new DataView(b.buffer).setUint32(0,n,true); return b; } 
+  function w16(n){ const b=new Uint8Array(2); new DataView(b.buffer).setUint16(0,n,true); return b; }
+  function concat(bufs){ 
+    let l=0; 
+    for(const b of bufs) l+=b.length; 
+    const out=new Uint8Array(l); 
+    let o=0; 
+    for(const b of bufs){ out.set(b,o); o+=b.length; } 
+    return out; 
+  }
+  async function zipSync(files){ 
+    const chunks=[]; const centrals=[]; let offset=0; 
+    for(const f of files){ 
+      const name=writestr(f.name); 
+      const data=new Uint8Array(await f.blob.arrayBuffer()); 
+      const crc=crc32(data);
+      const local = concat([writestr('PK\x03\x04'), w16(20), w16(0), w16(0), w16(0), w16(0), w32(crc), w32(data.length), w32(data.length), w16(name.length), w16(0), name, data]);
+      chunks.push(local);
+      const central = concat([writestr('PK\x01\x02'), w16(20), w16(20), w16(0), w16(0), w16(0), w16(0), w32(crc), w32(data.length), w32(data.length), w16(name.length), w16(0), w16(0), w16(0), w16(0), w32(0), w32(offset), name]);
+      centrals.push(central); 
+      offset += local.length; 
+    }
+    const centralAll = concat(centrals); 
+    const header = concat([writestr('PK\x05\x06'), w16(0), w16(0), w16(files.length), w16(files.length), w32(centralAll.length), w32(chunks.reduce((a,b)=>a+b.length,0)), w16(0)]);
+    return new Blob([concat([...chunks, centralAll, header])], {type:'application/zip'}); 
+  }
+  return {zipSync};
+})();
+
+async function makeZip(){ 
+  if(!files.length) return alert('No files recorded yet. Start recording first!'); 
+  
+  try {
+    els.zipBtn.disabled = true;
+    els.zipBtn.textContent = 'Creating ZIP...';
+    
+    const blob = await fflate.zipSync(files); 
+    const ts = new Date().toISOString().replace(/[:.]/g,'-').split('T')[0];
+    const zipName = `ConsoleBooth_Export_${ts}.zip`;
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = zipName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    els.zipBtn.disabled = false;
+    els.zipBtn.textContent = 'Download All as .zip';
+    
+  } catch(error) {
+    alert('Error creating zip: ' + error.message);
+    console.error('Zip creation error:', error);
+    els.zipBtn.disabled = false;
+    els.zipBtn.textContent = 'Download All as .zip';
+  }
+}
+
+/* ===== Monitor Sink, Theme, UI Scale & Erase ===== */
+async function setupMonitorSink(){ 
+  const aud=els.monitor; 
+  if(!master?.tap) return; 
+  
+  try {
+    aud.srcObject = master.tap.stream; 
+    aud.volume = 1.0; // Ensure full volume monitoring
+    aud.muted = false;
+    try { aud.playsInline = true; } catch {}
+    
+    // Create second monitor toggle (only if it doesn't exist)
+    let secondMonitorToggle = document.getElementById('secondMonitorToggle');
+    if(!secondMonitorToggle) {
+      secondMonitorToggle = document.createElement('button');
+      secondMonitorToggle.id = 'secondMonitorToggle';
+      secondMonitorToggle.className = 'ghost';
+      secondMonitorToggle.textContent = 'Second Monitor: OFF';
+      secondMonitorToggle.style.marginLeft = '10px';
+      
+      secondMonitorToggle.addEventListener('click', () => {
+        const isOn = master.secondMonitorGain.gain.value > 0;
+        master.secondMonitorGain.gain.value = isOn ? 0 : 1;
+        secondMonitorToggle.textContent = isOn ? 'Second Monitor: OFF' : 'Second Monitor: ON';
+        secondMonitorToggle.classList.toggle('active', !isOn);
+      });
+      
+      // Add second monitor toggle to header
+      const sinkNote = els.sinkNote;
+      if(sinkNote && sinkNote.parentNode) {
+        sinkNote.parentNode.insertBefore(secondMonitorToggle, sinkNote.nextSibling);
+      }
+    }
+    
+    if(typeof aud.setSinkId === 'function'){ 
+      els.sinkNote.textContent = 'Output switching: ready'; 
+      
+      // Set initial output device and connect main monitor
+      const initialDevice = els.outputSelect.value;
+      if(initialDevice) {
+        try {
+          await aud.setSinkId(initialDevice);
+          master.monitorGain.gain.value = 1; // Enable main monitoring
+          els.sinkNote.textContent = 'Output: ' + (els.outputSelect.selectedOptions[0]?.text || 'Set');
+        } catch(e) {
+          console.warn('Initial output device setting failed:', e);
+          // Fallback to default speakers only
+          master.secondMonitorGain.gain.value = 1;
+          // Hint about HTTPS requirement for setSinkId in Chrome
+          els.sinkNote.textContent = 'Output: Default (setSinkId requires HTTPS)';
+        }
+      } else {
+        // No specific output selected - use default speakers only
+        master.monitorGain.gain.value = 0;
+        master.secondMonitorGain.gain.value = 1;
+        els.sinkNote.textContent = 'Output: Default (Low Latency)';
+      }
+      
+  els.outputSelect.addEventListener('change', async ()=>{ 
+        try{ 
+          // Reset both monitoring paths
+          master.monitorGain.gain.value = 0;
+          master.secondMonitorGain.gain.value = 0;
+          
+          if(els.outputSelect.value) {
+            // Connect to selected output device via monitor element
+            await aud.setSinkId(els.outputSelect.value); 
+            master.monitorGain.gain.value = 1;
+            const deviceName = els.outputSelect.selectedOptions[0]?.text || 'Unknown';
+            els.sinkNote.textContent = 'Output: ' + deviceName;
+          } else {
+            // Switch back to default speakers only
+            master.monitorGain.gain.value = 0;
+            master.secondMonitorGain.gain.value = 1;
+            els.sinkNote.textContent = 'Output: Default (Low Latency)';
+          }
+          localStorage.setItem('consoleBooth_lastOutput', els.outputSelect.value || '');
+        }catch(e){ 
+          els.sinkNote.textContent='Cannot switch: '+(e && e.message ? e.message : 'permission/HTTPS'); 
+          // Fallback to default speakers
+          master.secondMonitorGain.gain.value = 1;
+        } 
+      }); 
+    } else { 
+      els.sinkNote.textContent = 'Output switching unsupported (requires HTTPS or Chrome)';
+      // Connect to default speakers only
+      master.secondMonitorGain.gain.value = 1; 
+    } 
+    
+    // Ensure audio is playing
+    try {
+      await aud.play();
+    } catch(e) {
+      console.warn('Auto-play blocked, user interaction required');
+    }
+    
+  } catch(error) {
+    console.warn('Error setting up monitor sink:', error);
+    els.sinkNote.textContent = 'Monitor setup failed';
+    // Fallback to default speakers
+    if(master?.secondMonitorGain) {
+      master.secondMonitorGain.gain.value = 1;
+    }
+  }
+}
+
+function eraseBooth(){ 
+  try{ 
+    stopRecording(); 
+  } catch(error) {
+    console.warn('Error stopping recording:', error);
+  }
+  
+  files=[]; 
+  els.files.innerHTML=''; 
+  
+  // Clean up audio nodes
+  if(strips.length) {
+    strips.forEach(strip => {
+      try {
+        // Disconnect all nodes to prevent memory leaks
+        Object.values(strip).forEach(node => {
+          if(node && typeof node.disconnect === 'function') {
+            node.disconnect();
+          }
+        });
+      } catch(error) {
+        console.warn('Error cleaning up strip:', error);
+      }
+    });
+  }
+  
+  strips=[]; 
+  
+  // Clean up master
+  if(master && typeof master === 'object') {
+    try {
+      Object.values(master).forEach(node => {
+        if(node && typeof node.disconnect === 'function') {
+          node.disconnect();
+        }
+      });
+    } catch(error) {
+      console.warn('Error cleaning up master:', error);
+    }
+  }
+  master={}; 
+  
+  if(inStream){ 
+    inStream.getTracks().forEach(t=>t.stop()); 
+  } 
+  
+  if(ctx && ctx.state!=='closed') {
+    try {
+      ctx.close(); 
+    } catch(error) {
+      console.warn('Error closing audio context:', error);
+    }
+  }
+  
+  ctx=null; 
+  inStream=null; 
+  inSource=null; 
+  splitter=null; 
+  convolverIRBuffer=null; 
+  els.stateChip.textContent='Audio: Off'; 
+  buildUI(); 
+  hookTopBar(); 
+  // Re-enumerate devices after reset so selections repopulate
+  try { listDevices(); } catch {}
+}
+
+function hookTopBar(){
+  // UI scale
+  const setScale = (pct)=>{ 
+    const s = clamp(pct,70,125); 
+    els.uiScaleVal.textContent = s+"%"; 
+    document.documentElement.style.setProperty('--uiScale', (s/100).toString()); 
+  };
+  
+  if(els.uiScale) {
+    els.uiScale.addEventListener('input', ()=> setScale(+els.uiScale.value)); 
+    setScale(+els.uiScale.value);
+  }
+  
+  // Theme
+  if(els.themeSel) {
+    els.themeSel.addEventListener('change', ()=>{
+      document.body.classList.remove('theme-swiss','theme-noir','theme-bright','theme-teal','theme-amber');
+      const v = els.themeSel.value; 
+      document.body.classList.add('theme-'+v);
+    });
+  }
+  
+  // Presets
+  if(els.applyPreset) {
+    els.applyPreset.addEventListener('click', ()=> {
+      const presetValue = els.presetSel?.value || 'clean';
+      applyPreset(presetValue);
+    });
+  }
+}
+
+/* ===== Events ===== */
+function init(){ 
+  loadDeviceChannelHints();
+  buildUI(); 
+  listDevices(); 
+  hookTopBar();
+
+  // Apply a clean, low-saturation preset on first load (one-time)
+  try {
+    const firstKey = 'consoleBooth_firstRunApplied';
+    if (!localStorage.getItem(firstKey)) {
+      applyPreset('clean');
+      localStorage.setItem(firstKey, '1');
+      console.log('Applied first-run Clean preset for headroom');
+    }
+  } catch {}
+  
+  // Load saved MIDI mappings
+  try {
+    const savedMappings = localStorage.getItem('consoleMidiMappings');
+    if(savedMappings) {
+      midiMappings = JSON.parse(savedMappings);
+      console.log('Loaded MIDI mappings from storage:', Object.keys(midiMappings).length, 'mappings');
+    }
+  // Restore last selected devices
+  const lastIn = localStorage.getItem('consoleBooth_lastInput');
+  const lastOut = localStorage.getItem('consoleBooth_lastOutput');
+  if(lastIn && els.inputSelect) els.inputSelect.value = lastIn;
+  if(lastOut && els.outputSelect) els.outputSelect.value = lastOut;
+  // Restore last IR (if a small URL blob was saved)
+  const irMeta = localStorage.getItem('consoleBooth_irMeta');
+  if(irMeta){ console.log('IR meta found; will apply when AudioContext starts'); }
+  } catch(e) {
+    console.warn('Failed to load MIDI mappings:', e);
+  }
+  
+  // Initialize knobs early
+  setTimeout(() => {
+    console.log('Early knob initialization...');
+    knobifyAll();
+    // Global value-bubble updater
+    document.addEventListener('input', (e) => {
+      if (e.target && e.target.matches('input[type="range"]')) {
+        updateValueDisplayForInput(e.target);
+      }
+    });
+    // Initial sweep
+    document.querySelectorAll('input[type="range"]').forEach(updateValueDisplayForInput);
+  }, 100);
+  
+  if(els.refreshBtn) els.refreshBtn.addEventListener('click', listDevices);
+  if(els.startBtn) els.startBtn.addEventListener('click', async () => {
+    try {
+      // Ensure user interaction for audio context and autoplay
+      if(els.monitor.paused) {
+        try {
+          await els.monitor.play();
+        } catch(e) {
+          console.log('Monitor will start after audio initialization');
+        }
+      }
+      await startAudio();
+    } catch(error) {
+      console.error('Failed to start audio:', error);
+    }
+  });
+  // Restart audio when selecting a different input device or sample rate
+  els.inputSelect?.addEventListener('change', () => {
+    localStorage.setItem('consoleBooth_lastInput', els.inputSelect.value || '');
+    updateInputInfoChip(deviceChannelHints[els.inputSelect.value]);
+    startAudio();
+  });
+  els.sampleRateSel?.addEventListener('change', () => startAudio());
+  // Refresh on device changes from the system
+  if(navigator.mediaDevices?.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+      console.log('Device list changed');
+      listDevices();
+    });
+  }
+  if(els.eraseBtn) els.eraseBtn.addEventListener('click', () => {
+    if(confirm('Erase all settings and recordings?')) {
+      eraseBooth();
+    }
+  });
+  if(els.recAll) els.recAll.addEventListener('click', startRecording);
+  if(els.stopAll) els.stopAll.addEventListener('click', () => {
+    stopRecording();
+    els.stopAll.disabled = true;
+  });
+  if(els.zipBtn) els.zipBtn.addEventListener('click', makeZip);
+  
+  // Auto balance button event listeners
+  if(els.autoBalanceTracks) els.autoBalanceTracks.addEventListener('click', autoBalanceTracks);
+  if(els.autoBalanceMaster) els.autoBalanceMaster.addEventListener('click', autoBalanceMaster);
+  if(els.autoBalanceAll) els.autoBalanceAll.addEventListener('click', autoBalanceAll);
+  
+  if(els.viewToggle) {
+    els.viewToggle.addEventListener('click', ()=>{ 
+      document.body.classList.toggle('advanced'); 
+      document.body.classList.toggle('minimal'); 
+      els.viewToggle.textContent = document.body.classList.contains('advanced')? 'Show Minimal' : 'Show Advanced'; 
+      
+      // Re-initialize knobs after view change
+      setTimeout(() => {
+        console.log('Re-initializing knobs after view toggle...');
+        knobifyAll();
+      }, 50);
+    });
+  }
+  
+  // Final knobs initialization
+  setTimeout(() => {
+    console.log('Final knob initialization...');
+    knobifyAll();
+  }, 500);
+
+  // Setup session management
+  setupSessionManagement();
+
+  // Global keyboard controls for all tracks
+  setupGlobalKeyboardControls();
+}
+
+// Global keyboard control functions
+let isPlaying = false;
+let playbackPositions = Array(NUM_STRIPS).fill(0); // Track playback positions for each strip
+
+function setupGlobalKeyboardControls() {
+  // Show keyboard shortcuts help briefly when page loads
+  setTimeout(() => {
+    const shortcutsEl = document.getElementById('keyboardShortcuts');
+    if (shortcutsEl) {
+      shortcutsEl.classList.add('show');
+      // Hide after 4 seconds
+      setTimeout(() => {
+        shortcutsEl.classList.remove('show');
+      }, 4000);
+    }
+  }, 1000);
+
+  document.addEventListener('keydown', (e) => {
+    // Skip if user is typing in an input field
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+      return;
+    }
+
+    // Show/hide keyboard shortcuts with ? key
+    if (e.code === 'Slash' && e.shiftKey) { // ? key
+      e.preventDefault();
+      const shortcutsEl = document.getElementById('keyboardShortcuts');
+      if (shortcutsEl) {
+        shortcutsEl.classList.toggle('show');
+      }
+    }
+
+    // Spacebar: Play/Stop all tracks
+    else if (e.code === 'Space') {
+      e.preventDefault();
+      if (e.metaKey || e.ctrlKey) {
+        // Cmd/Ctrl + Space: Pause/Resume all tracks
+        pauseResumeAllTracks();
+      } else {
+        // Space: Play/Stop all tracks
+        playStopAllTracks();
+      }
+    }
+    
+    // Arrow keys for seeking
+    else if (e.code === 'ArrowLeft') {
+      e.preventDefault();
+      seekAllTracks(-10); // Go back 10 seconds
+    }
+    else if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      seekAllTracks(10); // Go forward 10 seconds
+    }
+  });
+}
+
+function playStopAllTracks() {
+  try {
+    if (isPlaying) {
+      // Stop all tracks
+      for (let i = 0; i < NUM_STRIPS; i++) {
+        const strip = strips[i];
+        if (strip && strip.trackSource) {
+          // Store current position before stopping
+          if (strip.trackSource.buffer && ctx.currentTime && strip.startTime) {
+            playbackPositions[i] = ctx.currentTime - strip.startTime;
+          }
+          
+          strip.trackSource.stop();
+          strip.trackSource = null;
+          strip.startTime = null;
+          
+          // Update UI
+          const playBtn = document.getElementById(`playTrack${i}`);
+          const stopBtn = document.getElementById(`stopTrack${i}`);
+          if (playBtn) {
+            playBtn.textContent = '▶ Play';
+            playBtn.classList.remove('active');
+          }
+          if (stopBtn) stopBtn.classList.remove('active');
+        }
+      }
+      isPlaying = false;
+      console.log('All tracks stopped');
+    } else {
+      // Play all loaded tracks
+      let tracksStarted = 0;
+      for (let i = 0; i < NUM_STRIPS; i++) {
+        const strip = strips[i];
+        if (strip && strip.trackBuffer) {
+          try {
+            // Create new source
+            const source = ctx.createBufferSource();
+            source.buffer = strip.trackBuffer;
+          
+            // Connect to strip chain via trackGain
+            source.connect(strip.trackGain);
+            // Ensure track path is audible
+            // Set a safe playback gain headroom like per-strip play
+            strip.trackGain.gain.setValueAtTime(0.5, ctx.currentTime);
+            // Make sure strip is not muted
+            if (strip.mute) {
+              strip.mute.gain.setValueAtTime(1, ctx.currentTime);
+              strip.muted = false;
+            }
+            // Raise very low fader levels to -6 dB so we can hear playback
+            if (strip.fader && strip.fader.gain.value < 0.1) {
+              strip.fader.gain.setValueAtTime(0.5, ctx.currentTime);
+              const faderEl = document.getElementById(`fader${i}`) || document.getElementById(`faderAdv${i}`);
+              if (faderEl) {
+                faderEl.value = -6;
+                const valueEl = getValueBubbleForInput(faderEl);
+                if (valueEl) { valueEl.textContent = '-6.0 dB'; valueEl.style.visibility='visible'; valueEl.style.display='block'; }
+              }
+            }
+            // trackPan is already wired in the graph during startAudio
+            strip.trackSource = source;
+            
+            // Set loop if enabled
+            strip.trackSource.loop = !!strip.isLooping;
+            
+            // Start from stored position
+            const startOffset = playbackPositions[i] || 0;
+            strip.trackSource.start(0, startOffset);
+            strip.startTime = ctx.currentTime - startOffset;
+            
+            // Update UI
+            const playBtn = document.getElementById(`playTrack${i}`);
+            if (playBtn) {
+              playBtn.textContent = '⏸ Pause';
+              playBtn.classList.add('active');
+              playBtn.classList.add('playing');
+            }
+            
+            // Handle track end
+            strip.trackSource.onended = () => {
+              if (!strip.isLooping) {
+                playbackPositions[i] = 0; // Reset position when track ends
+                if (playBtn) {
+                  playBtn.textContent = '▶ Play';
+                  playBtn.classList.remove('active');
+                  playBtn.classList.remove('playing');
+                }
+              }
+            };
+            
+            tracksStarted++;
+            console.log(`Started track ${i + 1}: ${strip.trackFileName}`);
+          } catch (error) {
+            console.error(`Failed to start track ${i + 1}:`, error);
+          }
+        }
+      }
+      
+      if (tracksStarted > 0) {
+        isPlaying = true;
+        console.log(`Started ${tracksStarted} tracks with spacebar`);
+      } else {
+        console.log('No tracks loaded to play');
+      }
+    }
+  } catch (error) {
+    console.error('Error in playStopAllTracks:', error);
+  }
+}
+
+function pauseResumeAllTracks() {
+  try {
+    if (ctx.state === 'suspended') {
+      // Resume audio context and all tracks
+      ctx.resume().then(() => {
+        console.log('Audio context resumed - all tracks resumed');
+      });
+    } else if (ctx.state === 'running') {
+      // Suspend audio context to pause all tracks
+      ctx.suspend().then(() => {
+        console.log('Audio context suspended - all tracks paused');
+      });
+    }
+  } catch (error) {
+    console.error('Error in pauseResumeAllTracks:', error);
+  }
+}
+
+function seekAllTracks(seconds) {
+  try {
+    let tracksAffected = 0;
+    
+    for (let i = 0; i < NUM_STRIPS; i++) {
+      const strip = strips[i];
+      if (strip && strip.trackBuffer) {
+        // Update stored position
+        if (strip.trackSource && strip.startTime) {
+          // Currently playing - calculate current position and update
+          const currentPos = ctx.currentTime - strip.startTime;
+          playbackPositions[i] = Math.max(0, Math.min(strip.trackBuffer.duration, currentPos + seconds));
+          
+          // Restart with new position if playing
+          const wasLooping = strip.trackSource.loop;
+          strip.trackSource.stop();
+          
+          // Create new source with updated position
+          const source = ctx.createBufferSource();
+          source.buffer = strip.trackBuffer;
+          source.loop = wasLooping;
+          source.connect(strip.trackGain);
+          source.start(0, playbackPositions[i]);
+          strip.trackSource = source;
+          strip.startTime = ctx.currentTime - playbackPositions[i];
+          
+          // Handle track end
+          strip.trackSource.onended = () => {
+            if (!strip.trackSource.loop) {
+              playbackPositions[i] = 0;
+              const playBtn = document.getElementById(`playTrack${i}`);
+              if (playBtn) {
+                playBtn.textContent = '▶ Play';
+                playBtn.classList.remove('active');
+              }
+            }
+          };
+          
+          tracksAffected++;
+        } else {
+          // Not currently playing - just update stored position
+          playbackPositions[i] = Math.max(0, Math.min(strip.trackBuffer.duration, playbackPositions[i] + seconds));
+          tracksAffected++;
+        }
+      }
+    }
+    
+    if (tracksAffected > 0) {
+      console.log(`Seeked ${seconds > 0 ? 'forward' : 'backward'} ${Math.abs(seconds)} seconds on ${tracksAffected} tracks`);
+    }
+  } catch (error) {
+    console.error('Error in seekAllTracks:', error);
+  }
+}
+
+// Session Management System
+let currentSessionName = 'Untitled Session';
+
+function createSessionData() {
+  const sessionData = {
+    version: '1.0',
+    timestamp: new Date().toISOString(),
+    sessionName: currentSessionName,
+    console: {
+      theme: document.body.className,
+      uiScale: getComputedStyle(document.documentElement).getPropertyValue('--uiScale') || '1',
+      selectedInputDevice: document.getElementById('inputSelect')?.value || '',
+      selectedOutputDevice: document.getElementById('outputSelect')?.value || '',
+  masterFader: document.getElementById('masterFader')?.value || '0',
+  masterPan: document.getElementById('masterPan')?.value || '0',
+  masterMuted: document.getElementById('masterMute')?.classList.contains('muted') || false,
+  busSat: document.getElementById('busSat')?.value || '0.04',
+  busComp: document.getElementById('busComp')?.value || '0.08',
+  mHPF: document.getElementById('mHPF')?.value || '20',
+  mLPF: document.getElementById('mLPF')?.value || '20000',
+  mOut: document.getElementById('mOut')?.value || '0',
+  mMix: document.getElementById('mMix')?.value || '1',
+  aRet: document.getElementById('aRet')?.value || '-12',
+  bRet: document.getElementById('bRet')?.value || '-12',
+  revTime: document.getElementById('revTime')?.value || '2.0',
+  dlyTime: document.getElementById('dlyTime')?.value || '0.33',
+  revMix: document.getElementById('revMix')?.value || '1',
+  dlyFB: document.getElementById('dlyFB')?.value || '0.35',
+  mLimit: document.getElementById('mLimit')?.value || '-1.0',
+  busPreset: document.getElementById('busPreset')?.value || 'clean',
+  trackChannels: document.getElementById('trackChannelSelect')?.value || 'auto'
+    },
+    strips: []
+  };
+
+  // Capture all strip parameters
+  for (let i = 0; i < NUM_STRIPS; i++) {
+    const strip = strips[i];
+    const stripData = {
+      index: i,
+      // Track file info
+      trackFileName: strip?.trackFileName || null,
+      trackLoaded: !!(strip?.trackBuffer),
+      isLooping: strip?.isLooping || false,
+      isArmed: strip?.isArmed || false,
+      
+      // Control values
+  trim: document.getElementById(`trim${i}`)?.value || '0',
+  hpf: document.getElementById(`hpf${i}`)?.value || '25',
+  lpf: document.getElementById(`lpf${i}`)?.value || '20000',
+  lows: document.getElementById(`lows${i}`)?.value || '0',
+  mids: document.getElementById(`mids${i}`)?.value || '0',
+  highs: document.getElementById(`highs${i}`)?.value || '0',
+  sat: document.getElementById(`sat${i}`)?.value || '0.04',
+  cmp: document.getElementById(`cmp${i}`)?.value || '0.06',
+  cmpModel: document.getElementById(`cmpModel${i}`)?.value || 'vca',
+  auxA: document.getElementById(`auxA${i}`)?.value || '0',
+  auxB: document.getElementById(`auxB${i}`)?.value || '0',
+  pan: document.getElementById(`pan${i}`)?.value || '0',
+  fader: document.getElementById(`fader${i}`)?.value || document.getElementById(`faderAdv${i}`)?.value || '-6',
+      
+      // Button states
+      muted: strip?.muted || false,
+  soloed: strip?.solo || false,
+      
+      // Input routing
+  inputSource: document.getElementById(`inputSelect${i}`)?.value || 'auto',
+  soloSafe: document.getElementById(`soloSafe${i}`)?.checked || false,
+  auxAMode: document.getElementById(`auxAMode${i}`)?.value || 'post',
+  auxBMode: document.getElementById(`auxBMode${i}`)?.value || 'post',
+  recTap: document.getElementById(`recTap${i}`)?.value || 'post'
+    };
+    
+    sessionData.strips.push(stripData);
+  }
+
+  // MIDI mappings
+  sessionData.midi = {
+    mappings: midiMappings || {}
+  };
+
+  // IR loader metadata (no binary persistence to keep files small)
+  sessionData.ir = { loaded: !!convolverIRBuffer };
+
+  return sessionData;
+}
+
+function saveSessionToLocalStorage() {
+  try {
+    const sessionData = createSessionData();
+    const sessionKey = `consoleBooth_session_${Date.now()}`;
+    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    localStorage.setItem('consoleBooth_lastSession', sessionKey);
+    
+    // Update session display
+    if (els.sessionChip) {
+      els.sessionChip.textContent = `Session: ${sessionData.sessionName}`;
+    }
+    
+    console.log('Session saved to localStorage:', sessionData.sessionName);
+    showNotification(`Session "${sessionData.sessionName}" saved locally`, 'success');
+    return sessionKey;
+  } catch (error) {
+    console.error('Failed to save session:', error);
+    showNotification('Failed to save session', 'error');
+    return null;
+  }
+}
+
+function exportSessionFile() {
+  try {
+    const sessionData = createSessionData();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+    const filename = `ConsoleBoothSession_${sessionData.sessionName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.booth`;
+    
+    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('Session exported:', filename);
+    showNotification(`Session exported as ${filename}`, 'success');
+  } catch (error) {
+    console.error('Failed to export session:', error);
+    showNotification('Failed to export session', 'error');
+  }
+}
+
+async function importSessionFromFile(file) {
+  try {
+    const text = await file.text();
+    const sessionData = JSON.parse(text);
+    
+    if (!sessionData.version || !sessionData.console || !sessionData.strips) {
+      throw new Error('Invalid session file format');
+    }
+    
+    await loadSessionData(sessionData);
+    console.log('Session imported:', sessionData.sessionName);
+    showNotification(`Session "${sessionData.sessionName}" imported successfully`, 'success');
+  } catch (error) {
+    console.error('Failed to import session:', error);
+    showNotification('Failed to import session: ' + error.message, 'error');
+  }
+}
+
+async function loadSessionData(sessionData) {
+  try {
+    // Stop all current playback
+    playStopAllTracks();
+    
+    // Update session name and display
+    currentSessionName = sessionData.sessionName || 'Imported Session';
+    if (els.sessionChip) {
+      els.sessionChip.textContent = `Session: ${currentSessionName}`;
+    }
+    
+    // Refresh input selectors to ensure options exist before applying routing from the session
+    try { populateTrackInputSelectors(currentInputChannels); } catch(e) { console.warn('Selector refresh failed during session load:', e); }
+
+    // Apply console settings
+    const console = sessionData.console;
+    if (console.theme) {
+      document.body.className = console.theme;
+    }
+    
+    if (console.uiScale) {
+      document.documentElement.style.setProperty('--uiScale', console.uiScale);
+    }
+    
+    // Master section
+    if (console.masterFader !== undefined) {
+      const masterFader = document.getElementById('masterFader');
+      if (masterFader) {
+        masterFader.value = console.masterFader;
+        masterFader.dispatchEvent(new Event('input'));
+      }
+    }
+    if (console.masterPan !== undefined) {
+      const masterPan = document.getElementById('masterPan');
+      if (masterPan) {
+        masterPan.value = console.masterPan;
+        masterPan.dispatchEvent(new Event('input'));
+      }
+    }
+    // Master/bus controls
+    ['busSat','busComp','mHPF','mLPF','mOut','mMix','aRet','bRet','revTime','dlyTime','revMix','dlyFB','mLimit'].forEach(id => {
+      if (console[id] !== undefined) {
+        const el = document.getElementById(id);
+        if (el) { el.value = console[id]; el.dispatchEvent(new Event('input')); }
+      }
+    });
+    if(console.busPreset) {
+      const sel = document.getElementById('busPreset');
+      if(sel){ sel.value = console.busPreset; sel.dispatchEvent(new Event('change')); }
+    }
+    
+    // Apply strip settings
+    for (const stripData of sessionData.strips) {
+      const i = stripData.index;
+      if (i >= 0 && i < NUM_STRIPS) {
+        // Apply all control values
+  const controls = ['trim','hpf','lpf','lows','mids','highs','sat','cmp','auxA','auxB','pan'];
+        
+        controls.forEach(control => {
+          if (stripData[control] !== undefined) {
+            const el = document.getElementById(`${control}${i}`);
+            if (el) {
+              el.value = stripData[control];
+              el.dispatchEvent(new Event('input'));
+            }
+          }
+        });
+        
+        // Handle fader (check both minimal and advanced views)
+        if (stripData.fader !== undefined) {
+          const faderEl = document.getElementById(`fader${i}`) || document.getElementById(`faderAdv${i}`);
+          if (faderEl) {
+            faderEl.value = stripData.fader;
+            faderEl.dispatchEvent(new Event('input'));
+          }
+        }
+        
+        // Apply button states
+        if (strips[i]) {
+          strips[i].isLooping = stripData.isLooping || false;
+          strips[i].isArmed = stripData.isArmed || false;
+          
+          // Update loop button
+      const loopBtn = document.getElementById(`loopTrack${i}`);
+          if (loopBtn) {
+            if (stripData.isLooping) {
+        loopBtn.classList.add('looping');
+        loopBtn.textContent = '🔄 Loop ON';
+            } else {
+        loopBtn.classList.remove('looping');
+        loopBtn.textContent = '🔄 Loop';
+            }
+          }
+          
+          // Update ARM button
+      const armBtn = document.getElementById(`arm${i}`);
+          if (armBtn) {
+            if (stripData.isArmed) {
+        armBtn.classList.add('armed');
+        armBtn.textContent = '🔴 ARMED';
+            } else {
+        armBtn.classList.remove('armed');
+        armBtn.textContent = 'Arm';
+            }
+          }
+          
+          // Apply mute state
+          if (stripData.muted) {
+            const muteBtn = document.getElementById(`mute${i}`);
+            if (muteBtn && strips[i].mute) {
+              strips[i].mute.gain.setValueAtTime(0, ctx?.currentTime || 0);
+              strips[i].muted = true;
+              muteBtn.classList.add('muted');
+              muteBtn.textContent = 'MUTED';
+            }
+          }
+          // Solo Safe
+          const soloSafe = document.getElementById(`soloSafe${i}`);
+          if(soloSafe){ soloSafe.checked = !!stripData.soloSafe; strips[i].soloSafe = !!stripData.soloSafe; }
+          // Aux modes
+          const auxAMode = document.getElementById(`auxAMode${i}`);
+          const auxBMode = document.getElementById(`auxBMode${i}`);
+          if(auxAMode){ auxAMode.value = stripData.auxAMode || 'post'; auxAMode.dispatchEvent(new Event('change')); }
+          if(auxBMode){ auxBMode.value = stripData.auxBMode || 'post'; auxBMode.dispatchEvent(new Event('change')); }
+          // Record tap
+          const recTap = document.getElementById(`recTap${i}`);
+          if(recTap){ recTap.value = stripData.recTap || 'post'; recTap.dispatchEvent(new Event('change')); }
+        }
+        
+        // Apply input routing
+        if (stripData.inputSource !== undefined) {
+          const normalized = normalizeInputSelection(stripData.inputSource, i);
+          const advSel = document.getElementById(`inputSelect${i}`);
+          const minSel = document.getElementById(`inputSelectMin${i}`);
+          if (advSel) advSel.value = normalized;
+          if (minSel) minSel.value = normalized;
+          updateTrackInputMapping(i, normalized);
+        }
+
+        // Note: Audio files are not automatically loaded as they need user selection
+        // Show notification if track files were in the session
+        if (stripData.trackFileName) {
+          console.log(`Note: Track "${stripData.trackFileName}" was loaded in Strip ${i + 1} - please reload manually`);
+        }
+      }
+    }
+    
+    // Apply MIDI mappings
+    if (sessionData.midi && sessionData.midi.mappings) {
+      midiMappings = sessionData.midi.mappings;
+      console.log('MIDI mappings restored:', Object.keys(midiMappings).length, 'mappings');
+    }
+    
+    showNotification('Session loaded successfully! Audio files need to be reloaded manually.', 'info');
+    
+  } catch (error) {
+    console.error('Failed to load session data:', error);
+    showNotification('Failed to load session: ' + error.message, 'error');
+  }
+}
+
+function newSession() {
+  if (confirm('Create new session? This will reset all current settings.')) {
+    // Stop all playback
+    playStopAllTracks();
+    
+    // Reset session name and display
+    currentSessionName = 'Untitled Session';
+    if (els.sessionChip) {
+      els.sessionChip.textContent = `Session: ${currentSessionName}`;
+    }
+    
+    // Reset all controls to defaults
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+      const defaultValue = input.getAttribute('value') || input.min || '0';
+      input.value = defaultValue;
+      input.dispatchEvent(new Event('input'));
+    });
+    
+    // Reset all buttons
+    document.querySelectorAll('.active').forEach(btn => {
+      if (!btn.id.includes('theme')) { // Don't reset theme buttons
+        btn.classList.remove('active');
+      }
+    });
+    
+    document.querySelectorAll('.muted').forEach(btn => {
+      btn.classList.remove('muted');
+      btn.textContent = 'Mute';
+    });
+    
+    // Reset strips
+    for (let i = 0; i < NUM_STRIPS; i++) {
+      if (strips[i]) {
+        strips[i].isLooping = false;
+        strips[i].isArmed = false;
+        strips[i].muted = false;
+        strips[i].soloed = false;
+        strips[i].trackBuffer = null;
+        strips[i].trackFileName = null;
+        strips[i].trackSource = null;
+        
+        // Reset gain nodes
+        if (strips[i].mute && ctx) {
+          strips[i].mute.gain.setValueAtTime(1, ctx.currentTime);
+        }
+      }
+    }
+    
+    // Reset playback positions
+    playbackPositions.fill(0);
+    isPlaying = false;
+    
+    // Clear MIDI mappings
+    midiMappings = {};
+    
+    showNotification('New session created', 'success');
+    console.log('New session created');
+  }
+}
+
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8'};
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    z-index: 10000;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 300px;
+    word-wrap: break-word;
+  `;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  // Remove after 4 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 4000);
+}
+
+function setupSessionManagement() {
+  // Save session button
+  document.getElementById('saveSession')?.addEventListener('click', () => {
+    const sessionName = prompt('Enter session name:', currentSessionName);
+    if (sessionName) {
+      currentSessionName = sessionName;
+      saveSessionToLocalStorage();
+    }
+  });
+  
+  // Export session button
+  document.getElementById('exportSession')?.addEventListener('click', () => {
+    const sessionName = prompt('Enter session name for export:', currentSessionName);
+    if (sessionName) {
+      currentSessionName = sessionName;
+      exportSessionFile();
+    }
+  });
+  
+  // Import session button
+  document.getElementById('importSession')?.addEventListener('click', () => {
+    document.getElementById('importSessionFile')?.click();
+  });
+  
+  // File input handler
+  document.getElementById('importSessionFile')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importSessionFromFile(file);
+    }
+    e.target.value = ''; // Reset file input
+  });
+  
+  // New session button
+  document.getElementById('newSession')?.addEventListener('click', newSession);
+  
+  // Auto-save every 2 minutes
+  setInterval(() => {
+    if (currentSessionName !== 'Untitled Session') {
+      saveSessionToLocalStorage();
+      console.log('Auto-saved session');
+    }
+  }, 120000); // 2 minutes
+  
+  // Try to load last session on startup
+  setTimeout(() => {
+    try {
+      const lastSessionKey = localStorage.getItem('consoleBooth_lastSession');
+      if (lastSessionKey) {
+        const sessionJson = localStorage.getItem(lastSessionKey);
+        if (sessionJson) {
+          const sessionData = JSON.parse(sessionJson);
+          if (confirm(`Load previous session "${sessionData.sessionName}"?`)) {
+            loadSessionData(sessionData);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load previous session:', error);
+    }
+  }, 2000);
+}
+
+init();
+</script>
+</body>
+</html>

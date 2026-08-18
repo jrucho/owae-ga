@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StagePlot Builder — Single File</title>
+  <style>
+    :root{
+      --bg:#0f1216; --panel:#171b21; --muted:#2a313b; --text:#e9edf1; --accent:#7bdcff; --ok:#67d786; --warn:#ffcc66; --bad:#ff7a7a;
+      --grid:#212733; --paper:#ffffff; --ink:#111418; --focus:#a2e4ff;
+    }
+    [data-theme="light"]{
+      --bg:#f5f7fb; --panel:#ffffff; --muted:#e7ebf3; --text:#131721; --accent:#0666ff; --ok:#0a8f3e; --warn:#9a6b00; --bad:#b21c1c;
+      --grid:#e9edf3; --paper:#ffffff; --ink:#111418; --focus:#0044cc;
+    }
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif}
+    *{box-sizing:border-box}
+    a{color:var(--accent)}
+    .app{display:grid;grid-template-rows:auto 1fr; height:100%}
+    header{display:flex;gap:12px;align-items:center; padding:10px 12px; background:var(--panel); border-bottom:1px solid var(--muted); position:sticky; top:0; z-index:5}
+    header .brand{font-weight:700; letter-spacing:.3px}
+    header .spacer{flex:1}
+    header .btn{appearance:none;border:1px solid var(--muted); background:transparent; color:var(--text); padding:8px 10px; border-radius:10px; cursor:pointer}
+    header .btn:focus{outline:2px solid var(--focus); outline-offset:2px}
+    header .btn.primary{background:var(--accent); color:#041018; border-color:transparent}
+    header .btn.warn{background:transparent; border-color:var(--warn); color:var(--warn)}
+    header label{display:flex;gap:6px;align-items:center}
+
+    .main{display:grid; grid-template-columns: 220px 1fr 360px; gap:12px; padding:12px; height:calc(100vh - 56px)}
+    .panel{background:var(--panel); border:1px solid var(--muted); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; min-height:0}
+    .panel h3{margin:0; padding:10px 12px; border-bottom:1px solid var(--muted)}
+    .panel .body{padding:10px; overflow:auto}
+
+    .palette .item{display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--muted); border-radius:10px; margin-bottom:8px; cursor:grab; background:transparent}
+    .palette .item:active{cursor:grabbing}
+    .palette .item span.icon{width:24px; height:24px; display:inline-grid; place-items:center; border-radius:6px; border:1px solid var(--muted)}
+    .palette .row{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+
+    /* Canvas */
+    .canvas-wrap{position:relative; background:var(--panel); border:1px solid var(--muted); border-radius:14px; overflow:hidden}
+    .toolbar{display:flex; gap:8px; padding:8px; border-bottom:1px solid var(--muted); align-items:center; flex-wrap:wrap}
+    .toolbar .btn{padding:6px 10px; border-radius:10px; border:1px solid var(--muted); background:transparent; color:var(--text); cursor:pointer}
+    .toolbar .btn[aria-pressed="true"], .toolbar .btn.active{background:var(--muted)}
+    svg#stage{width:100%; height:100%; display:block; background:repeating-linear-gradient(0deg, var(--grid), var(--grid) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, var(--grid), var(--grid) 1px, transparent 1px, transparent 20px)}
+    .hint{position:absolute; left:10px; bottom:10px; background:rgba(0,0,0,.4); padding:6px 8px; border-radius:8px; font-size:12px}
+
+    /* Stage items */
+    .node{cursor:move}
+    .handle{cursor:grab}
+    .selected .outline{stroke:var(--accent); stroke-width:2}
+    .outline{stroke:#8893a4; stroke-dasharray:0; fill:rgba(255,255,255,.02)}
+    .label{font-size:12px; fill:var(--text)}
+    .rot{cursor:grab}
+
+    /* Right panel */
+    .patch{width:100%; border-collapse:collapse; font-size:12px}
+    .patch th,.patch td{border-bottom:1px solid var(--muted); padding:6px}
+    .patch thead th{position:sticky; top:0; background:var(--panel); z-index:1}
+    .tag{display:inline-block; padding:2px 6px; border:1px solid var(--muted); border-radius:999px; font-size:11px}
+    .tag.ok{border-color:var(--ok); color:var(--ok)}
+    .tag.warn{border-color:var(--warn); color:var(--warn)}
+    .tag.bad{border-color:var(--bad); color:var(--bad)}
+
+    .kv{display:grid; grid-template-columns:120px 1fr; gap:8px; align-items:center}
+    .kv input, .kv select{width:100%; padding:6px 8px; border-radius:8px; border:1px solid var(--muted); background:transparent; color:var(--text)}
+
+    .notif{padding:8px 10px; border-left:4px solid var(--warn); background:rgba(255,204,102,.08); border-radius:8px; margin:8px 0}
+    .notif.bad{border-color:var(--bad); background:rgba(255,122,122,.08)}
+    .notif.ok{border-color:var(--ok); background:rgba(103,215,134,.08)}
+
+    .foot{display:flex; gap:8px; padding:8px; border-top:1px solid var(--muted)}
+
+    /* Print */
+    @media print{
+      @page{size:A4; margin:12mm}
+      body{background:#fff; color:#000}
+      header, .panel.left, .panel.right .controls, .foot, .toolbar{display:none!important}
+      .main{grid-template-columns:1fr}
+      .canvas-wrap{height:120mm}
+      svg#stage{background:#fff}
+      .panel.right{border:none}
+      .panel.right .body{padding:0}
+      .patch td, .patch th{border:1px solid #000}
+    }
+
+    /* Responsive */
+    @media (max-width:1100px){.main{grid-template-columns: 1fr; grid-template-rows: 320px auto auto;}}
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="StagePlot Builder">
+    <header>
+      <div class="brand" aria-label="App name">🎛️ StagePlot Builder</div>
+      <label class="kv" style="max-width:380px">
+        <span>Project</span>
+        <input id="projectName" aria-label="Project name" placeholder="My Band – Tour 2025" />
+      </label>
+      <label class="kv" style="max-width:240px">
+        <span>Channel budget</span>
+        <input id="chBudget" type="number" min="1" max="64" value="16" aria-label="Max channels" />
+      </label>
+      <label class="kv" style="max-width:220px">
+        <span>Stage box size</span>
+        <select id="boxSize" aria-label="Stage box size">
+          <option value="8">8/8 (A/B)</option>
+          <option value="12">12/12 (A/B)</option>
+          <option value="16" selected>16/16 (A/B)</option>
+          <option value="24">24/24 (A/B)</option>
+        </select>
+      </label>
+      <div class="spacer"></div>
+      <button class="btn" id="themeToggle" aria-pressed="true" aria-label="Toggle dark or light mode">🌙</button>
+      <button class="btn" id="newBtn">New</button>
+      <button class="btn" id="importBtn">Import JSON</button>
+      <button class="btn" id="exportJsonBtn">Export JSON</button>
+      <button class="btn" id="exportCsvBtn">CSV</button>
+      <button class="btn" id="printBtn" class="primary">Print / PDF</button>
+      <button class="btn" id="zipBtn">ZIP bundle</button>
+    </header>
+
+    <div class="main">
+      <aside class="panel left palette" aria-label="Palette">
+        <h3>Palette</h3>
+        <div class="body">
+          <div class="row">
+            <button class="item" data-add="mic_dyn" aria-label="Add dynamic mic"><span class="icon">🎤</span><div>Mic – Dynamic</div></button>
+            <button class="item" data-add="mic_cond" aria-label="Add condenser mic"><span class="icon">🎙️</span><div>Mic – Condenser</div></button>
+          </div>
+          <div class="row">
+            <button class="item" data-add="di_passive" aria-label="Add passive DI"><span class="icon">🔌</span><div>DI – Passive</div></button>
+            <button class="item" data-add="di_active" aria-label="Add active DI"><span class="icon">⚡</span><div>DI – Active</div></button>
+          </div>
+          <div class="row">
+            <button class="item" data-add="amp" aria-label="Add guitar/bass amp"><span class="icon">🔊</span><div>Amp</div></button>
+            <button class="item" data-add="wedge" aria-label="Add monitor wedge"><span class="icon">🟪</span><div>Wedge</div></button>
+          </div>
+          <div class="row">
+            <button class="item" data-add="keys" aria-label="Add keys stereo"><span class="icon">🎹</span><div>Keys (stereo)</div></button>
+            <button class="item" data-add="dj" aria-label="Add DJ stereo"><span class="icon">💿</span><div>DJ (stereo)</div></button>
+          </div>
+          <div class="row">
+            <button class="item" data-add="drums" aria-label="Add drum kit"><span class="icon">🥁</span><div>Drum Kit</div></button>
+            <button class="item" data-add="choir4" aria-label="Add choir 4 mics"><span class="icon">👥</span><div>Choir (4 mics)</div></button>
+          </div>
+          <div class="row">
+            <button class="item" data-add="power" aria-label="Add power drop"><span class="icon">🔋</span><div>Power</div></button>
+            <button class="item" data-add="ethernet" aria-label="Add ethernet drop"><span class="icon">🕸️</span><div>Ethernet</div></button>
+          </div>
+          <h3 style="margin-top:12px">Templates</h3>
+          <div class="row">
+            <button class="item" data-template="trio"><span class="icon">🎸</span><div>3‑piece</div></button>
+            <button class="item" data-template="five"><span class="icon">🎶</span><div>5‑piece</div></button>
+          </div>
+          <div class="row">
+            <button class="item" data-template="dj"><span class="icon">🎧</span><div>DJ</div></button>
+            <button class="item" data-template="choir"><span class="icon">🎼</span><div>Choir</div></button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="canvas-wrap panel" aria-label="Stage canvas">
+        <div class="toolbar" role="toolbar" aria-label="Canvas tools">
+          <button class="btn" id="toolSelect" aria-pressed="true">Select</button>
+          <button class="btn" id="toolCable">Cable</button>
+          <button class="btn" id="toolRotate">Rotate</button>
+          <button class="btn" id="toolDelete">Delete</button>
+          <div class="spacer"></div>
+          <span class="tag" id="statusUsed">0 ch used</span>
+          <span class="tag warn" id="statusWarnings">0 warnings</span>
+        </div>
+        <svg id="stage" viewBox="0 0 1200 800" role="img" aria-label="Stage grid" tabindex="0"></svg>
+        <div class="hint" aria-hidden="true">Tip: drag items, R to rotate, Del to remove, C to cable, S to select</div>
+      </section>
+
+      <aside class="panel right" aria-label="Patch and validation">
+        <h3>Patch List & Validation</h3>
+        <div class="body">
+          <div class="kv" style="margin-bottom:6px">
+            <span>Stage orientation</span>
+            <select id="stageNote">
+              <option>Audience at bottom (FOH)</option>
+              <option>Audience at top</option>
+            </select>
+          </div>
+          <div id="validations"></div>
+          <table class="patch" aria-label="Patch list">
+            <thead>
+              <tr><th>#</th><th>Box</th><th>Source</th><th>Type</th><th>Phantom</th><th>Polarity</th><th>Notes</th></tr>
+            </thead>
+            <tbody id="patchBody"></tbody>
+          </table>
+        </div>
+        <div class="foot">
+          <button class="btn" id="autoNumberBtn">Renumber</button>
+          <button class="btn" id="phantomAllBtn">Phantom Auto</button>
+          <button class="btn" id="invertSuggestBtn">Invert Suggest</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="application/json" style="display:none" />
+
+  <script>
+  // ---- Minimal IDB helper (idb-keyval-like) ----
+  const idb = (()=>{
+    const DB='stageplot-db', STORE='projects'; let dbp;
+    function withDb(){
+      if(!dbp){ dbp=new Promise((res,rej)=>{const r=indexedDB.open(DB,1); r.onupgradeneeded=e=>e.target.result.createObjectStore(STORE); r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e.target.error);});}
+      return dbp;
+    }
+    async function tx(mode){ const db=await withDb(); return db.transaction(STORE,mode).objectStore(STORE); }
+    return {
+      async get(key){ const s=await tx('readonly'); return new Promise((res,rej)=>{const r=s.get(key); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}); },
+      async set(key,val){ const s=await tx('readwrite'); return new Promise((res,rej)=>{const r=s.put(val,key); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error)}); },
+      async del(key){ const s=await tx('readwrite'); return new Promise((res,rej)=>{const r=s.delete(key); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error)}); },
+      async keys(){ const s=await tx('readonly'); return new Promise((res,rej)=>{const r=s.getAllKeys(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error)}); }
+    };
+  })();
+
+  // ---- State ----
+  const state = {
+    projectName: '',
+    chBudget: 16,
+    boxSize: 16,
+    items: [], // nodes on canvas
+    cables: [], // {aId,bId}
+    channels: [], // derived patch list
+    selection: new Set(),
+    tool: 'select', // select | cable | rotate | delete
+    seq: 1 // id sequence
+  };
+
+  const GRID=20;
+
+  const TYPES = {
+    mic_dyn:   { label:'Mic – Dynamic', kind:'mic', sub:'dynamic', channels:1, requiresPhantom:false, icon:'🎤' },
+    mic_cond:  { label:'Mic – Condenser', kind:'mic', sub:'condenser', channels:1, requiresPhantom:true, icon:'🎙️' },
+    di_passive:{ label:'DI – Passive', kind:'di', sub:'passive', channels:1, requiresPhantom:false, icon:'🔌' },
+    di_active: { label:'DI – Active', kind:'di', sub:'active', channels:1, requiresPhantom:true, icon:'⚡' },
+    amp:       { label:'Amp', kind:'amp', channels:0, icon:'🔊' },
+    wedge:     { label:'Wedge', kind:'wedge', channels:0, icon:'🟪' },
+    keys:      { label:'Keys (stereo)', kind:'keys', channels:2, stereo:true, requiresPhantom:false, icon:'🎹' },
+    dj:        { label:'DJ (stereo)', kind:'dj', channels:2, stereo:true, requiresPhantom:false, icon:'💿' },
+    drums:     { label:'Drum Kit', kind:'drums', channels:0, kit:[
+                  {name:'Kick In', type:'mic_dyn'}, {name:'Kick Out', type:'mic_dyn'},
+                  {name:'Snare Top', type:'mic_dyn'}, {name:'Snare Bottom', type:'mic_dyn'},
+                  {name:'HH', type:'mic_cond'}, {name:'Tom 1', type:'mic_dyn'}, {name:'Tom 2', type:'mic_dyn'},
+                  {name:'OH L', type:'mic_cond'}, {name:'OH R', type:'mic_cond'}
+                ], icon:'🥁' },
+    choir4:    { label:'Choir (4 mics)', kind:'choir', channels:0, kit:[
+                  {name:'Choir 1', type:'mic_cond'}, {name:'Choir 2', type:'mic_cond'}, {name:'Choir 3', type:'mic_cond'}, {name:'Choir 4', type:'mic_cond'}
+                ], icon:'👥' },
+    power:     { label:'Power', kind:'power', channels:0, icon:'🔋' },
+    ethernet:  { label:'Ethernet', kind:'ethernet', channels:0, icon:'🕸️' }
+  };
+
+  // ---- DOM refs ----
+  const stage = document.getElementById('stage');
+  const patchBody = document.getElementById('patchBody');
+  const validations = document.getElementById('validations');
+  const statusUsed = document.getElementById('statusUsed');
+  const statusWarnings = document.getElementById('statusWarnings');
+
+  // ---- Utilities ----
+  const uid = () => 'n'+(state.seq++);
+  const snap = v => Math.round(v/GRID)*GRID;
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+  function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  function saveAutosave(){
+    const data = serialize();
+    idb.set('auto', data).catch(()=>{});
+    const name = document.getElementById('projectName').value.trim();
+    if(name) idb.set('project:'+name, data).catch(()=>{});
+  }
+
+  function serialize(){
+    return {
+      v:1, projectName: state.projectName, chBudget: state.chBudget, boxSize: state.boxSize,
+      items: state.items, cables: state.cables
+    };
+  }
+  function loadData(data){
+    state.projectName = data.projectName||'';
+    state.chBudget = data.chBudget||16;
+    state.boxSize = data.boxSize||16;
+    state.items = data.items||[];
+    state.cables = data.cables||[];
+    state.selection.clear();
+    document.getElementById('projectName').value = state.projectName;
+    document.getElementById('chBudget').value = state.chBudget;
+    document.getElementById('boxSize').value = state.boxSize;
+    render();
+  }
+
+  // ---- Canvas rendering ----
+  function render(){
+    stage.innerHTML='';
+    // Cables first (draw under)
+    for(const c of state.cables){
+      const a=state.items.find(i=>i.id===c.aId), b=state.items.find(i=>i.id===c.bId);
+      if(!a||!b) continue;
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',a.x); line.setAttribute('y1',a.y);
+      line.setAttribute('x2',b.x); line.setAttribute('y2',b.y);
+      line.setAttribute('stroke','#6aa7ff'); line.setAttribute('stroke-width','2');
+      line.setAttribute('stroke-dasharray','6 6');
+      stage.appendChild(line);
+    }
+    // Nodes
+    for(const it of state.items){ stage.appendChild(nodeSvg(it)); }
+    rebuildPatch();
+    saveAutosave();
+  }
+
+  function nodeSvg(it){
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','node'+(state.selection.has(it.id)?' selected':''));
+    g.setAttribute('data-id', it.id);
+    g.setAttribute('transform', `translate(${it.x},${it.y}) rotate(${it.rot||0})`);
+
+    let shape;
+    if(it.kind==='wedge'){
+      shape = poly([[0,-20],[40,20],[-40,20]]);
+    } else if(it.kind==='amp'){
+      shape = rect(-30,-20,60,40,6);
+    } else if(it.kind==='power' || it.kind==='ethernet'){
+      shape = rect(-18,-18,36,36,8);
+    } else if(it.kind==='drums' || it.kind==='choir'){
+      shape = rect(-50,-35,100,70,10);
+    } else if(it.kind==='keys' || it.kind==='dj'){
+      shape = rect(-50,-20,100,40,8);
+    } else {
+      shape = circle(0,0,14);
+    }
+    shape.setAttribute('class','outline');
+    g.appendChild(shape);
+
+    // Icon
+    const icon = document.createElementNS('http://www.w3.org/2000/svg','text');
+    icon.setAttribute('text-anchor','middle');
+    icon.setAttribute('dominant-baseline','middle');
+    icon.setAttribute('class','label');
+    icon.setAttribute('y', -2);
+    icon.textContent = TYPES[it.type]?.icon || '⬚';
+    g.appendChild(icon);
+
+    // Label
+    const lab = document.createElementNS('http://www.w3.org/2000/svg','text');
+    lab.setAttribute('text-anchor','middle');
+    lab.setAttribute('dominant-baseline','hanging');
+    lab.setAttribute('class','label');
+    lab.setAttribute('y', 18);
+    lab.textContent = it.label;
+    g.appendChild(lab);
+
+    // Handles (hit area)
+    const hit = rect(-40,-40,80,80,6);
+    hit.setAttribute('opacity','0');
+    hit.setAttribute('class','handle');
+    g.appendChild(hit);
+
+    // Rotation handle
+    const rot = circle(0,-34,6); rot.setAttribute('class','rot'); rot.setAttribute('fill', '#3a4454');
+    g.appendChild(rot);
+
+    return g;
+  }
+
+  function rect(x,y,w,h,r){ const el=document.createElementNS('http://www.w3.org/2000/svg','rect'); el.setAttribute('x',x); el.setAttribute('y',y); el.setAttribute('width',w); el.setAttribute('height',h); if(r) el.setAttribute('rx',r); el.setAttribute('stroke','currentColor'); el.setAttribute('fill','none'); return el; }
+  function circle(x,y,r){ const el=document.createElementNS('http://www.w3.org/2000/svg','circle'); el.setAttribute('cx',x); el.setAttribute('cy',y); el.setAttribute('r',r); el.setAttribute('stroke','currentColor'); el.setAttribute('fill','none'); return el; }
+  function poly(points){ const el=document.createElementNS('http://www.w3.org/2000/svg','polygon'); el.setAttribute('points', points.map(p=>p.join(',')).join(' ')); el.setAttribute('stroke','currentColor'); el.setAttribute('fill','none'); return el; }
+
+  // ---- Add items & templates ----
+  function addItem(type, x=200, y=200){
+    const t=TYPES[type]; if(!t) return;
+    const id = uid();
+    const it = { id, type, kind:t.kind, x:snap(x), y:snap(y), rot:0, label: defaultLabel(type) };
+    state.items.push(it);
+    render();
+    return it;
+  }
+  function defaultLabel(type){
+    const base=TYPES[type].label.split('–')[0].trim();
+    const count= state.items.filter(i=>i.type===type).length+1;
+    if(type==='keys') return 'Keys L/R';
+    if(type==='dj') return 'DJ L/R';
+    if(type==='drums') return 'Drums';
+    if(type==='choir4') return 'Choir';
+    return base+ ' ' + count;
+  }
+
+  function placeTemplate(name){
+    const cx=600, cy=420; // general center
+    if(name==='trio'){
+      const d=addItem('drums', cx, cy);
+      addItem('mic_dyn', cx-250, cy+40).label='Vox';
+      addItem('di_active', cx-260, cy+110).label='Bass DI';
+      addItem('amp', cx-260, cy+160).label='Bass Amp';
+      addItem('mic_dyn', cx+260, cy+40).label='Gtr Vox';
+      addItem('mic_dyn', cx+260, cy+110).label='Gtr Mic';
+      addItem('wedge', cx-260, cy+200);
+      addItem('wedge', cx+260, cy+200);
+    } else if(name==='five'){
+      placeTemplate('trio');
+      addItem('keys', cx-100, cy+110).label='Keys L/R';
+      addItem('wedge', cx-100, cy+200);
+      addItem('mic_dyn', cx+100, cy+110).label='Gtr 2 Mic';
+    } else if(name==='dj'){
+      addItem('dj', cx, cy+80).label='DJ L/R';
+      addItem('mic_dyn', cx-120, cy+40).label='Host Mic';
+      addItem('wedge', cx-120, cy+160);
+      addItem('wedge', cx+120, cy+160);
+      addItem('power', cx, cy+150);
+      addItem('ethernet', cx, cy+190);
+    } else if(name==='choir'){
+      const q=addItem('choir4', cx, cy);
+      addItem('wedge', cx-140, cy+120);
+      addItem('wedge', cx+140, cy+120);
+    }
+  }
+
+  // ---- Pointer interaction ----
+  let drag = null; // {id, dx, dy}
+  let cableStart = null; // item id
+  function hitTest(evt){
+    const target = evt.target.closest('[data-id]');
+    if(!target) return null; return state.items.find(i=>i.id===target.getAttribute('data-id'));
+  }
+
+  stage.addEventListener('pointerdown', (e)=>{
+    const it = hitTest(e);
+    const tool = state.tool;
+    if(tool==='select' || tool==='rotate' || tool==='delete'){
+      if(it){
+        if(tool==='delete'){ state.items = state.items.filter(x=>x.id!==it.id); state.cables = state.cables.filter(c=>c.aId!==it.id && c.bId!==it.id); render(); return; }
+        if(!e.shiftKey){ state.selection.clear(); }
+        state.selection.add(it.id);
+        const pt = clientToSvg(e.clientX,e.clientY);
+        const angleHandle = e.target.classList.contains('rot');
+        if(tool==='rotate' || angleHandle){ drag = {mode:'rot', id:it.id, startAngle: Math.atan2(pt.y - it.y, pt.x - it.x), startRot: it.rot||0}; }
+        else{ drag = {mode:'move', id:it.id, dx: it.x - pt.x, dy: it.y - pt.y}; }
+        render();
+      } else {
+        state.selection.clear(); render();
+      }
+    } else if(tool==='cable'){
+      if(it){
+        if(!cableStart){ cableStart = it.id; }
+        else if(cableStart!==it.id){ state.cables.push({aId:cableStart,bId:it.id}); cableStart=null; render(); }
+      }
+    }
+    stage.setPointerCapture(e.pointerId);
+  });
+
+  stage.addEventListener('pointermove', (e)=>{
+    if(!drag) return;
+    const it = state.items.find(i=>i.id===drag.id); if(!it) return;
+    const pt = clientToSvg(e.clientX,e.clientY);
+    if(drag.mode==='move'){
+      it.x = snap(pt.x + drag.dx); it.y = snap(pt.y + drag.dy); render();
+    } else if(drag.mode==='rot'){
+      const ang = Math.atan2(pt.y - it.y, pt.x - it.x);
+      const deg = ( (ang - drag.startAngle) * 180/Math.PI + drag.startRot );
+      it.rot = Math.round(deg/15)*15; render();
+    }
+  });
+  stage.addEventListener('pointerup', ()=>{ drag=null; });
+
+  function clientToSvg(cx,cy){
+    const pt = stage.createSVGPoint(); pt.x=cx; pt.y=cy; return pt.matrixTransform(stage.getScreenCTM().inverse());
+  }
+
+  // ---- Keyboard shortcuts ----
+  window.addEventListener('keydown', (e)=>{
+    if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+    if(e.key==='Delete' || e.key==='Backspace'){ for(const id of [...state.selection]){ state.items = state.items.filter(i=>i.id!==id); state.cables = state.cables.filter(c=>c.aId!==id && c.bId!==id); } state.selection.clear(); render(); }
+    if(e.key.toLowerCase()==='r'){ state.tool='rotate'; uiUpdateTool(); }
+    if(e.key.toLowerCase()==='s'){ state.tool='select'; uiUpdateTool(); }
+    if(e.key.toLowerCase()==='c'){ state.tool='cable'; uiUpdateTool(); }
+  });
+
+  // ---- Patch list rebuild ----
+  function rebuildPatch(){
+    const entries=[];
+    function pushEntry(srcLabel, srcType, requiresPhantom){
+      const ch = entries.length+1;
+      const boxSz = state.boxSize; const box = ch<=boxSz? 'A'+ch : 'B'+(ch-boxSz);
+      entries.push({ ch, box, source: srcLabel, type: srcType, phantom:false, invert:false, notes:'', requiresPhantom });
+    }
+    for(const it of state.items){
+      const t = TYPES[it.type];
+      if(t.kind==='drums' || t.kind==='choir'){
+        t.kit.forEach(k=>{ const kt=TYPES[k.type]; pushEntry(k.name, kt.label, kt.requiresPhantom); });
+      } else if(t.channels===2){
+        pushEntry((it.label||t.label)+' L', t.label, false);
+        pushEntry((it.label||t.label)+' R', t.label, false);
+      } else if(t.channels===1){
+        pushEntry(it.label||t.label, t.label, t.requiresPhantom||false);
+      }
+    }
+    // Merge existing toggles by source name when possible
+    for(const e of entries){
+      const old = state.channels.find(x=>x.source===e.source);
+      if(old){ e.phantom=old.phantom; e.invert=old.invert; e.notes=old.notes; }
+    }
+    state.channels = entries;
+    renderPatchTable();
+  }
+
+  function renderPatchTable(){
+    patchBody.innerHTML='';
+    for(const e of state.channels){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${e.ch}</td><td>${e.box}</td>
+        <td contenteditable="true" data-field="source" aria-label="Source">${e.source}</td>
+        <td>${e.type}</td>
+        <td><button class="btn" data-toggle="phantom">${e.phantom?'On':'Off'}</button></td>
+        <td><button class="btn" data-toggle="invert">${e.invert?'Invert':'Normal'}</button></td>
+        <td contenteditable="true" data-field="notes" aria-label="Notes">${e.notes||''}</td>`;
+      // Handlers
+      tr.querySelector('[data-toggle="phantom"]').addEventListener('click',()=>{ e.phantom=!e.phantom; renderPatchTable();});
+      tr.querySelector('[data-toggle="invert"]').addEventListener('click',()=>{ e.invert=!e.invert; renderPatchTable();});
+      for(const cell of tr.querySelectorAll('[data-field]')){
+        cell.addEventListener('input',()=>{ e[cell.dataset.field]=cell.textContent.trim(); scheduleValidate(); saveAutosave();});
+      }
+      patchBody.appendChild(tr);
+    }
+    scheduleValidate(); saveAutosave();
+  }
+
+  // ---- Validation ----
+  let validateTimer=null; function scheduleValidate(){ clearTimeout(validateTimer); validateTimer=setTimeout(validate, 60); }
+  function validate(){
+    const issues=[]; const warnings=[]; const infos=[];
+    // Channel budget
+    const used = state.channels.length; const budget = state.chBudget;
+    if(used>budget){ issues.push(`${used} channels used exceeds budget of ${budget}.`); }
+
+    // Phantom conflicts & requirements
+    for(const e of state.channels){
+      const requires = /Condenser|Active/.test(e.type) || e.requiresPhantom===true;
+      if(requires && !e.phantom) warnings.push(`Channel ${e.ch} ${e.source} requires phantom but is Off.`);
+      if(!requires && e.phantom){ warnings.push(`Channel ${e.ch} ${e.source}: phantom is On but not required (${e.type}).`); }
+    }
+
+    // DI/Mic duplication by base name
+    const byName = new Map();
+    for(const e of state.channels){
+      const base = e.source.replace(/\s+(L|R|Top|Bottom|In|Out)$/,'');
+      if(!byName.has(base)) byName.set(base, []); byName.get(base).push(e);
+    }
+    for(const [base, list] of byName){
+      const kinds = new Set(list.map(x=> (x.type.includes('DI')?'DI':(x.type.includes('Mic')?'Mic':'Other')) ));
+      if(kinds.has('DI') && kinds.has('Mic')) infos.push(`Source "${base}" has both DI and Mic. Confirm intent.`);
+      // Stereo pairs check
+      const L = list.find(x=>/\sL$/.test(x.source)); const R=list.find(x=>/\sR$/.test(x.source));
+      if((L&&!R)||(R&&!L)) warnings.push(`Stereo pair for "${base}" is incomplete.`);
+      if(L&&R && Math.abs(L.ch-R.ch)!==1) warnings.push(`Stereo pair "${base}" channels should be consecutive.`);
+    }
+
+    // Polarity suggestions for In/Out or Top/Bottom
+    for(const [base, list] of byName){
+      const top = list.find(x=>/Top$/.test(x.source)); const bottom=list.find(x=>/Bottom$/.test(x.source));
+      if(top && bottom && !bottom.invert){ infos.push(`Consider inverting polarity on ${bottom.source}.`); }
+      const inn = list.find(x=>/\sIn$/.test(x.source)); const out=list.find(x=>/\sOut$/.test(x.source));
+      if(inn && out && !out.invert){ infos.push(`Consider inverting polarity on ${out.source}.`); }
+    }
+
+    // Update status chips
+    document.getElementById('statusUsed').textContent = `${used} ch used`;
+    document.getElementById('statusWarnings').textContent = `${issues.length+warnings.length} warnings`;
+
+    // Render validation cards
+    validations.innerHTML='';
+    function card(cls, title, arr){ if(arr.length===0) return; const div=document.createElement('div'); div.className=`notif ${cls}`; div.innerHTML=`<strong>${title}</strong><ul style="margin:6px 0 0 14px">${arr.map(x=>`<li>${x}</li>`).join('')}</ul>`; validations.appendChild(div); }
+    card('bad','Issues', issues); card('','Warnings', warnings); card('ok','Info', infos);
+  }
+
+  // ---- UI controls ----
+  document.querySelectorAll('.palette .item[data-add]').forEach(btn=>{
+    btn.addEventListener('click',()=> addItem(btn.dataset.add, 200+Math.random()*400, 150+Math.random()*300));
+  });
+  document.querySelectorAll('.palette .item[data-template]').forEach(btn=>{
+    btn.addEventListener('click',()=> placeTemplate(btn.dataset.template));
+  });
+
+  document.getElementById('themeToggle').addEventListener('click',()=>{
+    const isDark = document.documentElement.getAttribute('data-theme')!=='light';
+    document.documentElement.setAttribute('data-theme', isDark? 'light':'dark');
+    document.getElementById('themeToggle').textContent = isDark? '☀️' : '🌙';
+  });
+
+  document.getElementById('chBudget').addEventListener('input', (e)=>{ state.chBudget = parseInt(e.target.value)||16; validate(); saveAutosave(); });
+  document.getElementById('boxSize').addEventListener('change', (e)=>{ state.boxSize = parseInt(e.target.value)||16; rebuildPatch(); saveAutosave(); });
+  document.getElementById('projectName').addEventListener('input', (e)=>{ state.projectName = e.target.value; saveAutosave(); });
+
+  function setTool(t){ state.tool=t; uiUpdateTool(); }
+  function uiUpdateTool(){
+    document.getElementById('toolSelect').setAttribute('aria-pressed', state.tool==='select');
+    document.getElementById('toolCable').setAttribute('aria-pressed', state.tool==='cable');
+    document.getElementById('toolRotate').setAttribute('aria-pressed', state.tool==='rotate');
+    document.getElementById('toolDelete').setAttribute('aria-pressed', state.tool==='delete');
+  }
+  document.getElementById('toolSelect').onclick=()=>setTool('select');
+  document.getElementById('toolCable').onclick=()=>setTool('cable');
+  document.getElementById('toolRotate').onclick=()=>setTool('rotate');
+  document.getElementById('toolDelete').onclick=()=>setTool('delete');
+
+  document.getElementById('autoNumberBtn').addEventListener('click',()=>{ state.channels.forEach((e,i)=>e.ch=i+1); renderPatchTable(); });
+  document.getElementById('phantomAllBtn').addEventListener('click',()=>{ state.channels.forEach(e=>{ const req=/Condenser|Active/.test(e.type) || e.requiresPhantom===true; e.phantom=req; }); renderPatchTable(); });
+  document.getElementById('invertSuggestBtn').addEventListener('click',()=>{ state.channels.forEach(e=>{ if(/(Bottom|Out)$/.test(e.source)) e.invert=true; }); renderPatchTable(); });
+
+  document.getElementById('printBtn').addEventListener('click',()=>window.print());
+
+  // CSV Export
+  document.getElementById('exportCsvBtn').addEventListener('click',()=>{
+    const rows=[['Channel','Box','Source','Type','Phantom','Polarity','Notes']];
+    for(const e of state.channels){ rows.push([e.ch,e.box,esc(e.source),e.type,e.phantom?'On':'Off', e.invert?'Invert':'Normal', esc(e.notes||'')]); }
+    const csv = rows.map(r=> r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    download(new Blob([csv],{type:'text/csv'}), (state.projectName||'stageplot')+'-patch.csv');
+  });
+
+  function esc(s){return (s||'').toString();}
+  function download(blob, filename){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000); }
+
+  // JSON Export/Import
+  document.getElementById('exportJsonBtn').addEventListener('click',()=>{
+    const data=serialize(); download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}), (state.projectName||'stageplot')+'.json');
+  });
+  document.getElementById('importBtn').addEventListener('click',()=> document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', async (e)=>{
+    const file=e.target.files[0]; if(!file) return; const text=await file.text(); try{ loadData(JSON.parse(text)); }catch(err){ alert('Invalid JSON'); }
+  });
+
+  // ZIP bundle (lazy-load JSZip if online)
+  let JSZipLib=null;
+  async function ensureZip(){
+    if(JSZipLib) return JSZipLib;
+    try{
+      const src = await fetch('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
+      const code = await src.text();
+      JSZipLib = (new Function(code+'; return JSZip;'))();
+      return JSZipLib;
+    }catch(e){ alert('Could not load JSZip. Check your connection.'); throw e; }
+  }
+  document.getElementById('zipBtn').addEventListener('click', async()=>{
+    try{
+      const JSZip = await ensureZip();
+      const zip = new JSZip();
+      const data = JSON.stringify(serialize(), null, 2);
+      zip.file('project.json', data);
+      // CSV
+      const rows=[['Channel','Box','Source','Type','Phantom','Polarity','Notes']];
+      for(const e of state.channels){ rows.push([e.ch,e.box,esc(e.source),e.type,e.phantom?'On':'Off', e.invert?'Invert':'Normal', esc(e.notes||'')]); }
+      const csv = rows.map(r=> r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      zip.file('patch.csv', csv);
+      // SVG snapshot
+      const svgBlob = new Blob([stage.outerHTML], {type:'image/svg+xml'});
+      zip.file('stage.svg', svgBlob);
+      const content = await zip.generateAsync({type:'blob'});
+      download(content, (state.projectName||'stageplot')+'-bundle.zip');
+    }catch(e){ console.warn(e); }
+  });
+
+  // New
+  document.getElementById('newBtn').addEventListener('click',()=>{ if(confirm('Clear current project?')){ state.items=[]; state.cables=[]; state.channels=[]; state.selection.clear(); state.projectName=''; document.getElementById('projectName').value=''; render(); }});
+
+  // ---- Init ----
+  (async function init(){
+    // Theme from OS
+    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    if(prefersLight){ document.documentElement.setAttribute('data-theme','light'); document.getElementById('themeToggle').textContent='☀️'; }
+    // Load autosave
+    const data = await idb.get('auto');
+    if(data){ loadData(data); } else { render(); }
+  })();
+  </script>
+</body>
+</html>
