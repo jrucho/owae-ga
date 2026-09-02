@@ -187,21 +187,21 @@ const latestBooks = [
     href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/ygqqhgnwl7li0sgo850g",
   },
   {
-    title: "SOFIÁNIMA",
+    title: "SOFIÁNIMA (GL)",
     language: "GL",
     date: "Jul 2026",
     cover: "/book-sofianima-gl.webp",
     href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/j7prcew74uqah7blyjipni",
   },
   {
-    title: "SOFIÁNIMA",
+    title: "SOFIÁNIMA (EN)",
     language: "EN",
     date: "Jul 2026",
     cover: "/book-sofianima-en.webp",
     href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/zeii98oc4klqyb0z4fhxj9",
   },
   {
-    title: "SOFIÁNIMA",
+    title: "SOFIÁNIMA (FR)",
     language: "FR",
     date: "Jul 2026",
     cover: "/book-sofianima-fr.webp",
@@ -291,6 +291,28 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="sofianima-sequence" aria-labelledby="sequence-title">
+        <div className="sequence-heading">
+          <p className="section-label">02 / THE SEQUENCE</p>
+          <h2 id="sequence-title">OUTWARD<br />TO INWARD.</h2>
+          <p>Nine pieces. 12-inch vinyl with booklet. Sound, visual language, text, texture, and silence.</p>
+        </div>
+        <ol className="tracklist">
+          {sofianimaTracks.map((track, index) => (
+            <li key={track.title}>
+              <a className="track-link" href={track.href} target="_blank" rel="noreferrer" aria-label={`Listen to ${track.title} on Bandcamp`}>
+                <span className="track-number">{String(index + 1).padStart(2, "0")}</span>
+                <span className="track-name">
+                  <strong>{track.title}</strong>
+                  <span className="track-duration">{track.duration}</span>
+                </span>
+                <span className="track-listen">Listen <ExternalArrow /></span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <section className="book-strip" aria-labelledby="books-title">
         <div className="book-strip-heading">
           <p className="section-label">BOOKS / UN-BOUND ARCHIVE</p>
@@ -314,28 +336,6 @@ export default function Home() {
             </a>
           ))}
         </div>
-      </section>
-
-      <section className="sofianima-sequence" aria-labelledby="sequence-title">
-        <div className="sequence-heading">
-          <p className="section-label">02 / THE SEQUENCE</p>
-          <h2 id="sequence-title">OUTWARD<br />TO INWARD.</h2>
-          <p>Nine pieces. 12-inch vinyl with booklet. Sound, visual language, text, texture, and silence.</p>
-        </div>
-        <ol className="tracklist">
-          {sofianimaTracks.map((track, index) => (
-            <li key={track.title}>
-              <a className="track-link" href={track.href} target="_blank" rel="noreferrer" aria-label={`Listen to ${track.title} on Bandcamp`}>
-                <span className="track-number">{String(index + 1).padStart(2, "0")}</span>
-                <span className="track-name">
-                  <strong>{track.title}</strong>
-                  <span className="track-duration">{track.duration}</span>
-                </span>
-                <span className="track-listen">Listen <ExternalArrow /></span>
-              </a>
-            </li>
-          ))}
-        </ol>
       </section>
 
       <section className="live-tools" aria-labelledby="live-tools-title">

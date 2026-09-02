@@ -56,6 +56,10 @@ test("homepage live-tool links use preserved local routes", async () => {
   assert.match(page, /book\/j7prcew74uqah7blyjipni/);
   assert.match(page, /book\/zeii98oc4klqyb0z4fhxj9/);
   assert.match(page, /book\/uohvggpg2h06cahlhltyfv/);
+  assert.match(page, /title: "SOFIÁNIMA \(GL\)"/);
+  assert.match(page, /title: "SOFIÁNIMA \(EN\)"/);
+  assert.match(page, /title: "SOFIÁNIMA \(FR\)"/);
+  assert.ok(page.indexOf("sofianima-sequence") < page.indexOf("book-strip"));
   assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });
 
