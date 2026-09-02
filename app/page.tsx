@@ -64,6 +64,33 @@ const projects = [
     href: "https://github.com/jrucho/schwung-twinsampler",
     cta: "Open on GitHub",
   },
+  {
+    index: "07",
+    name: "un-framed",
+    kind: "Image platform",
+    description:
+      "A collaborative image space for galleries, shared sessions, and visual storytelling.",
+    href: "https://un-framed.ai.studio/",
+    cta: "Open gallery",
+  },
+  {
+    index: "08",
+    name: "my-notes.ch",
+    kind: "Note-taking journal",
+    description:
+      "A focused space for capturing notes, shaping ideas, and keeping a personal journal.",
+    href: "https://my-notes.ch/",
+    cta: "Open notes",
+  },
+  {
+    index: "09",
+    name: "Second Voice",
+    kind: "Audio storytelling",
+    description:
+      "An interactive audio series built around voice, choice, and unfolding stories.",
+    href: "https://ais-pre-ll4f4fqnevrqhedkohb3km-18081576561.europe-west3.run.app/",
+    cta: "Open series",
+  },
 ];
 
 const releases = [
@@ -304,7 +331,7 @@ export default function Home() {
         <div className="projects-heading">
           <p className="section-label">05 / PROJECTS</p>
           <h2 id="projects-title">TOOLS FOR<br />MAKING.</h2>
-          <p>Platforms and tools for music, books, writing, synthesis, and live performance.</p>
+          <p>Platforms and tools for music, images, books, writing, synthesis, and storytelling.</p>
         </div>
         <div className="project-grid">
           {projects.map((project) => (

@@ -20,6 +20,7 @@ const legacyRoutes = [
 
 const sharedAssets = [
   "2026_03_27_19_17_03_431_569026.png",
+  "apple-touch-icon.png",
   "icon.svg",
   "logoowae.png",
   "logoowae2.png",
@@ -42,6 +43,9 @@ test("homepage live-tool links use preserved local routes", async () => {
   assert.match(page, /href="\/Beatmaker_Cues\.html"/);
   assert.match(page, /href="\/Swiss-VJ\.html"/);
   assert.match(page, /un-bound\.ai\.studio\/public\/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/);
+  assert.match(page, /https:\/\/un-framed\.ai\.studio\//);
+  assert.match(page, /https:\/\/my-notes\.ch\//);
+  assert.match(page, /ais-pre-ll4f4fqnevrqhedkohb3km-18081576561\.europe-west3\.run\.app/);
   assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });
 

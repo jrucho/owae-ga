@@ -163,8 +163,8 @@ a:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
 .project-card::before { position: absolute; z-index: -1; content: ""; inset: 0; background: var(--ink); transform: translateY(101%); transition: transform .35s cubic-bezier(.2,.7,.2,1); }
 .project-card:hover { color: var(--paper); }
 .project-card:hover::before { transform: translateY(0); }
-.project-card:nth-child(2):hover, .project-card:nth-child(5):hover { color: var(--ink); }
-.project-card:nth-child(2)::before, .project-card:nth-child(5)::before { background: var(--acid); }
+.project-card:nth-child(3n+2):hover { color: var(--ink); }
+.project-card:nth-child(3n+2)::before { background: var(--acid); }
 .project-meta { display: flex; justify-content: space-between; }
 .project-card h3 { margin: auto 0 24px; font-size: clamp(3rem, 4.8vw, 5.8rem); line-height: .8; letter-spacing: -.08em; font-weight: 900; overflow-wrap: anywhere; }
 .project-card > p { margin: 0 0 45px; max-width: 420px; font-size: 15px; line-height: 1.45; }
