@@ -21,6 +21,11 @@ const legacyRoutes = [
 const sharedAssets = [
   "2026_03_27_19_17_03_431_569026.png",
   "apple-touch-icon.png",
+  "book-sofianima-en.webp",
+  "book-sofianima-fr.webp",
+  "book-sofianima-gl.webp",
+  "book-three-days.webp",
+  "book-trois-jours.webp",
   "icon.svg",
   "logoowae.png",
   "logoowae2.png",
@@ -46,6 +51,11 @@ test("homepage live-tool links use preserved local routes", async () => {
   assert.match(page, /https:\/\/un-framed\.ai\.studio\//);
   assert.match(page, /https:\/\/my-notes\.ch\//);
   assert.match(page, /ais-pre-ll4f4fqnevrqhedkohb3km-18081576561\.europe-west3\.run\.app/);
+  assert.match(page, /book\/kx0fce63afh767a17bwrn/);
+  assert.match(page, /book\/ygqqhgnwl7li0sgo850g/);
+  assert.match(page, /book\/j7prcew74uqah7blyjipni/);
+  assert.match(page, /book\/zeii98oc4klqyb0z4fhxj9/);
+  assert.match(page, /book\/uohvggpg2h06cahlhltyfv/);
   assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });
 

@@ -104,6 +104,23 @@ a:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
 .album-links a:last-child { border-right: 0; }
 .album-links a:hover { color: var(--acid); }
 
+.book-strip { padding: 6vh 2.2vw 7vh; border-bottom: 1px solid var(--line); background: #0b0b0a; }
+.book-strip-heading { display: grid; grid-template-columns: .35fr 1.35fr 1fr; gap: 2.2vw; align-items: end; margin-bottom: 34px; }
+.book-strip-heading h2 { margin: 0; font-size: clamp(2.7rem, 5.4vw, 6.5rem); line-height: .82; letter-spacing: -.075em; font-weight: 900; }
+.book-strip-heading > a { display: flex; justify-content: space-between; align-items: center; max-width: 260px; justify-self: end; width: 100%; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.book-strip-heading > a:hover { color: var(--acid); }
+.book-rail { display: flex; overflow-x: auto; border-top: 1px solid var(--line); border-left: 1px solid var(--line); scrollbar-width: none; scroll-snap-type: x proximity; }
+.book-rail::-webkit-scrollbar { display: none; }
+.book-card { flex: 1 1 0; min-width: 0; padding: 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); scroll-snap-align: start; }
+.book-cover { position: relative; aspect-ratio: 7 / 10; overflow: hidden; background: #050505; }
+.book-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s cubic-bezier(.2,.7,.2,1), filter .3s ease; }
+.book-cover > span { position: absolute; top: 10px; right: 10px; padding: 6px 7px; color: var(--ink); background: var(--acid); font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.book-card:hover .book-cover img { transform: scale(1.025); filter: contrast(1.08); }
+.book-card-copy { display: flex; flex-direction: column; min-height: 154px; padding-top: 14px; }
+.book-card-copy p { margin: 0; color: var(--muted); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+.book-card-copy h3 { margin: 13px 0 24px; font-size: clamp(1.05rem, 1.55vw, 1.55rem); line-height: .95; letter-spacing: -.04em; font-weight: 800; text-transform: uppercase; }
+.book-card-copy > span { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 11px; border-top: 1px solid var(--line); color: var(--acid); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+
 .sofianima-sequence { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 100vh; border-bottom: 1px solid var(--line); }
 .sequence-heading { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 42px 2.2vw; border-right: 1px solid var(--line); overflow: hidden; background: radial-gradient(circle at 42% 58%, rgba(217,255,0,.13), transparent 32%); }
 .sequence-heading::after { position: absolute; content: ""; width: 40vw; height: 40vw; right: -22vw; bottom: 1vh; border: 1px solid rgba(217,255,0,.4); border-radius: 50%; box-shadow: 0 0 100px rgba(217,255,0,.08); }
@@ -207,6 +224,8 @@ footer { min-height: 72vh; padding: 7vh 2.2vw 28px; color: var(--ink); backgroun
   .current-release > .section-label { grid-row: span 2; }
   .album-copy { grid-column: 1 / -1; min-height: 620px; border-top: 1px solid var(--line); }
   .sofianima-sequence { grid-template-columns: 1fr; }
+  .book-strip-heading { grid-template-columns: 90px 1.4fr 1fr; }
+  .book-card { flex-basis: 30%; min-width: 220px; }
   .sequence-heading { min-height: 72vh; border-right: 0; border-bottom: 1px solid var(--line); }
   .live-tools { grid-template-columns: 90px 1fr; }
   .live-tools > * { min-height: 620px; }
@@ -224,7 +243,7 @@ footer { min-height: 72vh; padding: 7vh 2.2vw 28px; color: var(--ink); backgroun
 }
 
 @media (max-width: 680px) {
-  .site-header, .hero, .current-release > *, .sequence-heading, .track-link, .live-tools > *, .about, .projects-heading, .project-card, .releases, .closing-statement, footer { padding-right: 18px; padding-left: 18px; }
+  .site-header, .hero, .current-release > *, .book-strip, .sequence-heading, .track-link, .live-tools > *, .about, .projects-heading, .project-card, .releases, .closing-statement, footer { padding-right: 18px; padding-left: 18px; }
   .site-header { grid-template-columns: 1fr auto; min-height: 70px; }
   .brand { width: 65px; }
   .location { display: none; }
@@ -245,6 +264,12 @@ footer { min-height: 72vh; padding: 7vh 2.2vw 28px; color: var(--ink); backgroun
   .album-copy h2 { font-size: 16vw; }
   .album-links { grid-template-columns: 1fr; }
   .album-links a, .album-links a:not(:first-child) { padding: 16px 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  .book-strip { padding-top: 54px; padding-bottom: 60px; }
+  .book-strip-heading { grid-template-columns: 1fr; gap: 28px; }
+  .book-strip-heading h2 { font-size: 15vw; }
+  .book-strip-heading > a { justify-self: start; max-width: none; }
+  .book-rail { margin-right: -18px; }
+  .book-card { flex: 0 0 min(72vw, 300px); min-width: 0; }
   .sequence-heading { min-height: 680px; }
   .sequence-heading h2 { font-size: 16vw; }
   .track-link { grid-template-columns: 34px minmax(0, 1fr) auto; min-height: 94px; }

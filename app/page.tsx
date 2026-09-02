@@ -171,6 +171,44 @@ const sofianimaTracks = [
   { title: "Sofiánima", duration: "03:16", href: "https://owaega.bandcamp.com/track/sofi-nima" },
 ];
 
+const latestBooks = [
+  {
+    title: "Trois jours sans photographie",
+    language: "FR",
+    date: "Aug 2026",
+    cover: "/book-trois-jours.webp",
+    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/kx0fce63afh767a17bwrn",
+  },
+  {
+    title: "Three Days Without a Photograph",
+    language: "EN",
+    date: "Jul 2026",
+    cover: "/book-three-days.webp",
+    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/ygqqhgnwl7li0sgo850g",
+  },
+  {
+    title: "SOFIÁNIMA",
+    language: "GL",
+    date: "Jul 2026",
+    cover: "/book-sofianima-gl.webp",
+    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/j7prcew74uqah7blyjipni",
+  },
+  {
+    title: "SOFIÁNIMA",
+    language: "EN",
+    date: "Jul 2026",
+    cover: "/book-sofianima-en.webp",
+    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/zeii98oc4klqyb0z4fhxj9",
+  },
+  {
+    title: "SOFIÁNIMA",
+    language: "FR",
+    date: "Jul 2026",
+    cover: "/book-sofianima-fr.webp",
+    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/uohvggpg2h06cahlhltyfv",
+  },
+];
+
 const ExternalArrow = () => (
   <svg className="external-arrow" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
     <path d="M3 9 9 3M4 3h5v5" />
@@ -250,6 +288,31 @@ export default function Home() {
             <a href={links.vinyl} target="_blank" rel="noreferrer">Vinyl / CD <ExternalArrow /></a>
             <a href={links.book} target="_blank" rel="noreferrer">Book <ExternalArrow /></a>
           </div>
+        </div>
+      </section>
+
+      <section className="book-strip" aria-labelledby="books-title">
+        <div className="book-strip-heading">
+          <p className="section-label">BOOKS / UN-BOUND ARCHIVE</p>
+          <h2 id="books-title">LATEST BOOKS.</h2>
+          <a href={links.book} target="_blank" rel="noreferrer">
+            View full archive <ExternalArrow />
+          </a>
+        </div>
+        <div className="book-rail">
+          {latestBooks.map((book, index) => (
+            <a className="book-card" href={book.href} target="_blank" rel="noreferrer" key={`${book.title}-${book.language}`}>
+              <div className="book-cover">
+                <img src={book.cover} alt={`${book.title} book cover`} loading={index === 0 ? "eager" : "lazy"} />
+                <span>{book.language}</span>
+              </div>
+              <div className="book-card-copy">
+                <p>{book.date}</p>
+                <h3>{book.title}</h3>
+                <span>Read book <ExternalArrow /></span>
+              </div>
+            </a>
+          ))}
         </div>
       </section>
 
