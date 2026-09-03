@@ -26,6 +26,7 @@ const sharedAssets = [
   "book-sofianima-gl.webp",
   "book-three-days.webp",
   "book-trois-jours.webp",
+  "googled561e012fd6882e6.html",
   "icon.svg",
   "logoowae.png",
   "logoowae2.png",
