@@ -41,6 +41,28 @@ test("serves the homepage and every preserved legacy route", async () => {
 
   try {
     await waitForServer();
+    const homepage = await (await fetch(baseUrl)).text();
+    assert.match(homepage, /O ano dos cuartos prestados/);
+    assert.match(homepage, /L’Année des chambres empruntées/);
+    assert.match(homepage, /The Year of Borrowed Rooms/);
+    assert.match(homepage, /TRES DÍAS SEN FOTOGRAFÍA/);
+    assert.match(homepage, /SOFIÁNIMA cover/);
+    const bookOrder = [
+      "O ano dos cuartos prestados",
+      "L’Année des chambres empruntées",
+      "The Year of Borrowed Rooms",
+      "TRES DÍAS SEN FOTOGRAFÍA",
+      "Trois jours sans photographie",
+      "Three Days Without a Photograph",
+      "SOFIÁNIMA (GL)",
+      "SOFIÁNIMA (EN)",
+      "SOFIÁNIMA (FR)",
+    ];
+    const bookPositions = bookOrder.map((title) => homepage.indexOf(title));
+    assert.ok(bookPositions.every((position) => position >= 0));
+    assert.deepEqual(bookPositions, [...bookPositions].sort((a, b) => a - b));
+    assert.ok((homepage.match(/SOFIÁNIMA cover/g) ?? []).length >= 2);
+
     for (const route of routes) {
       const response = await fetch(`${baseUrl}${route}`);
       assert.equal(response.status, 200, `${route} should return 200`);

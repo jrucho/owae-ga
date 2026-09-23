@@ -1,4 +1,7 @@
 import MobileMenu from "./MobileMenu";
+import { getLatestBooks, getLatestReleases } from "@/lib/feeds";
+
+export const revalidate = 21600;
 
 const links = {
   bandcamp: "https://owaega.bandcamp.com/album/sofi-nima",
@@ -93,72 +96,6 @@ const projects = [
   },
 ];
 
-const releases = [
-  {
-    title: "Vento Atlántico",
-    date: "01 Jan 2026",
-    kind: "Album",
-    cover: "/vento-atlantico.jpg",
-    href: "https://owaega.bandcamp.com/album/vento-atl-ntico",
-  },
-  {
-    title: "Eco Atlántico",
-    date: "18 Dec 2025",
-    kind: "Album",
-    cover: "/eco-atlantico.jpg",
-    href: "https://owaega.bandcamp.com/album/eco-atl-ntico",
-  },
-  {
-    title: "Codae Alt",
-    date: "11 Dec 2025",
-    kind: "Track",
-    cover: "/codae-alt.jpg",
-    href: "https://owaega.bandcamp.com/track/codae-alt",
-  },
-  {
-    title: "Fenda",
-    date: "04 Dec 2025",
-    kind: "Track",
-    cover: "/fenda.jpg",
-    href: "https://owaega.bandcamp.com/track/fenda",
-  },
-  {
-    title: "Espirais",
-    date: "20 Nov 2025",
-    kind: "Track",
-    cover: "/espirais.jpg",
-    href: "https://owaega.bandcamp.com/track/espirais",
-  },
-  {
-    title: "Sismo",
-    date: "06 Nov 2025",
-    kind: "Track",
-    cover: "/sismo.jpg",
-    href: "https://owaega.bandcamp.com/track/sismo",
-  },
-  {
-    title: "Fío de fume",
-    date: "30 Oct 2025",
-    kind: "Beat tape",
-    cover: "/fio-de-fume.jpg",
-    href: "https://owaega.bandcamp.com/album/f-o-de-fume",
-  },
-  {
-    title: "Brutalismo Atlántico",
-    date: "29 Sep 2025",
-    kind: "Album",
-    cover: "/brutalismo-atlantico.jpg",
-    href: "https://owaega.bandcamp.com/album/brutalismo-atl-ntico",
-  },
-  {
-    title: "CAMPO EP",
-    date: "23 Jun 2025",
-    kind: "EP",
-    cover: "/campo-ep.jpg",
-    href: "https://owaega.bandcamp.com/album/campo-ep",
-  },
-];
-
 const sofianimaTracks = [
   { title: "Outward", duration: "03:30", href: "https://owaega.bandcamp.com/track/outward" },
   { title: "Mark", duration: "02:19", href: "https://owaega.bandcamp.com/track/mark" },
@@ -171,51 +108,18 @@ const sofianimaTracks = [
   { title: "Sofiánima", duration: "03:16", href: "https://owaega.bandcamp.com/track/sofi-nima" },
 ];
 
-const latestBooks = [
-  {
-    title: "Trois jours sans photographie",
-    language: "FR",
-    date: "Aug 2026",
-    cover: "/book-trois-jours.webp",
-    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/kx0fce63afh767a17bwrn",
-  },
-  {
-    title: "Three Days Without a Photograph",
-    language: "EN",
-    date: "Jul 2026",
-    cover: "/book-three-days.webp",
-    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/ygqqhgnwl7li0sgo850g",
-  },
-  {
-    title: "SOFIÁNIMA (GL)",
-    language: "GL",
-    date: "Jul 2026",
-    cover: "/book-sofianima-gl.webp",
-    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/j7prcew74uqah7blyjipni",
-  },
-  {
-    title: "SOFIÁNIMA (EN)",
-    language: "EN",
-    date: "Jul 2026",
-    cover: "/book-sofianima-en.webp",
-    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/zeii98oc4klqyb0z4fhxj9",
-  },
-  {
-    title: "SOFIÁNIMA (FR)",
-    language: "FR",
-    date: "Jul 2026",
-    cover: "/book-sofianima-fr.webp",
-    href: "https://un-bound.ai.studio/public/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/book/uohvggpg2h06cahlhltyfv",
-  },
-];
-
 const ExternalArrow = () => (
   <svg className="external-arrow" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
     <path d="M3 9 9 3M4 3h5v5" />
   </svg>
 );
 
-export default function Home() {
+export default async function Home() {
+  const [latestBooks, releases] = await Promise.all([
+    getLatestBooks(),
+    getLatestReleases(),
+  ]);
+
   return (
     <main>
       <header className="site-header">

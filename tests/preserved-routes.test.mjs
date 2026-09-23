@@ -21,11 +21,15 @@ const legacyRoutes = [
 const sharedAssets = [
   "2026_03_27_19_17_03_431_569026.png",
   "apple-touch-icon.png",
+  "book-borrowed-rooms-en.webp",
+  "book-borrowed-rooms-fr.webp",
+  "book-borrowed-rooms-gl.webp",
   "book-sofianima-en.webp",
   "book-sofianima-fr.webp",
   "book-sofianima-gl.webp",
   "book-three-days.webp",
   "book-trois-jours.webp",
+  "book-tres-dias-gl.webp",
   "googled561e012fd6882e6.html",
   "icon.svg",
   "logoowae.png",
@@ -45,21 +49,26 @@ test("preserves shared legacy assets", async () => {
 
 test("homepage live-tool links use preserved local routes", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const feeds = await readFile(new URL("../lib/feeds.ts", import.meta.url), "utf8");
+  const content = `${page}\n${feeds}`;
 
   assert.match(page, /href="\/Beatmaker_Cues\.html"/);
   assert.match(page, /href="\/Swiss-VJ\.html"/);
-  assert.match(page, /un-bound\.ai\.studio\/public\/nCzhZaiY9Vg73Y63wbrXI7ORiWy2/);
+  assert.match(content, /un-bound\.ai\.studio/);
   assert.match(page, /https:\/\/un-framed\.ai\.studio\//);
   assert.match(page, /https:\/\/my-notes\.ch\//);
   assert.match(page, /ais-pre-ll4f4fqnevrqhedkohb3km-18081576561\.europe-west3\.run\.app/);
-  assert.match(page, /book\/kx0fce63afh767a17bwrn/);
-  assert.match(page, /book\/ygqqhgnwl7li0sgo850g/);
-  assert.match(page, /book\/j7prcew74uqah7blyjipni/);
-  assert.match(page, /book\/zeii98oc4klqyb0z4fhxj9/);
-  assert.match(page, /book\/uohvggpg2h06cahlhltyfv/);
-  assert.match(page, /title: "SOFIÁNIMA \(GL\)"/);
-  assert.match(page, /title: "SOFIÁNIMA \(EN\)"/);
-  assert.match(page, /title: "SOFIÁNIMA \(FR\)"/);
+  assert.match(feeds, /6gqhzsm4o253xnka0jisyv/);
+  assert.match(feeds, /msd2mslnczio1stlpvwzw/);
+  assert.match(feeds, /i85m31uxptqsgjp26li5de/);
+  assert.match(feeds, /2bxlaq1fd9vftsdx7vxjhu/);
+  assert.match(feeds, /title: "SOFIÁNIMA \(GL\)"/);
+  assert.match(feeds, /title: "SOFIÁNIMA \(EN\)"/);
+  assert.match(feeds, /title: "SOFIÁNIMA \(FR\)"/);
+  assert.ok(feeds.indexOf("6gqhzsm4o253xnka0jisyv") < feeds.indexOf("2bxlaq1fd9vftsdx7vxjhu"));
+  assert.ok(feeds.indexOf('title: "SOFIÁNIMA"') < feeds.indexOf('title: "Vento Atlántico"'));
+  assert.match(feeds, /unstable_cache/);
+  assert.match(feeds, /revalidate: 21600/);
   assert.ok(page.indexOf("sofianima-sequence") < page.indexOf("book-strip"));
   assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });
