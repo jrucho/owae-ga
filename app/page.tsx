@@ -329,6 +329,7 @@ export default async function Home() {
                 <span>Open <ExternalArrow /></span>
               </div>
               <div className="release-info">
+                <h3>{release.title}</h3>
                 <p>{release.date} / {release.kind}</p>
               </div>
             </a>

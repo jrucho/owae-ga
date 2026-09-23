@@ -62,6 +62,7 @@ test("serves the homepage and every preserved legacy route", async () => {
     assert.ok(bookPositions.every((position) => position >= 0));
     assert.deepEqual(bookPositions, [...bookPositions].sort((a, b) => a - b));
     assert.ok((homepage.match(/SOFIÁNIMA cover/g) ?? []).length >= 2);
+    assert.match(homepage, /<h3>SOFIÁNIMA<\/h3><p>15 May 2026(?:<!-- -->)? \/ (?:<!-- -->)?Album<\/p>/);
 
     for (const route of routes) {
       const response = await fetch(`${baseUrl}${route}`);

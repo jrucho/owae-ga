@@ -71,6 +71,7 @@ test("homepage live-tool links use preserved local routes", async () => {
   assert.match(feeds, /revalidate: 21600/);
   assert.ok(page.indexOf("sofianima-sequence") < page.indexOf("book-strip"));
   assert.match(page, /<h3 className="visually-hidden">\{book\.title\}<\/h3>/);
+  assert.match(page, /<h3>\{release\.title\}<\/h3>/);
   assert.doesNotMatch(page, /<span aria-hidden="true">↗<\/span>/);
 });
 
