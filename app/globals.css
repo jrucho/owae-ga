@@ -14,6 +14,7 @@ html { scroll-behavior: smooth; background: var(--ink); }
 body { margin: 0; background: var(--ink); color: var(--paper); font-family: Arial, Helvetica, sans-serif; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
+.visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 .external-arrow { width: 12px; height: 12px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: square; stroke-linejoin: miter; }
 a:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
 
@@ -111,14 +112,13 @@ a:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
 .book-strip-heading > a:hover { color: var(--acid); }
 .book-rail { display: flex; overflow-x: auto; border-top: 1px solid var(--line); border-left: 1px solid var(--line); scrollbar-width: none; scroll-snap-type: x proximity; }
 .book-rail::-webkit-scrollbar { display: none; }
-.book-card { flex: 1 0 220px; min-width: 220px; padding: 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); scroll-snap-align: start; }
+.book-card { flex: 1 0 280px; min-width: 280px; padding: 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); scroll-snap-align: start; }
 .book-cover { position: relative; aspect-ratio: 7 / 10; overflow: hidden; background: #050505; }
 .book-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s cubic-bezier(.2,.7,.2,1), filter .3s ease; }
 .book-cover > span { position: absolute; top: 10px; right: 10px; padding: 6px 7px; color: var(--ink); background: var(--acid); font-size: 9px; font-weight: 800; letter-spacing: .12em; }
 .book-card:hover .book-cover img { transform: scale(1.025); filter: contrast(1.08); }
-.book-card-copy { display: flex; flex-direction: column; min-height: 154px; padding-top: 14px; }
+.book-card-copy { display: flex; flex-direction: column; min-height: 82px; padding-top: 14px; }
 .book-card-copy p { margin: 0; color: var(--muted); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
-.book-card-copy h3 { margin: 13px 0 24px; font-size: clamp(1.05rem, 1.55vw, 1.55rem); line-height: .95; letter-spacing: -.04em; font-weight: 800; text-transform: uppercase; }
 .book-card-copy > span { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 11px; border-top: 1px solid var(--line); color: var(--acid); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
 
 .sofianima-sequence { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 100vh; border-bottom: 1px solid var(--line); }
@@ -225,7 +225,7 @@ footer { min-height: 72vh; padding: 7vh 2.2vw 28px; color: var(--ink); backgroun
   .album-copy { grid-column: 1 / -1; min-height: 620px; border-top: 1px solid var(--line); }
   .sofianima-sequence { grid-template-columns: 1fr; }
   .book-strip-heading { grid-template-columns: 90px 1.4fr 1fr; }
-  .book-card { flex-basis: 30%; min-width: 220px; }
+  .book-card { flex-basis: 260px; min-width: 260px; }
   .sequence-heading { min-height: 72vh; border-right: 0; border-bottom: 1px solid var(--line); }
   .live-tools { grid-template-columns: 90px 1fr; }
   .live-tools > * { min-height: 620px; }

@@ -233,8 +233,8 @@ export default async function Home() {
                 <span>{book.language}</span>
               </div>
               <div className="book-card-copy">
+                <h3 className="visually-hidden">{book.title}</h3>
                 <p>{book.date}</p>
-                <h3>{book.title}</h3>
                 <span>Read book <ExternalArrow /></span>
               </div>
             </a>
