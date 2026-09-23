@@ -32,19 +32,19 @@ const bookDetails: Record<string, Pick<Book, "title" | "language" | "date" | "co
   "msd2mslnczio1stlpvwzw": {
     title: "L’Année des chambres empruntées",
     language: "FR",
-    date: "Aug 2026",
+    date: "Sep 2026",
     cover: "/book-borrowed-rooms-fr.webp",
   },
   "i85m31uxptqsgjp26li5de": {
     title: "The Year of Borrowed Rooms",
     language: "EN",
-    date: "Jul 2026",
+    date: "Sep 2026",
     cover: "/book-borrowed-rooms-en.webp",
   },
   "2bxlaq1fd9vftsdx7vxjhu": {
     title: "TRES DÍAS SEN FOTOGRAFÍA",
     language: "GL",
-    date: "Sep 2026",
+    date: "Aug 2026",
     cover: "/book-tres-dias-gl.webp",
   },
   "kx0fce63afh767a17bwrn": {
@@ -56,7 +56,7 @@ const bookDetails: Record<string, Pick<Book, "title" | "language" | "date" | "co
   "ygqqhgnwl7li0sgo850g": {
     title: "Three Days Without a Photograph",
     language: "EN",
-    date: "Jul 2026",
+    date: "Aug 2026",
     cover: "/book-three-days.webp",
   },
   "j7prcew74uqah7blyjipni": {
@@ -228,7 +228,7 @@ const fetchUnboundBooks = unstable_cache(
       return [{
         title: known?.title ?? title,
         language: known?.language ?? fields?.language?.stringValue?.toUpperCase() ?? "—",
-        date: formatMonth(createdAt),
+        date: known?.date ?? formatMonth(createdAt),
         cover: known?.cover ?? fields?.coverUrl?.stringValue ?? "",
         href: `${UNBOUND_ORIGIN}/public/${UNBOUND_PROFILE}/book/${shareId}`,
         shareId,
@@ -257,7 +257,7 @@ const fetchUnboundBooks = unstable_cache(
         href: book.href,
       }));
   },
-  ["unbound-public-books-v1"],
+  ["unbound-public-books-v3"],
   { revalidate: 21600, tags: ["unbound-books"] },
 );
 
