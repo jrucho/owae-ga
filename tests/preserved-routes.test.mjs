@@ -35,12 +35,29 @@ const sharedAssets = [
   "logoowae.png",
   "logoowae2.png",
   "manifest.webmanifest",
+  "owae-ga-hero.avif",
+  "owae-ga-hero.webp",
+  "owae-ga-social.jpg",
   "owae.ga - Tudor.mp3",
   "service-worker.js",
+  "sofianima-cover.avif",
+  "sofianima-cover.webp",
 ];
 
 test("preserves every legacy tool at its original route", async () => {
   await Promise.all(legacyRoutes.map((route) => access(new URL(`../public/${route}`, import.meta.url))));
+});
+
+test("legacy service worker retires only Console Booth data", async () => {
+  const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
+
+  assert.match(worker, /\^console-booth/);
+  assert.match(worker, /self\.registration\.unregister\(\)/);
+  assert.match(worker, /client\.navigate\(client\.url\)/);
+  assert.match(worker, /self\.skipWaiting\(\)/);
+  assert.doesNotMatch(worker, /addEventListener\(["']fetch/);
+  assert.doesNotMatch(worker, /caches\.match|caches\.open/);
+  assert.doesNotMatch(worker, /keys\.map\([^)]*caches\.delete/);
 });
 
 test("preserves shared legacy assets", async () => {

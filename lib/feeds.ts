@@ -21,6 +21,7 @@ const UNBOUND_ORIGIN = "https://un-bound.ai.studio";
 const UNBOUND_QUERY_URL =
   "https://firestore.googleapis.com/v1/projects/gen-lang-client-0492465470/databases/ai-studio-04d3ed5d-0b3a-4826-9c0e-c76943141d2e/documents:runQuery?key=AIzaSyD6Gpf5eG_pIgVvOq8lYRQEgRB6YwOw31k";
 const BANDCAMP_ORIGIN = "https://owaega.bandcamp.com";
+const FEED_TIMEOUT_MS = 3500;
 
 const bookDetails: Record<string, Pick<Book, "title" | "language" | "date" | "cover">> = {
   "6gqhzsm4o253xnka0jisyv": {
@@ -211,7 +212,7 @@ const fetchUnboundBooks = unstable_cache(
           orderBy: [{ field: { fieldPath: "createdAt" }, direction: "DESCENDING" }],
         },
       }),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
     });
 
     if (!response.ok) throw new Error(`un-bound returned ${response.status}`);
@@ -273,11 +274,11 @@ const fetchBandcampReleases = unstable_cache(
   async (): Promise<Release[]> => {
     const [detailsResponse, musicResponse] = await Promise.all([
       fetch("https://bandcamp.com/api/mobile/24/band_details?band_id=2032818042", {
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
       }),
       fetch(`${BANDCAMP_ORIGIN}/music`, {
         headers: { "user-agent": "owae.ga release feed" },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
       }),
     ]);
 

@@ -10,7 +10,7 @@ import {
   safeFileStem,
 } from "../lib/mastering.ts";
 
-function sineBuffer(duration = 0.1, sampleRate = 44100) {
+function sineBuffer(duration = 0.1, sampleRate = 44100, channels = 2) {
   const length = Math.round(duration * sampleRate);
   const left = new Float32Array(length);
   const right = new Float32Array(length);
@@ -20,7 +20,7 @@ function sineBuffer(duration = 0.1, sampleRate = 44100) {
     right[index] = sample;
   }
   return {
-    numberOfChannels: 2,
+    numberOfChannels: channels,
     length,
     sampleRate,
     duration,
@@ -33,7 +33,18 @@ test("analyzes levels and exposes mastering profiles", () => {
   assert.ok(metrics.peak > 0.49 && metrics.peak <= 0.5);
   assert.ok(metrics.rms > 0.35 && metrics.rms < 0.36);
   assert.ok(Number.isFinite(metrics.lufs));
+  assert.ok(metrics.truePeak >= metrics.peak);
   assert.deepEqual(Object.keys(MASTER_PROFILES), ["Balanced", "Warm", "Open", "Loud"]);
+});
+
+test("integrated loudness sums stereo energy and estimates true peak", () => {
+  const mono = analyzeAudio(sineBuffer(1, 48000, 1));
+  const stereo = analyzeAudio(sineBuffer(1, 48000, 2));
+  const stereoDifference = stereo.lufs - mono.lufs;
+
+  assert.ok(stereoDifference > 2.8 && stereoDifference < 3.2);
+  assert.ok(stereo.truePeak >= stereo.peak);
+  assert.ok(Number.isFinite(stereo.truePeakDb));
 });
 
 test("exports valid 16-bit and 24-bit WAV files", async () => {
@@ -76,4 +87,5 @@ test("mastering block exposes every export option", async () => {
   assert.match(component, /<h3>Mastered<\/h3>/);
   assert.match(component, /<span>RMS<\/span>/);
   assert.match(component, /<span>Crest<\/span>/);
+  assert.match(component, /<span>True peak\*<\/span>/);
 });

@@ -122,12 +122,15 @@ export default async function Home() {
   ]);
 
   return (
-    <main>
+    <>
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="owae.ga home">
-          <img src="/logo-owae.png" alt="owae.ga" />
+          <img src="/logo-owae.png" width="1000" height="1000" alt="owae.ga" />
         </a>
         <nav aria-label="Main navigation">
+          <a href="#music">Music</a>
+          <a href="#master">Master</a>
           <a href="#about">About</a>
           <a href="#projects">Projects</a>
           <a href="#releases">Releases</a>
@@ -137,6 +140,7 @@ export default async function Home() {
         <span className="location">LSN / GAL</span>
       </header>
 
+      <main id="main-content">
       <section className="hero" id="top" aria-labelledby="hero-title">
         <div className="hero-image" aria-hidden="true" />
         <div className="hero-grid" aria-hidden="true" />
@@ -170,7 +174,11 @@ export default async function Home() {
       <section className="current-release" id="music" aria-labelledby="current-title">
         <div className="section-label">01 / CURRENT TRANSMISSION</div>
         <div className="album-cover-wrap">
-          <img src="/sofianima-cover.png" alt="SOFIÁNIMA album cover" />
+          <picture>
+            <source srcSet="/sofianima-cover.avif" type="image/avif" />
+            <source srcSet="/sofianima-cover.webp" type="image/webp" />
+            <img src="/sofianima-cover.png" width="1200" height="1200" loading="lazy" alt="SOFIÁNIMA album cover" />
+          </picture>
           <span>New album / 15.05.2026</span>
         </div>
         <div className="album-copy">
@@ -205,7 +213,7 @@ export default async function Home() {
         <ol className="tracklist">
           {sofianimaTracks.map((track, index) => (
             <li key={track.title}>
-              <a className="track-link" href={track.href} target="_blank" rel="noreferrer" aria-label={`Listen to ${track.title} on Bandcamp`}>
+              <a className="track-link" href={track.href} target="_blank" rel="noreferrer" aria-label={`Listen to ${track.title}, ${track.duration}, on Bandcamp`}>
                 <span className="track-number">{String(index + 1).padStart(2, "0")}</span>
                 <span className="track-name">
                   <strong>{track.title}</strong>
@@ -218,7 +226,7 @@ export default async function Home() {
         </ol>
       </section>
 
-      <section className="book-strip" aria-labelledby="books-title">
+      <section className="book-strip" id="books" aria-labelledby="books-title">
         <div className="book-strip-heading">
           <p className="section-label">BOOKS / UN-BOUND ARCHIVE</p>
           <h2 id="books-title">LATEST BOOKS.</h2>
@@ -227,10 +235,10 @@ export default async function Home() {
           </a>
         </div>
         <div className="book-rail">
-          {latestBooks.map((book, index) => (
+          {latestBooks.map((book) => (
             <a className="book-card" href={book.href} target="_blank" rel="noreferrer" key={`${book.title}-${book.language}`}>
               <div className="book-cover">
-                <img src={book.cover} alt={`${book.title} book cover`} loading={index === 0 ? "eager" : "lazy"} />
+                <img src={book.cover} width="700" height="1000" alt="" loading="lazy" />
                 <span>{book.language}</span>
               </div>
               <div className="book-card-copy">
@@ -243,7 +251,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="live-tools" aria-labelledby="live-tools-title">
+      <section className="live-tools" id="play" aria-labelledby="live-tools-title">
         <div className="tools-heading">
           <p className="section-label">03 / LIVE TOOLS</p>
           <h2 id="live-tools-title">PLAY THE<br />BROWSER.</h2>
@@ -328,7 +336,7 @@ export default async function Home() {
           {releases.map((release, index) => (
             <a className={`release-card release-${index + 1}`} href={release.href} target="_blank" rel="noreferrer" key={release.title}>
               <div className="release-image">
-                <img src={release.cover} alt={`${release.title} cover`} loading="lazy" />
+                <img src={release.cover} width="700" height="700" alt="" loading="lazy" />
                 <span>Open <ExternalArrow /></span>
               </div>
               <div className="release-info">
@@ -345,10 +353,11 @@ export default async function Home() {
         <p>IMAGE.</p>
         <p>TOOLS.</p>
       </section>
+      </main>
 
       <footer id="contact">
         <div className="footer-top">
-          <img src="/logo-owae.png" alt="owae.ga" />
+          <img src="/logo-owae.png" width="1000" height="1000" loading="lazy" alt="owae.ga" />
           <p>Multimedia practice<br />Lausanne / Galicia</p>
         </div>
         <div className="footer-links">
@@ -363,6 +372,6 @@ export default async function Home() {
           <a href="#top">Back to top ↑</a>
         </div>
       </footer>
-    </main>
+    </>
   );
 }

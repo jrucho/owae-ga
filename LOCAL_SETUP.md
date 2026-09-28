@@ -5,7 +5,7 @@ owae.ga website.
 
 ## Requirements
 
-- Node.js 22.13 or newer
+- Node.js 22.x (22.13 or newer)
 - npm (included with Node.js)
 - An internet connection for the first dependency installation
 
@@ -27,7 +27,7 @@ owae.ga website.
    ```
 
 5. Open the local address printed in Terminal, normally
-   `http://localhost:5173`.
+   `http://localhost:3000`.
 
 Stop the site with `Control + C` in Terminal.
 

@@ -4,7 +4,7 @@ The 2026 owae.ga website, built with Next.js and deployed on Vercel.
 
 ## Local development
 
-Requires Node.js 22.13 or newer.
+Requires Node.js 22.x (22.13 or newer).
 
 ```bash
 npm ci
