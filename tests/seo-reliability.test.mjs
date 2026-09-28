@@ -37,3 +37,10 @@ test("feed fallbacks remain local, ordered, and bounded on cold failures", async
   assert.ok(feeds.indexOf('title: "SOFIÁNIMA"') < feeds.indexOf('title: "Vento Atlántico"'));
   assert.match(feeds, /title: "SOFIÁNIMA"[\s\S]*date: "15 May 2026"/);
 });
+
+test("mobile document is horizontally locked while the book rail remains scrollable", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /html, body \{[^}]*overflow-x: hidden/);
+  assert.match(css, /html, body \{ overflow-x: clip; \}/);
+  assert.match(css, /\.book-rail \{[^}]*overflow-x: auto/);
+});
