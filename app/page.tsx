@@ -1,4 +1,5 @@
 import MobileMenu from "./MobileMenu";
+import MasteringBlock from "./MasteringBlock";
 import { getLatestBooks, getLatestReleases } from "@/lib/feeds";
 
 export const revalidate = 21600;
@@ -269,6 +270,8 @@ export default async function Home() {
           </div>
         </a>
       </section>
+
+      <MasteringBlock />
 
       <section className="about" id="about" aria-labelledby="about-title">
         <p className="section-label">04 / ABOUT</p>

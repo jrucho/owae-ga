@@ -47,6 +47,8 @@ test("serves the homepage and every preserved legacy route", async () => {
     assert.match(homepage, /The Year of Borrowed Rooms/);
     assert.match(homepage, /TRES DÍAS SEN FOTOGRAFÍA/);
     assert.match(homepage, /SOFIÁNIMA cover/);
+    assert.match(homepage, /MASTER IN/);
+    assert.match(homepage, /THE BROWSER\./);
     const bookOrder = [
       "O ano dos cuartos prestados",
       "L’Année des chambres empruntées",

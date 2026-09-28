@@ -14,6 +14,8 @@
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
   "dependencies": {
+    "@audio/encode-flac": "^1.4.1",
+    "@breezystack/lamejs": "^1.2.7",
     "drizzle-orm": "0.45.2",
     "next": "16.2.6",
     "react": "19.2.6",
@@ -38,5 +40,5 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "displayName": "owae.ga \u2014 Music & Visuals"
+  "displayName": "owae.ga — Music & Visuals"
 }
