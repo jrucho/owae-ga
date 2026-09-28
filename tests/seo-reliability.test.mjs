@@ -43,4 +43,5 @@ test("mobile document is horizontally locked while the book rail remains scrolla
   assert.match(css, /html, body \{[^}]*overflow-x: hidden/);
   assert.match(css, /html, body \{ overflow-x: clip; \}/);
   assert.match(css, /\.book-rail \{[^}]*overflow-x: auto/);
+  assert.match(css, /\.book-rail \{[^}]*contain: layout paint/);
 });

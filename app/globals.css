@@ -116,7 +116,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .book-strip-heading h2 { margin: 0; font-size: clamp(2.7rem, 5.4vw, 6.5rem); line-height: .82; letter-spacing: -.075em; font-weight: 900; }
 .book-strip-heading > a { display: flex; justify-content: space-between; align-items: center; max-width: 260px; justify-self: end; width: 100%; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
 .book-strip-heading > a:hover { color: var(--acid); }
-.book-rail { display: flex; overflow-x: auto; padding-bottom: 5px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); scrollbar-width: thin; scrollbar-color: var(--acid) transparent; scroll-snap-type: x proximity; }
+.book-rail { display: flex; overflow-x: auto; contain: layout paint; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; padding-bottom: 5px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); scrollbar-width: thin; scrollbar-color: var(--acid) transparent; scroll-snap-type: x proximity; }
 .book-rail::-webkit-scrollbar { height: 4px; }
 .book-rail::-webkit-scrollbar-thumb { background: var(--acid); }
 .book-card { flex: 1 0 280px; min-width: 280px; padding: 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); scroll-snap-align: start; }
