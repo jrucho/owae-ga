@@ -1,5 +1,6 @@
 import MobileMenu from "./MobileMenu";
 import MasteringBlock from "./MasteringBlock";
+import DecayEngine from "./DecayEngine";
 import { getLatestBooks, getLatestReleases } from "@/lib/feeds";
 
 export const revalidate = 21600;
@@ -325,6 +326,8 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      <DecayEngine />
 
       <section className="releases" id="releases" aria-labelledby="releases-title">
         <div className="releases-heading">

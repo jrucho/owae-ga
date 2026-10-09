@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/DecayEngine-v1.0-macOS.zip",
+        headers: [
+          ...safeHeaders,
+          { key: "Content-Disposition", value: 'attachment; filename="DecayEngine-v1.0-macOS.zip"' },
+          { key: "Cache-Control", value: "public, max-age=3600, must-revalidate" },
+        ],
+      },
+      {
         source: "/service-worker.js",
         headers: [
           ...safeHeaders,

@@ -74,6 +74,18 @@ const structuredData = {
     },
     {
       "@type": "SoftwareApplication",
+      "@id": `${siteUrl}/#decay-engine`,
+      name: "DECAY ENGINE",
+      url: `${siteUrl}/#decay-engine`,
+      downloadUrl: `${siteUrl}/DecayEngine-v1.0-macOS.zip`,
+      softwareVersion: "1.0",
+      applicationCategory: "MultimediaApplication",
+      operatingSystem: "macOS 11 or later",
+      description: "A creative stereo audio effect with compression, saturation, tonal aging, modulation, echoes, and diffused feedback. Available as AU, VST2, and VST3 for Apple Silicon and Intel.",
+      author: { "@id": `${siteUrl}/#carlos-abeijon-martinez` },
+    },
+    {
+      "@type": "SoftwareApplication",
       "@id": `${siteUrl}/#browser-mastering`,
       name: "owae.ga Browser Mastering",
       url: `${siteUrl}/#master`,
