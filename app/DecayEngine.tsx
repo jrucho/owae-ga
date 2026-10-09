@@ -21,13 +21,13 @@ export default function DecayEngine() {
         <div className={styles.download}>
           <p>macOS 11 or later<br />Apple Silicon &amp; Intel / Stereo audio</p>
           <span>AU · VST2 · VST3</span>
-          <a href="/DecayEngine-v1.0-macOS.zip" download>
+          <a href="https://drive.google.com/uc?export=download&id=1Gkpihp_Ts-OL8Fplzio_opn5_t0zv803" target="_blank" rel="noreferrer">
             <span>Download DECAY ENGINE v1</span>
             <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
               <path d="M8 2v8m-3-3 3 3 3-3M3 11v3h10v-3" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>
           </a>
-          <small>macOS plugin package / ZIP</small>
+          <small>macOS plugin package / ZIP / Google Drive</small>
         </div>
       </div>
 

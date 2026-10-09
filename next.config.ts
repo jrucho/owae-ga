@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [{
+      source: "/DecayEngine-v1.0-macOS.zip",
+      destination: "https://drive.google.com/uc?export=download&id=1Gkpihp_Ts-OL8Fplzio_opn5_t0zv803",
+      permanent: false,
+    }];
+  },
   async headers() {
     const safeHeaders = [
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -13,14 +20,6 @@ const nextConfig: NextConfig = {
         headers: [
           ...safeHeaders,
           { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=()" },
-        ],
-      },
-      {
-        source: "/DecayEngine-v1.0-macOS.zip",
-        headers: [
-          ...safeHeaders,
-          { key: "Content-Disposition", value: 'attachment; filename="DecayEngine-v1.0-macOS.zip"' },
-          { key: "Cache-Control", value: "public, max-age=3600, must-revalidate" },
         ],
       },
       {
