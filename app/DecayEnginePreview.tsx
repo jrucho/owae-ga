@@ -17,13 +17,12 @@ export default function DecayEnginePreview() {
         onClick={() => dialogRef.current?.showModal()}
       >
         <Image
-          src="/decay-engine-interface.webp"
-          width={1600}
-          height={1200}
+          src="/decay-engine-interface.webp?v=044ce44ee95b"
+          width={1596}
+          height={1198}
           alt="DECAY ENGINE interface showing Weight, Damage, Memory, and Distance macros alongside Pressure, Dirt, Decay, Drift, Void, and Ghost processing controls."
           unoptimized
         />
-        <span>VIEW INTERFACE / ENLARGE</span>
       </button>
       <figcaption>DECAY ENGINE / V1 / PLUGIN INTERFACE</figcaption>
       <dialog
@@ -38,13 +37,13 @@ export default function DecayEnginePreview() {
           <button type="submit" autoFocus>Close preview</button>
         </form>
         <Image
-          src="/decay-engine-interface.webp"
-          width={1600}
-          height={1200}
+          src="/decay-engine-interface.webp?v=044ce44ee95b"
+          width={1596}
+          height={1198}
           alt="Full DECAY ENGINE v1 plugin interface."
           unoptimized
         />
-        <a href="/decay-engine-interface.webp" target="_blank" rel="noreferrer">Open full-size image</a>
+        <a href="/decay-engine-interface.webp?v=044ce44ee95b" target="_blank" rel="noreferrer">Open full-size image</a>
       </dialog>
     </figure>
   );

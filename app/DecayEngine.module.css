@@ -13,7 +13,6 @@
 .preview { max-width: 1120px; margin: 48px auto 0; }
 .previewButton { position: relative; display: block; width: 100%; padding: 0; border: 1px solid var(--line); background: #000; color: var(--ink); cursor: zoom-in; }
 .previewButton img { display: block; width: 100%; height: auto; }
-.previewButton > span { position: absolute; right: 12px; bottom: 12px; padding: 10px 12px; background: var(--acid); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
 .preview figcaption { margin-top: 12px; color: var(--muted); font-size: 10px; letter-spacing: .14em; }
 .previewDialog { width: min(1700px, calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); margin: auto; padding: 16px; border: 1px solid var(--line); background: #080808; color: var(--paper); overflow: auto; }
 .previewDialog::backdrop { background: rgba(0,0,0,.9); }
@@ -46,5 +45,4 @@
   .processor h3 { font-size: clamp(20px,6vw,32px); }
   .description { font-size: 16px; }
   .preview { margin-top: 32px; }
-  .previewButton > span { position: static; display: block; padding: 14px; }
 }
