@@ -1,4 +1,5 @@
 import styles from "./DecayEngine.module.css";
+import DecayEnginePreview from "./DecayEnginePreview";
 
 const processors = [
   ["PRESSURE", "Compression for density and impact."],
@@ -30,6 +31,8 @@ export default function DecayEngine() {
           <small>macOS plugin package / ZIP / Google Drive</small>
         </div>
       </div>
+
+      <DecayEnginePreview />
 
       <p className={styles.description}>
         DECAY ENGINE by OWAE.GA is a creative audio effect that transforms clean

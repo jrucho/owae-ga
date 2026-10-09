@@ -77,6 +77,7 @@ const structuredData = {
       "@id": `${siteUrl}/#decay-engine`,
       name: "DECAY ENGINE",
       url: `${siteUrl}/#decay-engine`,
+      screenshot: `${siteUrl}/decay-engine-interface.webp`,
       downloadUrl: "https://drive.google.com/uc?export=download&id=1Gkpihp_Ts-OL8Fplzio_opn5_t0zv803",
       softwareVersion: "1.0",
       applicationCategory: "MultimediaApplication",
